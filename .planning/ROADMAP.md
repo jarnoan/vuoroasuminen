@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Bootstrap Next.js project, install deps, create Drizzle schema and app config
-- [ ] 01-02-PLAN.md — Auth.js v5 Google OAuth with split config, shell UI with sign-in/sign-out
+- [x] 01-02-PLAN.md — Auth.js v5 Google OAuth with split config, shell UI with sign-in/sign-out
 
 **UI hint**: yes
 
