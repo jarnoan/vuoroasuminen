@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-foundation-01-01-PLAN.md
-last_updated: "2026-04-04T15:41:41.559Z"
-last_activity: 2026-04-04 -- Phase 01 execution started; plan 01-01 complete
+stopped_at: "Checkpoint: Task 3 human verification of Google OAuth flow (01-foundation-01-02-PLAN.md)"
+last_updated: "2026-04-04T15:47:59.897Z"
+last_activity: 2026-04-04
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 50
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 01 (foundation) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 01
-Last activity: 2026-04-04 -- Phase 01 execution started
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-04
 
 Progress: [█████░░░░░] 50%
 
@@ -53,6 +53,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 7 | 2 tasks | 14 files |
+| Phase 01-foundation P02 | 2 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: AppConfig: parents array, children string[], startDate ISO, firstParent ParentId — non-secret structured config in src/config/app.ts
 - [Phase 01-foundation]: status enum (draft/published) not boolean — extensible; gcal_events mirror table from day one for Phase 4 idempotency
 - [Phase 01-foundation]: Export pgEnum from schema files or drizzle-kit generate silently omits CREATE TYPE
+- [Phase 01-foundation]: Split Auth.js config: auth.config.ts (edge-safe, no adapter) + auth.ts (DrizzleAdapter, JWT strategy) — middleware uses auth.config only to avoid edge runtime crash
+- [Phase 01-foundation]: JWT session strategy WITH DrizzleAdapter — JWT cookie for edge-compatible middleware; adapter persists OAuth tokens to accounts table for Phase 4 GCal sync
+- [Phase 01-foundation]: prompt:consent + access_type:offline in Google provider — forces refresh_token re-issue on every sign-in (prevents Pitfall 2)
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T15:41:41.557Z
-Stopped at: Completed 01-foundation-01-01-PLAN.md
+Last session: 2026-04-04T15:47:59.895Z
+Stopped at: Checkpoint: Task 3 human verification of Google OAuth flow (01-foundation-01-02-PLAN.md)
 Resume file: None

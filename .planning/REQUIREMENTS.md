@@ -7,10 +7,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in with their Google account via OAuth
-- [ ] **AUTH-02**: User session persists across browser refresh
-- [ ] **AUTH-03**: User can sign out from any page
-- [ ] **AUTH-04**: App requests Google Calendar API scope at sign-in so calendar sync works without re-auth
+- [x] **AUTH-01**: User can sign in with their Google account via OAuth
+- [x] **AUTH-02**: User session persists across browser refresh
+- [x] **AUTH-03**: User can sign out from any page
+- [x] **AUTH-04**: App requests Google Calendar API scope at sign-in so calendar sync works without re-auth
 
 ### Setup
 
@@ -84,10 +84,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | SETP-01 | Phase 1 | Complete |
 | SETP-02 | Phase 2 | Pending |
 | SCHED-01 | Phase 2 | Pending |
