@@ -29,10 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A parent can sign out from any page
   4. The OAuth flow requests the Google Calendar API scope so no re-auth is needed for sync later
   5. The `schedule_entries`, `gcal_events`, `children`, `schedules`, and Auth.js tables exist in Supabase with correct types (DATE columns, status enum)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 01-01-PLAN.md — Bootstrap Next.js project, install deps, create Drizzle schema and app config
+- [x] 01-01-PLAN.md — Bootstrap Next.js project, install deps, create Drizzle schema and app config
 - [ ] 01-02-PLAN.md — Auth.js v5 Google OAuth with split config, shell UI with sign-in/sign-out
 
 **UI hint**: yes
@@ -80,7 +80,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planning complete | - |
+| 1. Foundation | 1/2 | In Progress|  |
 | 2. Schedule Table UI | 0/? | Not started | - |
 | 3. Draft/Publish + Statistics | 0/? | Not started | - |
 | 4. Google Calendar Sync | 0/? | Not started | - |

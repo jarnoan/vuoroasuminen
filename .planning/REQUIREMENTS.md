@@ -14,7 +14,7 @@
 
 ### Setup
 
-- [ ] **SETP-01**: A configuration file or environment-level setup defines the two parents (name, Google account, calendar ID), list of children, the default alternating-week start date, and which parent starts first
+- [x] **SETP-01**: A configuration file or environment-level setup defines the two parents (name, Google account, calendar ID), list of children, the default alternating-week start date, and which parent starts first
 - [ ] **SETP-02**: System pre-fills the 12-week planning window with the alternating-week pattern on first load
 
 ### Schedule Table
@@ -88,7 +88,7 @@
 | AUTH-02 | Phase 1 | Pending |
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
-| SETP-01 | Phase 1 | Pending |
+| SETP-01 | Phase 1 | Complete |
 | SETP-02 | Phase 2 | Pending |
 | SCHED-01 | Phase 2 | Pending |
 | SCHED-02 | Phase 2 | Pending |
