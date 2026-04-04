@@ -1,3 +1,4 @@
+import "../env" // must be first — loads .env.local before db pool initializes
 import { db } from "./index"
 import { children } from "./schema/domain"
 import config from "../config/app"

@@ -3,10 +3,14 @@ import { Pool } from "pg"
 import * as authSchema from "./schema/auth"
 import * as domainSchema from "./schema/domain"
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+function createDb() {
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  })
+  return drizzle(pool, {
+    schema: { ...authSchema, ...domainSchema },
+  })
+}
 
-export const db = drizzle(pool, {
-  schema: { ...authSchema, ...domainSchema },
-})
+export const db = createDb()
