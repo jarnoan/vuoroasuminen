@@ -12,7 +12,8 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Google OAuth authentication — both parents log in with their own Google accounts *(Validated in Phase 01: foundation)*
+- [x] Both parents share the same schedule data (real-time collaborative view) — DB schema and Auth.js token persistence in place *(Validated in Phase 01: foundation)*
 
 ### Active
 
@@ -54,7 +55,7 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Google OAuth for auth | Both parents already have Google accounts; avoids managing separate credentials | — Pending |
+| Google OAuth for auth | Both parents already have Google accounts; avoids managing separate credentials | Auth.js v5 + DrizzleAdapter; JWT strategy for edge-compatible middleware |
 | One calendar per parent (not per child) | Parents want to see their own obligations in their calendar | — Pending |
 | One all-day event per child per day | Each child's location is independently visible in the calendar | — Pending |
 | Last-write-wins conflict resolution | Co-parents can coordinate informally; complex merge UI is overkill | — Pending |
@@ -79,4 +80,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 after initialization*
+*Last updated: 2026-04-05 — Phase 01 (foundation) complete*
+
+## Current State
+
+Phase 01 complete. Next.js 15 project bootstrapped with TypeScript, Tailwind v4, shadcn/ui, Drizzle ORM, Auth.js v5 Google OAuth, and Supabase PostgreSQL. Google sign-in flow working end-to-end with Calendar API scope and refresh token rotation. Phase 02 (schedule table UI) is next.
