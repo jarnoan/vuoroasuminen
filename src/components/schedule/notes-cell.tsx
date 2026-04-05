@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 interface NotesCellProps {
   entryId: string | null
@@ -10,8 +10,22 @@ interface NotesCellProps {
 
 export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
   const [localValue, setLocalValue] = useState(value)
+  const isFocusedRef = useRef(false)
+
+  // Sync localValue when value changes from realtime updates,
+  // but only when the input is not focused (to avoid overwriting active edits)
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setLocalValue(value)
+    }
+  }, [value])
+
+  function handleFocus() {
+    isFocusedRef.current = true
+  }
 
   function handleBlur() {
+    isFocusedRef.current = false
     if (entryId && localValue !== value) {
       onSave(entryId, localValue)
     }
@@ -22,6 +36,7 @@ export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
       type="text"
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
+      onFocus={handleFocus}
       onBlur={handleBlur}
       placeholder="Add note..."
       disabled={entryId === null}
