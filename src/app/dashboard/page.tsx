@@ -1,19 +1,15 @@
 import Header from "@/components/layout/header"
 import { getScheduleWindow } from "@/lib/schedule/queries"
+import { ScheduleTable } from "@/components/schedule/schedule-table"
 
 export default async function Dashboard() {
   const schedule = await getScheduleWindow()
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="p-4">
-        <p className="text-sm text-muted-foreground mb-2">
-          Schedule: {schedule.startDate} to {schedule.endDate} ({schedule.days.length} days)
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Data loaded. Schedule table UI coming in Plan 02.
-        </p>
+      <main className="flex-1 p-4">
+        <ScheduleTable initialData={schedule} />
       </main>
     </div>
   )

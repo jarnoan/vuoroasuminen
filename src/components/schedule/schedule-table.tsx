@@ -1,0 +1,147 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+import { toggleCell, saveNotes } from "@/actions/schedule"
+import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
+import { ScheduleCell } from "./schedule-cell"
+import { NotesCell } from "./notes-cell"
+import { TodayButton } from "./today-button"
+
+interface ScheduleTableProps {
+  initialData: DateWindow
+}
+
+export function ScheduleTable({ initialData }: ScheduleTableProps) {
+  const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
+
+  // Auto-scroll to today on mount
+  useEffect(() => {
+    const todayRow = document.querySelector('[data-today="true"]')
+    if (todayRow) {
+      todayRow.scrollIntoView({ behavior: "instant", block: "center" })
+    }
+  }, [])
+
+  async function handleToggle(entryId: string, newParentId: ParentId) {
+    // Optimistic update
+    setDays((prev) =>
+      prev.map((day) => ({
+        ...day,
+        cells: day.cells.map((cell) =>
+          cell.entryId === entryId ? { ...cell, parentId: newParentId } : cell
+        ),
+      }))
+    )
+
+    try {
+      await toggleCell(entryId, newParentId)
+    } catch {
+      // Revert on failure
+      const revertParentId: ParentId = newParentId === "father" ? "mother" : "father"
+      setDays((prev) =>
+        prev.map((day) => ({
+          ...day,
+          cells: day.cells.map((cell) =>
+            cell.entryId === entryId ? { ...cell, parentId: revertParentId } : cell
+          ),
+        }))
+      )
+      toast.error("Failed to save change. Please try again.")
+    }
+  }
+
+  async function handleNoteSave(entryId: string, notes: string) {
+    setDays((prev) =>
+      prev.map((day) =>
+        day.notesEntryId === entryId ? { ...day, notes } : day
+      )
+    )
+    try {
+      await saveNotes(entryId, notes)
+    } catch {
+      toast.error("Failed to save note.")
+    }
+  }
+
+  // Derive column headers from first day's cells
+  const childNames = days[0]?.cells.map((c) => c.childName) ?? []
+  const colCount = childNames.length + 2 // Date + children + Notes
+
+  // Find today's date for the TodayButton
+  const todayDate = days.find((d) => d.isToday)?.date ?? ""
+
+  return (
+    <>
+      <div className="overflow-y-auto">
+        <table className="w-full border-collapse">
+          <thead className="sticky top-0 z-10 bg-background">
+            <tr>
+              <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b">
+                Date
+              </th>
+              {childNames.map((name) => (
+                <th
+                  key={name}
+                  className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[90px]"
+                >
+                  {name}
+                </th>
+              ))}
+              <th className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[160px]">
+                Notes
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {days.map((day, index) => (
+              <>
+                {day.isWeekStart && index > 0 && (
+                  <tr key={`sep-${day.date}`}>
+                    <td
+                      colSpan={colCount}
+                      className="h-2 bg-muted/50"
+                    />
+                  </tr>
+                )}
+                <tr
+                  key={day.date}
+                  data-date={day.date}
+                  data-today={day.isToday ? "true" : undefined}
+                  className={day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20" : undefined}
+                >
+                  <td className="px-3 py-2 text-sm whitespace-nowrap font-mono">
+                    {day.dayLabel}
+                  </td>
+                  {day.cells.map((cell) => (
+                    <td key={cell.childId} className="px-1 py-1">
+                      {cell.entryId ? (
+                        <ScheduleCell
+                          entryId={cell.entryId}
+                          parentId={cell.parentId}
+                          status={cell.status}
+                          childName={cell.childName}
+                          onToggle={handleToggle}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground px-2">—</span>
+                      )}
+                    </td>
+                  ))}
+                  <td className="px-1 py-1">
+                    <NotesCell
+                      entryId={day.notesEntryId}
+                      value={day.notes}
+                      onSave={handleNoteSave}
+                    />
+                  </td>
+                </tr>
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {todayDate && <TodayButton todayDate={todayDate} />}
+    </>
+  )
+}
