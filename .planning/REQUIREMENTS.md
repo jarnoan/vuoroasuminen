@@ -19,18 +19,18 @@
 
 ### Schedule Table
 
-- [ ] **SCHED-01**: User sees a table with rows = days (rolling 12-week window from today) and columns = one per child plus a shared notes column
-- [ ] **SCHED-02**: Each cell shows which parent the child is with on that day (color-coded by parent)
+- [x] **SCHED-01**: User sees a table with rows = days (rolling 12-week window from today) and columns = one per child plus a shared notes column
+- [x] **SCHED-02**: Each cell shows which parent the child is with on that day (color-coded by parent)
 - [x] **SCHED-03**: User can change a cell value (father / mother) for any child on any day
 - [x] **SCHED-04**: Each child's location is tracked independently — children can be at different parents on the same day
 - [x] **SCHED-05**: User can edit the shared notes field for any day
-- [ ] **SCHED-06**: Changes made in draft state are visible immediately to both parents in real time (Supabase Realtime)
+- [x] **SCHED-06**: Changes made in draft state are visible immediately to both parents in real time (Supabase Realtime)
 
 ### Draft & Publish
 
 - [x] **DRFT-01**: All edits create or modify draft entries — they do not immediately push to Google Calendar
 - [ ] **DRFT-02**: Either parent can approve and publish the current draft, which triggers Google Calendar sync
-- [ ] **DRFT-03**: The UI clearly distinguishes draft cells from published cells (e.g. visual indicator)
+- [x] **DRFT-03**: The UI clearly distinguishes draft cells from published cells (e.g. visual indicator)
 
 ### Google Calendar Sync
 
@@ -90,15 +90,15 @@
 | AUTH-04 | Phase 1 | Complete |
 | SETP-01 | Phase 1 | Complete |
 | SETP-02 | Phase 2 | Complete |
-| SCHED-01 | Phase 2 | Pending |
-| SCHED-02 | Phase 2 | Pending |
+| SCHED-01 | Phase 2 | Complete |
+| SCHED-02 | Phase 2 | Complete |
 | SCHED-03 | Phase 2 | Complete |
 | SCHED-04 | Phase 2 | Complete |
 | SCHED-05 | Phase 2 | Complete |
-| SCHED-06 | Phase 2 | Pending |
+| SCHED-06 | Phase 2 | Complete |
 | DRFT-01 | Phase 2 | Complete |
 | DRFT-02 | Phase 3 | Pending |
-| DRFT-03 | Phase 2 | Pending |
+| DRFT-03 | Phase 2 | Complete |
 | GCAL-01 | Phase 4 | Pending |
 | GCAL-02 | Phase 4 | Pending |
 | GCAL-03 | Phase 4 | Pending |
