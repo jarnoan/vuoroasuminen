@@ -15,20 +15,22 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - [x] Google OAuth authentication — both parents log in with their own Google accounts *(Validated in Phase 01: foundation)*
 - [x] Both parents share the same schedule data (real-time collaborative view) — DB schema and Auth.js token persistence in place *(Validated in Phase 01: foundation)*
 
+### Validated
+
+- [x] Schedule table UI: rows = days (12-week rolling window), columns = children + shared notes column *(Validated in Phase 02: schedule-table-ui)*
+- [x] Each cell shows which parent the child is with that day; any child can independently be at either parent *(Validated in Phase 02: schedule-table-ui)*
+- [x] Default schedule pre-filled based on alternating weeks pattern; users edit exceptions *(Validated in Phase 02: schedule-table-ui)*
+- [x] Draft mode: plan future dates as drafts before publishing to real calendars *(Validated in Phase 02: schedule-table-ui)*
+- [x] Both parents see each other's edits in real time via Supabase Realtime (no refresh needed) *(Validated in Phase 02: schedule-table-ui)*
+- [x] Shared notes column per day (both parents can read and write) *(Validated in Phase 02: schedule-table-ui)*
+
 ### Active
 
-- [ ] Schedule table UI: rows = days (12-week rolling window), columns = children + shared notes column
-- [ ] Each cell shows which parent the child is with that day; any child can independently be at either parent
-- [ ] Default schedule pre-filled based on alternating weeks pattern; users edit exceptions
-- [ ] Draft mode: plan future dates as drafts before publishing to real calendars
 - [ ] Either parent can approve a draft and publish it to Google Calendar
 - [ ] Google Calendar integration: one calendar per parent; one all-day event per child per day they are with that parent (e.g. "Emma @ dad")
 - [ ] Changes made in the UI are reflected in Google Calendar in real time (once approved/published)
-- [ ] Google OAuth authentication — both parents log in with their own Google accounts
-- [ ] Both parents share the same schedule data (real-time collaborative view)
 - [ ] Last-write-wins conflict resolution for simultaneous edits
 - [ ] Statistics panel: full 12-week window totals per child per parent — days with each parent, days alone with each parent, child-free days and weekends per parent
-- [ ] Shared notes column per day (both parents can read and write)
 
 ### Out of Scope
 
@@ -80,8 +82,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-05 — Phase 01 (foundation) complete*
+*Last updated: 2026-04-05 — Phase 02 (schedule-table-ui) complete*
 
 ## Current State
 
-Phase 01 complete. Next.js 15 project bootstrapped with TypeScript, Tailwind v4, shadcn/ui, Drizzle ORM, Auth.js v5 Google OAuth, and Supabase PostgreSQL. Google sign-in flow working end-to-end with Calendar API scope and refresh token rotation. Phase 02 (schedule table UI) is next.
+Phase 02 complete. Interactive 84-row schedule table is live — color-coded parent cells, optimistic toggles, inline notes editing, week separators, today highlighting, and Supabase Realtime sync so both parents see each other's edits without refreshing. Phase 03 (draft/publish + statistics) is next.
