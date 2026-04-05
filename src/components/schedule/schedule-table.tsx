@@ -112,7 +112,7 @@ export function ScheduleTable({ initialData, realtimeRef }: ScheduleTableProps) 
 
   return (
     <>
-      <div className="overflow-y-auto">
+      <div className="overflow-y-auto h-[calc(100vh-8rem)]">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
