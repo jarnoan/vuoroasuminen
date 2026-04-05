@@ -13,7 +13,7 @@ Four phases deliver a shared co-parenting custody scheduler from zero to full Go
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation** - Auth.js v5 + Drizzle ORM + Supabase setup, Google OAuth with Calendar scope, and complete DB schema
-- [ ] **Phase 2: Schedule Table UI** - Read/write 12-week schedule grid with real-time sync, alternating-week pre-fill, shared notes, and draft state
+- [x] **Phase 2: Schedule Table UI** - Read/write 12-week schedule grid with real-time sync, alternating-week pre-fill, shared notes, and draft state (completed 2026-04-05)
 - [ ] **Phase 3: Draft/Publish + Statistics** - Publish flow with confirmation dialog, approve button, and complete statistics panel
 - [ ] **Phase 4: Google Calendar Sync** - Write-only GCal integration with idempotent event management, orphan cleanup, and rate-limit handling
 
@@ -47,12 +47,12 @@ Plans:
   3. A parent can change any child's cell to father or mother and the change appears immediately on both parents' screens
   4. A parent can edit the shared notes field for any day and the other parent sees it in real time
   5. Draft cells are visually distinct from published cells so both parents can see what is not yet confirmed
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Data layer: types, alternating-week generator, data queries, Server Actions
-- [ ] 02-02-PLAN.md — Schedule table UI: 84-row grid with color-coded cells, click-to-toggle, notes, week separators
-- [ ] 02-03-PLAN.md — Realtime sync: Supabase Postgres Changes subscription, cross-browser state sync
+- [x] 02-02-PLAN.md — Schedule table UI: 84-row grid with color-coded cells, click-to-toggle, notes, week separators
+- [x] 02-03-PLAN.md — Realtime sync: Supabase Postgres Changes subscription, cross-browser state sync
 **UI hint**: yes
 
 ### Phase 3: Draft/Publish + Statistics
@@ -86,6 +86,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/2 | In Progress|  |
-| 2. Schedule Table UI | 1/3 | In Progress|  |
+| 2. Schedule Table UI | 3/3 | Complete   | 2026-04-05 |
 | 3. Draft/Publish + Statistics | 0/? | Not started | - |
 | 4. Google Calendar Sync | 0/? | Not started | - |

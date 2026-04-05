@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-schedule-table-ui-01-PLAN.md
-last_updated: "2026-04-05T13:03:51.174Z"
-last_activity: 2026-04-05 -- Phase 02 execution started
+stopped_at: "Completed 02-schedule-table-ui-03-PLAN.md (awaiting checkpoint:human-verify)"
+last_updated: "2026-04-05T18:38:13.822Z"
+last_activity: 2026-04-05
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 5
   percent: 50
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 02 (schedule-table-ui) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 02
-Last activity: 2026-04-05 -- Phase 02 execution started
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-04-05
 
 Progress: [█████░░░░░] 50%
 
@@ -55,6 +55,8 @@ Progress: [█████░░░░░] 50%
 | Phase 01-foundation P01 | 7 | 2 tasks | 14 files |
 | Phase 01-foundation P02 | 2 | 2 tasks | 10 files |
 | Phase 02-schedule-table-ui P01 | 2 | 2 tasks | 6 files |
+| Phase 02-schedule-table-ui P02 | 2 | 2 tasks | 5 files |
+| Phase 02-schedule-table-ui P03 | 4 | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -75,6 +77,10 @@ Recent decisions affecting current work:
 - [Phase 02-schedule-table-ui]: ScheduleDay.notes sourced from first child entry's notes column — shared notes per day approach
 - [Phase 02-schedule-table-ui]: DB seeding happens lazily in getScheduleWindow when no entries exist for the window — avoids separate seed step
 - [Phase 02-schedule-table-ui]: sonner Toaster mounted at root layout so it is available globally for client components
+- [Phase 02-schedule-table-ui]: ScheduleCell renders null-entryId cells as a dash placeholder rather than disabled button — cleaner UI for seeding gaps
+- [Phase 02-schedule-table-ui]: Week separator implemented as a separate colSpan tr row rather than a border on the Monday row to avoid border-collapse conflicts
+- [Phase 02-schedule-table-ui]: Realtime wired via ref injection rather than context — avoids re-render cascade; ScheduleTable controls its own state
+- [Phase 02-schedule-table-ui]: Plain createClient (not @supabase/ssr) for browser Realtime — correct when Supabase Auth is not in use
 
 ### Pending Todos
 
@@ -87,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T13:03:51.172Z
-Stopped at: Completed 02-schedule-table-ui-01-PLAN.md
+Last session: 2026-04-05T18:38:13.821Z
+Stopped at: Completed 02-schedule-table-ui-03-PLAN.md (awaiting checkpoint:human-verify)
 Resume file: None
