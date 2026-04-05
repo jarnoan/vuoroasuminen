@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Completed 02-schedule-table-ui-01-PLAN.md
 last_updated: "2026-04-05T13:03:51.174Z"
-last_activity: 2026-04-05
+last_activity: 2026-04-05 -- Phase 02 execution started
 progress:
   total_phases: 4
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 01 — foundation
+**Current focus:** Phase 02 — schedule-table-ui
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-05
+Phase: 02 (schedule-table-ui) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 02
+Last activity: 2026-04-05 -- Phase 02 execution started
 
 Progress: [█████░░░░░] 50%
 
