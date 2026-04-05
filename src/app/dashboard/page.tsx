@@ -1,6 +1,6 @@
 import Header from "@/components/layout/header"
 import { getScheduleWindow } from "@/lib/schedule/queries"
-import { ScheduleTable } from "@/components/schedule/schedule-table"
+import { ScheduleWithRealtime } from "@/components/schedule/schedule-with-realtime"
 
 export default async function Dashboard() {
   const schedule = await getScheduleWindow()
@@ -9,7 +9,7 @@ export default async function Dashboard() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 p-4">
-        <ScheduleTable initialData={schedule} />
+        <ScheduleWithRealtime initialData={schedule} />
       </main>
     </div>
   )
