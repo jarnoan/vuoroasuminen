@@ -139,7 +139,7 @@ export function ScheduleTable({ initialData, realtimeRef }: ScheduleTableProps) 
                   <tr key={`sep-${day.date}`}>
                     <td
                       colSpan={colCount}
-                      className="h-3 bg-border"
+                      className="h-px bg-border"
                     />
                   </tr>
                 )}
