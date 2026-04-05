@@ -47,7 +47,12 @@ Plans:
   3. A parent can change any child's cell to father or mother and the change appears immediately on both parents' screens
   4. A parent can edit the shared notes field for any day and the other parent sees it in real time
   5. Draft cells are visually distinct from published cells so both parents can see what is not yet confirmed
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Data layer: types, alternating-week generator, data queries, Server Actions
+- [ ] 02-02-PLAN.md — Schedule table UI: 84-row grid with color-coded cells, click-to-toggle, notes, week separators
+- [ ] 02-03-PLAN.md — Realtime sync: Supabase Postgres Changes subscription, cross-browser state sync
 **UI hint**: yes
 
 ### Phase 3: Draft/Publish + Statistics
