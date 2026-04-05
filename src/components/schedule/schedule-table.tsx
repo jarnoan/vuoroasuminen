@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -8,12 +8,51 @@ import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
 import { TodayButton } from "./today-button"
 
-interface ScheduleTableProps {
-  initialData: DateWindow
+type RealtimeEntry = {
+  id: string
+  childId: string
+  day: string
+  parentId: ParentId
+  status: "draft" | "published"
+  notes: string | null
 }
 
-export function ScheduleTable({ initialData }: ScheduleTableProps) {
+interface ScheduleTableProps {
+  initialData: DateWindow
+  realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
+}
+
+export function ScheduleTable({ initialData, realtimeRef }: ScheduleTableProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
+
+  // Expose a callback for realtime updates
+  const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
+    setDays(prev => prev.map(day => {
+      if (day.date !== entry.day) return day
+      return {
+        ...day,
+        cells: day.cells.map(cell =>
+          cell.entryId === entry.id || (cell.childId === entry.childId && cell.entryId === null)
+            ? { ...cell, entryId: entry.id, parentId: entry.parentId, status: entry.status }
+            : cell
+        ),
+        notes: entry.notes ?? day.notes,
+        notesEntryId: day.notesEntryId === entry.id ? entry.id : day.notesEntryId,
+      }
+    }))
+  }, [])
+
+  // Assign to ref so parent can call it
+  useEffect(() => {
+    if (realtimeRef && 'current' in realtimeRef) {
+      (realtimeRef as React.MutableRefObject<typeof handleRealtimeEntry | null>).current = handleRealtimeEntry
+    }
+    return () => {
+      if (realtimeRef && 'current' in realtimeRef) {
+        (realtimeRef as React.MutableRefObject<typeof handleRealtimeEntry | null>).current = null
+      }
+    }
+  }, [handleRealtimeEntry, realtimeRef])
 
   // Auto-scroll to today on mount
   useEffect(() => {
