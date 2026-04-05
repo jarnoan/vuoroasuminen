@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Completed 02-schedule-table-ui-03-PLAN.md (awaiting checkpoint:human-verify)"
-last_updated: "2026-04-05T18:38:13.822Z"
+status: verifying
+stopped_at: Completed 02-schedule-table-ui phase — all 3 plans done, human verification passed
+last_updated: "2026-04-05T19:05:30.296Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 Phase: 02 (schedule-table-ui) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-05
 
 Progress: [█████░░░░░] 50%
@@ -57,6 +57,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02-schedule-table-ui P01 | 2 | 2 tasks | 6 files |
 | Phase 02-schedule-table-ui P02 | 2 | 2 tasks | 5 files |
 | Phase 02-schedule-table-ui P03 | 4 | 1 tasks | 5 files |
+| Phase 02-schedule-table-ui P03 | 50 | 4 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 02-schedule-table-ui]: Week separator implemented as a separate colSpan tr row rather than a border on the Monday row to avoid border-collapse conflicts
 - [Phase 02-schedule-table-ui]: Realtime wired via ref injection rather than context — avoids re-render cascade; ScheduleTable controls its own state
 - [Phase 02-schedule-table-ui]: Plain createClient (not @supabase/ssr) for browser Realtime — correct when Supabase Auth is not in use
+- [Phase 02-schedule-table-ui]: Sticky header requires bounded scroll container: h-[calc(100vh-8rem)] on overflow-y-auto wrapper
+- [Phase 02-schedule-table-ui]: NotesCell syncs incoming value prop via useEffect with isFocusedRef guard — prevents overwriting active user input while accepting realtime updates
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T18:38:13.821Z
-Stopped at: Completed 02-schedule-table-ui-03-PLAN.md (awaiting checkpoint:human-verify)
+Last session: 2026-04-05T19:05:30.294Z
+Stopped at: Completed 02-schedule-table-ui phase — all 3 plans done, human verification passed
 Resume file: None
