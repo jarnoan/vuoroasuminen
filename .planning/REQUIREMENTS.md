@@ -15,20 +15,20 @@
 ### Setup
 
 - [x] **SETP-01**: A configuration file or environment-level setup defines the two parents (name, Google account, calendar ID), list of children, the default alternating-week start date, and which parent starts first
-- [ ] **SETP-02**: System pre-fills the 12-week planning window with the alternating-week pattern on first load
+- [x] **SETP-02**: System pre-fills the 12-week planning window with the alternating-week pattern on first load
 
 ### Schedule Table
 
 - [ ] **SCHED-01**: User sees a table with rows = days (rolling 12-week window from today) and columns = one per child plus a shared notes column
 - [ ] **SCHED-02**: Each cell shows which parent the child is with on that day (color-coded by parent)
-- [ ] **SCHED-03**: User can change a cell value (father / mother) for any child on any day
-- [ ] **SCHED-04**: Each child's location is tracked independently — children can be at different parents on the same day
-- [ ] **SCHED-05**: User can edit the shared notes field for any day
+- [x] **SCHED-03**: User can change a cell value (father / mother) for any child on any day
+- [x] **SCHED-04**: Each child's location is tracked independently — children can be at different parents on the same day
+- [x] **SCHED-05**: User can edit the shared notes field for any day
 - [ ] **SCHED-06**: Changes made in draft state are visible immediately to both parents in real time (Supabase Realtime)
 
 ### Draft & Publish
 
-- [ ] **DRFT-01**: All edits create or modify draft entries — they do not immediately push to Google Calendar
+- [x] **DRFT-01**: All edits create or modify draft entries — they do not immediately push to Google Calendar
 - [ ] **DRFT-02**: Either parent can approve and publish the current draft, which triggers Google Calendar sync
 - [ ] **DRFT-03**: The UI clearly distinguishes draft cells from published cells (e.g. visual indicator)
 
@@ -89,14 +89,14 @@
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
 | SETP-01 | Phase 1 | Complete |
-| SETP-02 | Phase 2 | Pending |
+| SETP-02 | Phase 2 | Complete |
 | SCHED-01 | Phase 2 | Pending |
 | SCHED-02 | Phase 2 | Pending |
-| SCHED-03 | Phase 2 | Pending |
-| SCHED-04 | Phase 2 | Pending |
-| SCHED-05 | Phase 2 | Pending |
+| SCHED-03 | Phase 2 | Complete |
+| SCHED-04 | Phase 2 | Complete |
+| SCHED-05 | Phase 2 | Complete |
 | SCHED-06 | Phase 2 | Pending |
-| DRFT-01 | Phase 2 | Pending |
+| DRFT-01 | Phase 2 | Complete |
 | DRFT-02 | Phase 3 | Pending |
 | DRFT-03 | Phase 2 | Pending |
 | GCAL-01 | Phase 4 | Pending |
