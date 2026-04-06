@@ -29,7 +29,7 @@
 ### Draft & Publish
 
 - [x] **DRFT-01**: All edits create or modify draft entries — they do not immediately push to Google Calendar
-- [ ] **DRFT-02**: Either parent can approve and publish the current draft, which triggers Google Calendar sync
+- [x] **DRFT-02**: Either parent can approve and publish the current draft, which triggers Google Calendar sync
 - [x] **DRFT-03**: The UI clearly distinguishes draft cells from published cells (e.g. visual indicator)
 
 ### Google Calendar Sync
@@ -97,7 +97,7 @@
 | SCHED-05 | Phase 2 | Complete |
 | SCHED-06 | Phase 2 | Complete |
 | DRFT-01 | Phase 2 | Complete |
-| DRFT-02 | Phase 3 | Pending |
+| DRFT-02 | Phase 3 | Complete |
 | DRFT-03 | Phase 2 | Complete |
 | GCAL-01 | Phase 4 | Pending |
 | GCAL-02 | Phase 4 | Pending |
