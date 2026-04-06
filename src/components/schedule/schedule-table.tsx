@@ -20,9 +20,10 @@ type RealtimeEntry = {
 interface ScheduleTableProps {
   initialData: DateWindow
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
+  renderAbove?: (days: ScheduleDay[]) => React.ReactNode
 }
 
-export function ScheduleTable({ initialData, realtimeRef }: ScheduleTableProps) {
+export function ScheduleTable({ initialData, realtimeRef, renderAbove }: ScheduleTableProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
 
   // Expose a callback for realtime updates
@@ -112,6 +113,7 @@ export function ScheduleTable({ initialData, realtimeRef }: ScheduleTableProps) 
 
   return (
     <>
+      {renderAbove?.(days)}
       <div className="overflow-y-auto h-[calc(100vh-8rem)]">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-background">

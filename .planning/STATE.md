@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-draft-publish-statistics-01-PLAN.md
-last_updated: "2026-04-06T08:32:02.560Z"
-last_activity: 2026-04-06 -- Phase 03 execution started
+stopped_at: Completed 03-draft-publish-statistics-02-PLAN.md
+last_updated: "2026-04-06T08:32:03.024Z"
+last_activity: 2026-04-06 -- Phase 03 Wave 1 complete
 progress:
   total_phases: 4
   completed_phases: 2
@@ -59,6 +59,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02-schedule-table-ui P03 | 4 | 1 tasks | 5 files |
 | Phase 02-schedule-table-ui P03 | 50 | 4 tasks | 6 files |
 | Phase 03-draft-publish-statistics P01 | 3 | 2 tasks | 5 files |
+| Phase 03-draft-publish-statistics P02 | 9 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 02-schedule-table-ui]: NotesCell syncs incoming value prop via useEffect with isFocusedRef guard — prevents overwriting active user input while accepting realtime updates
 - [Phase 03-draft-publish-statistics]: shadcn/ui canary Dialog uses @base-ui/react/dialog (not Radix) — DialogTrigger uses render prop pattern instead of asChild
 - [Phase 03-draft-publish-statistics]: Header children slot pattern: Server Component stays server-side, client PublishButton injected via children prop from Dashboard
+- [Phase 03-draft-publish-statistics]: renderAbove render prop on ScheduleTable gives StatsPanel reactive access to days state without lifting state
+- [Phase 03-draft-publish-statistics]: computeStats is a pure function — no DB calls, no side effects, fully testable
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-06T08:32:02.558Z
-Stopped at: Completed 03-draft-publish-statistics-01-PLAN.md
+Last session: 2026-04-06T08:32:03.022Z
+Stopped at: Completed 03-draft-publish-statistics-02-PLAN.md
 Resume file: None
