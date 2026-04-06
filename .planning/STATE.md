@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 3 context gathered
-last_updated: "2026-04-06T08:17:32.200Z"
+stopped_at: Completed 03-draft-publish-statistics-02-PLAN.md
+last_updated: "2026-04-06T08:32:03.024Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
   percent: 50
 ---
 
@@ -58,6 +58,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02-schedule-table-ui P02 | 2 | 2 tasks | 5 files |
 | Phase 02-schedule-table-ui P03 | 4 | 1 tasks | 5 files |
 | Phase 02-schedule-table-ui P03 | 50 | 4 tasks | 6 files |
+| Phase 03-draft-publish-statistics P02 | 9 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 02-schedule-table-ui]: Plain createClient (not @supabase/ssr) for browser Realtime — correct when Supabase Auth is not in use
 - [Phase 02-schedule-table-ui]: Sticky header requires bounded scroll container: h-[calc(100vh-8rem)] on overflow-y-auto wrapper
 - [Phase 02-schedule-table-ui]: NotesCell syncs incoming value prop via useEffect with isFocusedRef guard — prevents overwriting active user input while accepting realtime updates
+- [Phase 03-draft-publish-statistics]: renderAbove render prop on ScheduleTable gives StatsPanel reactive access to days state without lifting state
+- [Phase 03-draft-publish-statistics]: computeStats is a pure function — no DB calls, no side effects, fully testable
 
 ### Pending Todos
 
@@ -96,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-06T08:17:32.194Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-draft-publish-statistics/03-CONTEXT.md
+Last session: 2026-04-06T08:32:03.022Z
+Stopped at: Completed 03-draft-publish-statistics-02-PLAN.md
+Resume file: None
