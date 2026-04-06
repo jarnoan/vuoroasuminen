@@ -64,10 +64,10 @@ Plans:
   2. After publishing, published cells are visually updated and the draft indicator clears for affected days
   3. The statistics panel shows days per child per parent, solo days per child per parent, child-free days per parent, and child-free weekends per parent for the full 12-week window
   4. Statistics update to reflect both draft and published entries so parents can see the effect of their plan before publishing
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
+- [x] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
 - [ ] 03-02-PLAN.md — Statistics panel: computation module, StatsPanel component, schedule wiring
 **UI hint**: yes
 
@@ -95,5 +95,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. Schedule Table UI | 3/3 | Complete   | 2026-04-05 |
-| 3. Draft/Publish + Statistics | 0/? | Not started | - |
+| 3. Draft/Publish + Statistics | 1/2 | In Progress|  |
 | 4. Google Calendar Sync | 0/? | Not started | - |
