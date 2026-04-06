@@ -64,7 +64,11 @@ Plans:
   2. After publishing, published cells are visually updated and the draft indicator clears for affected days
   3. The statistics panel shows days per child per parent, solo days per child per parent, child-free days per parent, and child-free weekends per parent for the full 12-week window
   4. Statistics update to reflect both draft and published entries so parents can see the effect of their plan before publishing
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
+- [ ] 03-02-PLAN.md — Statistics panel: computation module, StatsPanel component, schedule wiring
 **UI hint**: yes
 
 ### Phase 4: Google Calendar Sync
@@ -76,7 +80,11 @@ Plans:
   2. When a custody day is reassigned and republished, the old event is removed from the previous parent's calendar and created in the new parent's calendar
   3. Re-publishing the same plan without changes does not create duplicate events
   4. Each parent's calendar only contains events for children staying with them — events for the other parent's custody days are absent
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
+- [ ] 03-02-PLAN.md — Statistics panel: computation module, StatsPanel component, schedule wiring
 
 ## Progress
 
