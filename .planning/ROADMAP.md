@@ -67,8 +67,9 @@ Plans:
 **Plans:** 1/2 plans executed
 
 Plans:
+
 - [x] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
-- [ ] 03-02-PLAN.md — Statistics panel: computation module, StatsPanel component, schedule wiring
+- [x] 03-02-PLAN.md — Statistics panel: computation module, StatsPanel component, schedule wiring
 **UI hint**: yes
 
 ### Phase 4: Google Calendar Sync

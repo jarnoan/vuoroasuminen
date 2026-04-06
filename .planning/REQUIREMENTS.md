@@ -42,11 +42,11 @@
 
 ### Statistics
 
-- [ ] **STAT-01**: Statistics panel shows, for the full 12-week window: number of days each child is with each parent
-- [ ] **STAT-02**: Statistics panel shows: number of days each child is alone with each parent (the other children are not present)
-- [ ] **STAT-03**: Statistics panel shows: number of child-free days per parent (no children present)
-- [ ] **STAT-04**: Statistics panel shows: number of child-free weekends per parent (full weekend Sat+Sun with no children)
-- [ ] **STAT-05**: Statistics reflect both published and draft entries so parents can see the effect of their plan before publishing
+- [x] **STAT-01**: Statistics panel shows, for the full 12-week window: number of days each child is with each parent
+- [x] **STAT-02**: Statistics panel shows: number of days each child is alone with each parent (the other children are not present)
+- [x] **STAT-03**: Statistics panel shows: number of child-free days per parent (no children present)
+- [x] **STAT-04**: Statistics panel shows: number of child-free weekends per parent (full weekend Sat+Sun with no children)
+- [x] **STAT-05**: Statistics reflect both published and draft entries so parents can see the effect of their plan before publishing
 
 ## v2 Requirements
 
@@ -104,11 +104,11 @@
 | GCAL-03 | Phase 4 | Pending |
 | GCAL-04 | Phase 4 | Pending |
 | GCAL-05 | Phase 4 | Pending |
-| STAT-01 | Phase 3 | Pending |
-| STAT-02 | Phase 3 | Pending |
-| STAT-03 | Phase 3 | Pending |
-| STAT-04 | Phase 3 | Pending |
-| STAT-05 | Phase 3 | Pending |
+| STAT-01 | Phase 3 | Complete |
+| STAT-02 | Phase 3 | Complete |
+| STAT-03 | Phase 3 | Complete |
+| STAT-04 | Phase 3 | Complete |
+| STAT-05 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 25 total
