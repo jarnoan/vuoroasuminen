@@ -100,8 +100,14 @@ None yet.
 - Start Google OAuth app verification process during Phase 1 (3-5 business days; blocks real-user handoff)
 - Supabase free tier pauses after 1 week inactivity — upgrade to Pro before sharing with real users
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260406-oca | Fix PublishButton disabled state after publishing | 2026-04-06 | d03f195 | [260406-oca-fix-publishbutton-disabled-state-after-p](.planning/quick/260406-oca-fix-publishbutton-disabled-state-after-p/) |
+
 ## Session Continuity
 
-Last session: 2026-04-06T08:32:03.022Z
-Stopped at: Completed 03-draft-publish-statistics-02-PLAN.md
+Last session: 2026-04-06T14:31:33.432Z
+Stopped at: Quick task 260406-oca complete — PublishButton disabled immediately after publish
 Resume file: None
