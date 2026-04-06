@@ -1,8 +1,9 @@
+import React from "react"
 import { auth, signOut } from "@/auth"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
-export default async function Header() {
+export default async function Header({ children }: { children?: React.ReactNode }) {
   const session = await auth()
   if (!session?.user) return null
 
@@ -12,6 +13,7 @@ export default async function Header() {
         <span className="text-xl font-bold">Vuoroasuminen</span>
       </div>
       <div className="flex items-center gap-4">
+        {children}
         {session.user.image && (
           <Image
             src={session.user.image}
