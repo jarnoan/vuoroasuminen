@@ -1,5 +1,6 @@
 import React from "react"
-import { auth, signOut } from "@/auth"
+import { auth } from "@/auth"
+import { signOutAction } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
@@ -24,12 +25,7 @@ export default async function Header({ children }: { children?: React.ReactNode 
           />
         )}
         <span className="text-sm">{session.user.name}</span>
-        <form
-          action={async () => {
-            "use server"
-            await signOut()
-          }}
-        >
+        <form action={signOutAction}>
           <Button variant="outline" size="sm" type="submit">
             Sign out
           </Button>
