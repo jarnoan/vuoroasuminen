@@ -21,9 +21,10 @@ interface ScheduleTableProps {
   initialData: DateWindow
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   renderAbove?: (days: ScheduleDay[]) => React.ReactNode
+  onDaysChange?: (days: ScheduleDay[]) => void
 }
 
-export function ScheduleTable({ initialData, realtimeRef, renderAbove }: ScheduleTableProps) {
+export function ScheduleTable({ initialData, realtimeRef, renderAbove, onDaysChange }: ScheduleTableProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
 
   // Expose a callback for realtime updates
@@ -62,6 +63,11 @@ export function ScheduleTable({ initialData, realtimeRef, renderAbove }: Schedul
       todayRow.scrollIntoView({ behavior: "instant", block: "center" })
     }
   }, [])
+
+  // Notify parent of days changes (optimistic updates, realtime, initial mount)
+  useEffect(() => {
+    onDaysChange?.(days)
+  }, [days, onDaysChange])
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
     // Optimistic update

@@ -4,7 +4,7 @@ import { useRef, useCallback } from "react"
 import { ScheduleTable } from "./schedule-table"
 import { StatsPanel } from "./stats-panel"
 import { RealtimeProvider } from "./realtime-provider"
-import type { DateWindow, ParentId } from "@/lib/schedule/types"
+import type { DateWindow, ParentId, ScheduleDay } from "@/lib/schedule/types"
 
 type EntryUpdate = {
   id: string
@@ -15,7 +15,12 @@ type EntryUpdate = {
   notes: string | null
 }
 
-export function ScheduleWithRealtime({ initialData }: { initialData: DateWindow }) {
+interface ScheduleWithRealtimeProps {
+  initialData: DateWindow
+  onDaysChange?: (days: ScheduleDay[]) => void
+}
+
+export function ScheduleWithRealtime({ initialData, onDaysChange }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -28,6 +33,7 @@ export function ScheduleWithRealtime({ initialData }: { initialData: DateWindow 
           initialData={initialData}
           realtimeRef={realtimeRef}
           renderAbove={(days) => <StatsPanel days={days} />}
+          onDaysChange={onDaysChange}
         />
     </RealtimeProvider>
   )
