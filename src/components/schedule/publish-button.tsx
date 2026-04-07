@@ -26,6 +26,7 @@ export function PublishButton({ days }: PublishButtonProps) {
   const [publishing, setPublishing] = useState(false)
 
   // Derive draft count directly from live days prop — no ratchet state needed
+  // Derive draft count directly from live days prop
   const draftCells = days.flatMap(day =>
     day.cells.filter(cell => cell.status === "draft")
   )
@@ -60,6 +61,7 @@ export function PublishButton({ days }: PublishButtonProps) {
   }
 
   // Per D-08: disabled when no draft entries exist
+  // Disabled when no draft entries exist
   if (draftCount === 0) {
     return (
       <Button variant="outline" size="sm" disabled>
