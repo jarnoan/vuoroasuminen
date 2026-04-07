@@ -106,9 +106,10 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260406-oca | Fix PublishButton disabled state after publishing | 2026-04-06 | d03f195 | [260406-oca-fix-publishbutton-disabled-state-after-p](.planning/quick/260406-oca-fix-publishbutton-disabled-state-after-p/) |
 | 260406-ogw | Fix PublishButton re-enable after new drafts | 2026-04-06 | 5d2fc25 | [260406-ogw-fix-publishbutton-re-enable-after-new-dr](.planning/quick/260406-ogw-fix-publishbutton-re-enable-after-new-dr/) |
+| 260407-r3q | Fix inline use server in header.tsx build error | 2026-04-07 | 1dcd532 | [260407-r3q-fix-inline-use-server-in-header-tsx-brok](.planning/quick/260407-r3q-fix-inline-use-server-in-header-tsx-brok/) |
 
 ## Session Continuity
 
-Last session: 2026-04-06T14:40:00.000Z
-Stopped at: Quick task 260406-ogw complete — PublishButton re-enables after new drafts via DashboardShell state lifting
+Last session: 2026-04-07T00:00:00.000Z
+Stopped at: Quick task 260407-r3q complete — inline use server removed, Client Component import boundary fixed, build passes
 Resume file: None
