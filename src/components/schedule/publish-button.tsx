@@ -19,9 +19,10 @@ import { format, parseISO } from "date-fns"
 
 interface PublishButtonProps {
   days: ScheduleDay[]
+  onPublished?: () => void
 }
 
-export function PublishButton({ days }: PublishButtonProps) {
+export function PublishButton({ days, onPublished }: PublishButtonProps) {
   const [open, setOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
@@ -49,6 +50,7 @@ export function PublishButton({ days }: PublishButtonProps) {
       const result = await publishDraft()
       if (result.success) {
         toast.success(`Published ${result.count} entries`)
+        onPublished?.()
         setOpen(false)
       } else {
         toast.error(result.error)
