@@ -107,9 +107,10 @@ None yet.
 | 260406-oca | Fix PublishButton disabled state after publishing | 2026-04-06 | d03f195 | [260406-oca-fix-publishbutton-disabled-state-after-p](.planning/quick/260406-oca-fix-publishbutton-disabled-state-after-p/) |
 | 260406-ogw | Fix PublishButton re-enable after new drafts | 2026-04-06 | 5d2fc25 | [260406-ogw-fix-publishbutton-re-enable-after-new-dr](.planning/quick/260406-ogw-fix-publishbutton-re-enable-after-new-dr/) |
 | 260407-r3q | Fix inline use server in header.tsx build error | 2026-04-07 | 1dcd532 | [260407-r3q-fix-inline-use-server-in-header-tsx-brok](.planning/quick/260407-r3q-fix-inline-use-server-in-header-tsx-brok/) |
+| 260407-rbx | Fix publish button not becoming disabled after publish | 2026-04-07 | 948610b | [260407-rbx-publish-button-does-not-become-disabled-](.planning/quick/260407-rbx-publish-button-does-not-become-disabled-/) |
 
 ## Session Continuity
 
 Last session: 2026-04-07T00:00:00.000Z
-Stopped at: Quick task 260407-r3q complete — inline use server removed, Client Component import boundary fixed, build passes
+Stopped at: Quick task 260407-rbx complete — optimistic publish disables button immediately without waiting for Supabase Realtime events
 Resume file: None
