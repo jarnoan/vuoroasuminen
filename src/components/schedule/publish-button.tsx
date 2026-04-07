@@ -14,29 +14,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { publishDraft } from "@/actions/schedule"
-import type { DateWindow } from "@/lib/schedule/types"
+import type { ScheduleDay } from "@/lib/schedule/types"
 import { format, parseISO } from "date-fns"
 
 interface PublishButtonProps {
-  initialData: DateWindow
+  days: ScheduleDay[]
 }
 
-export function PublishButton({ initialData }: PublishButtonProps) {
+export function PublishButton({ days }: PublishButtonProps) {
   const [open, setOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [hasPublished, setHasPublished] = useState(false)
 
-  // Derive draft count from already-loaded schedule data
-  const draftCells = initialData.days.flatMap(day =>
+  // Derive draft count directly from live days prop
+  const draftCells = days.flatMap(day =>
     day.cells.filter(cell => cell.status === "draft")
   )
   const draftCount = draftCells.length
 
-  // Override draftCount to 0 immediately after a successful publish (no reload needed)
-  const effectiveDraftCount = hasPublished ? 0 : draftCount
-
   // Find date range of days that have at least one draft entry
-  const draftDays = initialData.days.filter(day =>
+  const draftDays = days.filter(day =>
     day.cells.some(cell => cell.status === "draft")
   )
   const firstDraftDate = draftDays[0]?.date
@@ -52,7 +48,6 @@ export function PublishButton({ initialData }: PublishButtonProps) {
       const result = await publishDraft()
       if (result.success) {
         toast.success(`Published ${result.count} entries`)
-        setHasPublished(true)
         setOpen(false)
       } else {
         toast.error(result.error)
@@ -64,8 +59,8 @@ export function PublishButton({ initialData }: PublishButtonProps) {
     }
   }
 
-  // Per D-08: disabled when no draft entries exist (or after a successful publish)
-  if (effectiveDraftCount === 0) {
+  // Disabled when no draft entries exist
+  if (draftCount === 0) {
     return (
       <Button variant="outline" size="sm" disabled>
         Publish
