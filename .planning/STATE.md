@@ -105,9 +105,10 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260406-oca | Fix PublishButton disabled state after publishing | 2026-04-06 | d03f195 | [260406-oca-fix-publishbutton-disabled-state-after-p](.planning/quick/260406-oca-fix-publishbutton-disabled-state-after-p/) |
+| 260406-ogw | Fix PublishButton re-enable after new drafts | 2026-04-06 | 5d2fc25 | [260406-ogw-fix-publishbutton-re-enable-after-new-dr](.planning/quick/260406-ogw-fix-publishbutton-re-enable-after-new-dr/) |
 
 ## Session Continuity
 
-Last session: 2026-04-06T14:31:33.432Z
-Stopped at: Quick task 260406-oca complete — PublishButton disabled immediately after publish
+Last session: 2026-04-06T14:40:00.000Z
+Stopped at: Quick task 260406-ogw complete — PublishButton re-enables after new drafts via DashboardShell state lifting
 Resume file: None
