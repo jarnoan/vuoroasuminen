@@ -108,9 +108,10 @@ None yet.
 | 260406-ogw | Fix PublishButton re-enable after new drafts | 2026-04-06 | 5d2fc25 | [260406-ogw-fix-publishbutton-re-enable-after-new-dr](.planning/quick/260406-ogw-fix-publishbutton-re-enable-after-new-dr/) |
 | 260407-r3q | Fix inline use server in header.tsx build error | 2026-04-07 | 1dcd532 | [260407-r3q-fix-inline-use-server-in-header-tsx-brok](.planning/quick/260407-r3q-fix-inline-use-server-in-header-tsx-brok/) |
 | 260407-rbx | Fix publish button not becoming disabled after publish | 2026-04-07 | 948610b | [260407-rbx-publish-button-does-not-become-disabled-](.planning/quick/260407-rbx-publish-button-does-not-become-disabled-/) |
+| 260407-rim | Fix publish button CDC overwrite re-enabling after publishing | 2026-04-07 | 663efae | [260407-rim-publish-button-still-does-not-become-dis](.planning/quick/260407-rim-publish-button-still-does-not-become-dis/) |
 
 ## Session Continuity
 
 Last session: 2026-04-07T00:00:00.000Z
-Stopped at: Quick task 260407-rbx complete — optimistic publish disables button immediately without waiting for Supabase Realtime events
+Stopped at: Quick task 260407-rim complete — publishRef threads to ScheduleTable so CDC events cannot re-enable Publish button after publishing
 Resume file: None
