@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, date, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, pgEnum, text, date, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 // CRITICAL: Export the enum — drizzle-kit generate silently omits unexported enums
 export const scheduleStatusEnum = pgEnum("schedule_status", [
@@ -46,4 +46,9 @@ export const gcalEvents = pgTable("gcal_events", {
   googleEventId: text("google_event_id").notNull(),
   calendarId: text("calendar_id").notNull(),
   syncedAt: timestamp("synced_at", { mode: "date" }).notNull().defaultNow(),
-})
+}, (table) => [
+  uniqueIndex("gcal_events_entry_calendar_unique").on(
+    table.scheduleEntryId,
+    table.calendarId
+  ),
+])
