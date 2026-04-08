@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useCallback } from "react"
+import React, { useRef, useCallback } from "react"
 import { ScheduleTable } from "./schedule-table"
 import { StatsPanel } from "./stats-panel"
 import { RealtimeProvider } from "./realtime-provider"
@@ -18,9 +18,10 @@ type EntryUpdate = {
 interface ScheduleWithRealtimeProps {
   initialData: DateWindow
   onDaysChange?: (days: ScheduleDay[]) => void
+  publishRef?: React.RefObject<(() => void) | null>
 }
 
-export function ScheduleWithRealtime({ initialData, onDaysChange }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ initialData, onDaysChange, publishRef }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -32,6 +33,7 @@ export function ScheduleWithRealtime({ initialData, onDaysChange }: ScheduleWith
       <ScheduleTable
           initialData={initialData}
           realtimeRef={realtimeRef}
+          publishRef={publishRef}
           renderAbove={(days) => <StatsPanel days={days} />}
           onDaysChange={onDaysChange}
         />
