@@ -34,11 +34,11 @@
 
 ### Google Calendar Sync
 
-- [ ] **GCAL-01**: On publish, the app creates or updates an all-day Google Calendar event for each child on each published day, in that parent's calendar (e.g. "Emma @ isä" in father's calendar)
-- [ ] **GCAL-02**: On publish, events are removed from a parent's calendar for days where that child is no longer staying with them
-- [ ] **GCAL-03**: Calendar sync is idempotent — re-publishing the same plan does not create duplicate events
-- [ ] **GCAL-04**: Each parent's calendar only receives events for the children staying with that parent on each day
-- [ ] **GCAL-05**: All calendar events use the `DATE` format (full-day events, timezone-safe)
+- [x] **GCAL-01**: On publish, the app creates or updates an all-day Google Calendar event for each child on each published day, in that parent's calendar (e.g. "Emma @ isä" in father's calendar)
+- [x] **GCAL-02**: On publish, events are removed from a parent's calendar for days where that child is no longer staying with them
+- [x] **GCAL-03**: Calendar sync is idempotent — re-publishing the same plan does not create duplicate events
+- [x] **GCAL-04**: Each parent's calendar only receives events for the children staying with that parent on each day
+- [x] **GCAL-05**: All calendar events use the `DATE` format (full-day events, timezone-safe)
 
 ### Statistics
 
@@ -99,11 +99,11 @@
 | DRFT-01 | Phase 2 | Complete |
 | DRFT-02 | Phase 3 | Complete |
 | DRFT-03 | Phase 2 | Complete |
-| GCAL-01 | Phase 4 | Pending |
-| GCAL-02 | Phase 4 | Pending |
-| GCAL-03 | Phase 4 | Pending |
-| GCAL-04 | Phase 4 | Pending |
-| GCAL-05 | Phase 4 | Pending |
+| GCAL-01 | Phase 4 | Complete |
+| GCAL-02 | Phase 4 | Complete |
+| GCAL-03 | Phase 4 | Complete |
+| GCAL-04 | Phase 4 | Complete |
+| GCAL-05 | Phase 4 | Complete |
 | STAT-01 | Phase 3 | Complete |
 | STAT-02 | Phase 3 | Complete |
 | STAT-03 | Phase 3 | Complete |

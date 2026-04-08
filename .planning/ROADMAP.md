@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Foundation** - Auth.js v5 + Drizzle ORM + Supabase setup, Google OAuth with Calendar scope, and complete DB schema
 - [x] **Phase 2: Schedule Table UI** - Read/write 12-week schedule grid with real-time sync, alternating-week pre-fill, shared notes, and draft state (completed 2026-04-05)
 - [ ] **Phase 3: Draft/Publish + Statistics** - Publish flow with confirmation dialog, approve button, and complete statistics panel
-- [ ] **Phase 4: Google Calendar Sync** - Write-only GCal integration with idempotent event management, orphan cleanup, and rate-limit handling
+- [x] **Phase 4: Google Calendar Sync** - Write-only GCal integration with idempotent event management, orphan cleanup, and rate-limit handling (completed 2026-04-08)
 
 ## Phase Details
 
@@ -81,7 +81,7 @@ Plans:
   2. When a custody day is reassigned and republished, the old event is removed from the previous parent's calendar and created in the new parent's calendar
   3. Re-publishing the same plan without changes does not create duplicate events
   4. Each parent's calendar only contains events for children staying with them — events for the other parent's custody days are absent
-**Plans:** 2 plans
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
@@ -97,4 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. Schedule Table UI | 3/3 | Complete   | 2026-04-05 |
 | 3. Draft/Publish + Statistics | 1/2 | In Progress|  |
-| 4. Google Calendar Sync | 0/? | Not started | - |
+| 4. Google Calendar Sync | 1/1 | Complete   | 2026-04-08 |
