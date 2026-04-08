@@ -24,13 +24,16 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - [x] Both parents see each other's edits in real time via Supabase Realtime (no refresh needed) *(Validated in Phase 02: schedule-table-ui)*
 - [x] Shared notes column per day (both parents can read and write) *(Validated in Phase 02: schedule-table-ui)*
 
+### Validated
+
+- [x] Either parent can approve a draft and publish it to Google Calendar *(Validated in Phase 03: draft-publish-statistics)*
+- [x] Google Calendar integration: one calendar per parent; one all-day event per child per day they are with that parent (e.g. "Emma @ Isä") *(Validated in Phase 04: google-calendar-sync)*
+- [x] Changes made in the UI are reflected in Google Calendar once published — idempotent sync with orphan cleanup on custody switch *(Validated in Phase 04: google-calendar-sync)*
+- [x] Statistics panel: full 12-week window totals per child per parent — days with each parent, days alone with each parent, child-free days and weekends per parent *(Validated in Phase 03: draft-publish-statistics)*
+
 ### Active
 
-- [ ] Either parent can approve a draft and publish it to Google Calendar
-- [ ] Google Calendar integration: one calendar per parent; one all-day event per child per day they are with that parent (e.g. "Emma @ dad")
-- [ ] Changes made in the UI are reflected in Google Calendar in real time (once approved/published)
 - [ ] Last-write-wins conflict resolution for simultaneous edits
-- [ ] Statistics panel: full 12-week window totals per child per parent — days with each parent, days alone with each parent, child-free days and weekends per parent
 
 ### Out of Scope
 
@@ -82,8 +85,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-05 — Phase 02 (schedule-table-ui) complete*
+*Last updated: 2026-04-08 — Phase 04 (google-calendar-sync) complete*
 
 ## Current State
 
-Phase 02 complete. Interactive 84-row schedule table is live — color-coded parent cells, optimistic toggles, inline notes editing, week separators, today highlighting, and Supabase Realtime sync so both parents see each other's edits without refreshing. Phase 03 (draft/publish + statistics) is next.
+Phase 04 complete. Full Google Calendar sync is live — `googleapis` installed, `buildGCalClient` exchanges refresh tokens per parent, `syncCalendarsAfterPublish` performs full 12-week window reconciliation (orphan cleanup + create missing events) via `Promise.allSettled` for failure isolation. `publishDraft` calls sync as best-effort; a GCal failure never rolls back the DB publish. All-day events use DATE format (timezone-safe, exclusive end date). Idempotency enforced by `gcal_events` UNIQUE constraint on `(schedule_entry_id, calendar_id)`. Human UAT (live credentials) required before launch.
