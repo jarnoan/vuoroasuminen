@@ -20,11 +20,12 @@ type RealtimeEntry = {
 interface ScheduleTableProps {
   initialData: DateWindow
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
+  publishRef?: React.RefObject<(() => void) | null>
   renderAbove?: (days: ScheduleDay[]) => React.ReactNode
   onDaysChange?: (days: ScheduleDay[]) => void
 }
 
-export function ScheduleTable({ initialData, realtimeRef, renderAbove, onDaysChange }: ScheduleTableProps) {
+export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbove, onDaysChange }: ScheduleTableProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
 
   // Expose a callback for realtime updates
@@ -55,6 +56,28 @@ export function ScheduleTable({ initialData, realtimeRef, renderAbove, onDaysCha
       }
     }
   }, [handleRealtimeEntry, realtimeRef])
+
+  // Expose a callback to apply optimistic publish (draft → published) in local state
+  const applyPublished = useCallback(() => {
+    setDays(prev => prev.map(day => ({
+      ...day,
+      cells: day.cells.map(cell =>
+        cell.status === "draft" ? { ...cell, status: "published" as const } : cell
+      ),
+    })))
+  }, [])
+
+  // Assign applyPublished to publishRef so parent can trigger it
+  useEffect(() => {
+    if (publishRef && 'current' in publishRef) {
+      (publishRef as React.MutableRefObject<(() => void) | null>).current = applyPublished
+    }
+    return () => {
+      if (publishRef && 'current' in publishRef) {
+        (publishRef as React.MutableRefObject<(() => void) | null>).current = null
+      }
+    }
+  }, [applyPublished, publishRef])
 
   // Auto-scroll to today on mount
   useEffect(() => {
