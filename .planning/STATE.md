@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-draft-publish-statistics-02-PLAN.md
-last_updated: "2026-04-06T08:32:03.024Z"
-last_activity: 2026-04-06 -- Phase 03 Wave 1 complete
+status: verifying
+stopped_at: Completed 04-google-calendar-sync 04-01-PLAN.md
+last_updated: "2026-04-08T18:55:35.591Z"
+last_activity: 2026-04-08
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 6
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
   percent: 50
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 03 — draft-publish-statistics
+**Current focus:** Phase 04 — google-calendar-sync
 
 ## Current Position
 
-Phase: 03 (draft-publish-statistics) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 03
-Last activity: 2026-04-06 -- Phase 03 execution started
+Phase: 04 (google-calendar-sync) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-04-08
 
 Progress: [█████░░░░░] 50%
 
@@ -60,6 +60,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02-schedule-table-ui P03 | 50 | 4 tasks | 6 files |
 | Phase 03-draft-publish-statistics P01 | 3 | 2 tasks | 5 files |
 | Phase 03-draft-publish-statistics P02 | 9 | 2 tasks | 6 files |
+| Phase 04-google-calendar-sync P04-01 | 52 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,7 @@ Recent decisions affecting current work:
 - [Phase 03-draft-publish-statistics]: Header children slot pattern: Server Component stays server-side, client PublishButton injected via children prop from Dashboard
 - [Phase 03-draft-publish-statistics]: renderAbove render prop on ScheduleTable gives StatsPanel reactive access to days state without lifting state
 - [Phase 03-draft-publish-statistics]: computeStats is a pure function — no DB calls, no side effects, fully testable
+- [Phase 04-google-calendar-sync]: GCal sync is best-effort — failure does not roll back DB publish; token lookup joins users table on email; manual token exchange for fresh access_token; all-day event end.date is exclusive (addDays +1)
 
 ### Pending Todos
 
@@ -112,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-07T00:00:00.000Z
-Stopped at: Quick task 260407-rim complete — publishRef threads to ScheduleTable so CDC events cannot re-enable Publish button after publishing
+Last session: 2026-04-08T18:55:35.589Z
+Stopped at: Completed 04-google-calendar-sync 04-01-PLAN.md
 Resume file: None
