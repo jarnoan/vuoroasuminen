@@ -69,5 +69,6 @@ export async function publishDraft(): Promise<
     }
   }
 
+  console.log("[publishDraft] syncResult:", JSON.stringify(syncResult, null, 2))
   return { success: true, count: result.length, syncResult }
 }
