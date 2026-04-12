@@ -116,6 +116,7 @@ None yet.
 | 260412-fhd | fix missing key prop on fragment in ScheduleTable map | 2026-04-12 | ac9bf22 | [260412-fhd-fix-missing-key-prop-on-fragment-in-sche](.planning/quick/260412-fhd-fix-missing-key-prop-on-fragment-in-sche/) |
 | 260412-fjd | fix child columns not showing after adding third child and renaming | 2026-04-12 | 7d397e7 | [260412-fjd-fix-child-columns-not-showing-after-addi](.planning/quick/260412-fjd-fix-child-columns-not-showing-after-addi/) |
 | 260412-u66 | fix sign-in button compatibility with next-auth@beta + Next.js | 2026-04-12 | f5320fa | [260412-u66-fix-sign-in-button-compatibility-with-ne](.planning/quick/260412-u66-fix-sign-in-button-compatibility-with-ne/) |
+| 260412-ud9 | fix GCal sync invalid_grant by persisting refreshed tokens to DB | 2026-04-12 | 1273119 | [260412-ud9-fix-gcal-sync-invalid-grant-by-persistin](.planning/quick/260412-ud9-fix-gcal-sync-invalid-grant-by-persistin/) |
 
 ## Session Continuity
 
