@@ -32,8 +32,8 @@ export async function saveNotes(entryId: string, notes: string) {
   return { success: true }
 }
 
-export async function publishDraft(): Promise<
-  | { success: true; count: number; syncResult: SyncResult | null }
+export async function publishSchedule(): Promise<
+  | { success: true; count: number }
   | { success: false; error: string }
 > {
   const session = await auth()
@@ -54,13 +54,16 @@ export async function publishDraft(): Promise<
     )
     .returning({ id: scheduleEntries.id })
 
-  // GCal sync is best-effort — a sync failure must NOT roll back the DB publish (per D-05)
-  let syncResult: SyncResult | null = null
+  return { success: true, count: result.length }
+}
+
+export async function syncCalendars(): Promise<SyncResult> {
+  let syncResult: SyncResult
   try {
     syncResult = await syncCalendarsAfterPublish()
   } catch (err) {
-    // Log the error but still return success: true for the DB publish
-    console.error("[publishDraft] GCal sync threw unexpectedly:", err)
+    // Log the error but still return a result object — sync is best-effort
+    console.error("[syncCalendars] GCal sync threw unexpectedly:", err)
     syncResult = {
       success: false,
       parentResults: [
@@ -69,6 +72,6 @@ export async function publishDraft(): Promise<
     }
   }
 
-  console.log("[publishDraft] syncResult:", JSON.stringify(syncResult, null, 2))
-  return { success: true, count: result.length, syncResult }
+  console.log("[syncCalendars] syncResult:", JSON.stringify(syncResult, null, 2))
+  return syncResult
 }
