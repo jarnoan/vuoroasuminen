@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -165,7 +165,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
           </thead>
           <tbody>
             {days.map((day, index) => (
-              <>
+              <React.Fragment key={day.date}>
                 {day.isWeekStart && index > 0 && (
                   <tr key={`sep-${day.date}`}>
                     <td
@@ -206,7 +206,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
                     />
                   </td>
                 </tr>
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
