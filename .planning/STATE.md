@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 Phase: 04
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-04-08
+Last activity: 2026-04-12 - Completed quick task 260412-fhd: fix missing key prop on fragment in ScheduleTable map
 
 Progress: [█████░░░░░] 50%
 
@@ -111,6 +111,7 @@ None yet.
 | 260407-r3q | Fix inline use server in header.tsx build error | 2026-04-07 | 1dcd532 | [260407-r3q-fix-inline-use-server-in-header-tsx-brok](.planning/quick/260407-r3q-fix-inline-use-server-in-header-tsx-brok/) |
 | 260407-rbx | Fix publish button not becoming disabled after publish | 2026-04-07 | 948610b | [260407-rbx-publish-button-does-not-become-disabled-](.planning/quick/260407-rbx-publish-button-does-not-become-disabled-/) |
 | 260407-rim | Fix publish button CDC overwrite re-enabling after publishing | 2026-04-07 | 663efae | [260407-rim-publish-button-still-does-not-become-dis](.planning/quick/260407-rim-publish-button-still-does-not-become-dis/) |
+| 260412-fhd | fix missing key prop on fragment in ScheduleTable map | 2026-04-12 | ac9bf22 | [260412-fhd-fix-missing-key-prop-on-fragment-in-sche](.planning/quick/260412-fhd-fix-missing-key-prop-on-fragment-in-sche/) |
 
 ## Session Continuity
 
