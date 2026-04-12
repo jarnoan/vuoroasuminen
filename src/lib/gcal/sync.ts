@@ -6,6 +6,37 @@ import { getWindowBounds } from "@/lib/schedule/generate-default"
 import config from "@/config/app"
 import { buildGCalClient } from "@/lib/gcal/client"
 
+/**
+ * Retries an async operation on 429 / 503 rate-limit errors.
+ * Backoff: 2^attempt * 1000ms + random jitter up to 1000ms, max 5 retries.
+ * googleapis surfaces rate-limit errors as objects where:
+ *   (err as any).code === 429
+ *   OR (err as any).status === 429 / 503
+ *   OR (err as any).errors?.[0]?.domain === 'usageLimits'
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (err: unknown) {
+      const e = err as { code?: number; status?: number; errors?: Array<{ domain?: string }> }
+      const isRateLimit =
+        e?.code === 429 ||
+        e?.status === 429 ||
+        e?.status === 503 ||
+        e?.errors?.[0]?.domain === 'usageLimits'
+
+      if (!isRateLimit || attempt === maxRetries) throw err
+
+      const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000
+      console.log(`[GCal sync] Rate limit hit — retry ${attempt + 1}/${maxRetries} in ${Math.round(delay)}ms`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+  // TypeScript needs this; unreachable in practice
+  throw new Error('withRetry exhausted')
+}
+
 export interface ParentSyncResult {
   parentId: string
   created: number
@@ -144,18 +175,20 @@ async function syncParentCalendar(
   })
 
   for (const orphan of orphans) {
-    try {
-      await calendar.events.delete({
-        calendarId: orphan.calendarId,
-        eventId: orphan.googleEventId,
-      })
-    } catch (err: unknown) {
-      // 404 / 410 = already deleted in Google Calendar — treat as success (per Q7)
-      const code = (err as { code?: number })?.code
-      if (code !== 404 && code !== 410) {
-        throw err
+    await withRetry(async () => {
+      try {
+        await calendar.events.delete({
+          calendarId: orphan.calendarId,
+          eventId: orphan.googleEventId,
+        })
+      } catch (err: unknown) {
+        // 404 / 410 = already deleted in Google Calendar — treat as success (per Q7)
+        const code = (err as { code?: number })?.code
+        if (code !== 404 && code !== 410) {
+          throw err
+        }
       }
-    }
+    })
     // Always remove local mirror row, regardless of GCal 404/410
     await db.delete(gcalEvents).where(eq(gcalEvents.id, orphan.id))
     deleted++
@@ -185,14 +218,16 @@ async function syncParentCalendar(
     // All-day event: end date is EXCLUSIVE — must be the day after start (per D-10, RESEARCH Q2)
     const endDate = format(addDays(parseISO(entry.day), 1), "yyyy-MM-dd")
 
-    const response = await calendar.events.insert({
-      calendarId: parent.calendarId,
-      requestBody: {
-        summary: `${childName} @ ${parent.name}`,  // e.g. "Emma @ Isä" (per D-09)
-        start: { date: entry.day },
-        end: { date: endDate },
-      },
-    })
+    const response = await withRetry(() =>
+      calendar.events.insert({
+        calendarId: parent.calendarId,
+        requestBody: {
+          summary: `${childName} @ ${parent.name}`,  // e.g. "Emma @ Isä" (per D-09)
+          start: { date: entry.day },
+          end: { date: endDate },
+        },
+      })
+    )
 
     const googleEventId = response.data.id!
 
@@ -205,6 +240,8 @@ async function syncParentCalendar(
     })
 
     created++
+    // Throttle to ~9 QPS (below the 10 QPS per-user limit) even with 2 parents concurrent
+    await new Promise(resolve => setTimeout(resolve, 110))
   }
 
   console.log(`[GCal sync] ${parent.name}: created ${created} new events`)
