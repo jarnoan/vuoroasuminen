@@ -81,7 +81,7 @@ Plans:
   2. When a custody day is reassigned and republished, the old event is removed from the previous parent's calendar and created in the new parent's calendar
   3. Re-publishing the same plan without changes does not create duplicate events
   4. Each parent's calendar only contains events for children staying with them — events for the other parent's custody days are absent
-**Plans:** 1/1 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — Publish flow: Server Action, confirmation dialog, Header button
@@ -97,4 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. Schedule Table UI | 3/3 | Complete   | 2026-04-05 |
 | 3. Draft/Publish + Statistics | 1/2 | In Progress|  |
-| 4. Google Calendar Sync | 1/1 | Complete   | 2026-04-08 |
+| 4. Google Calendar Sync | 2/2 | Complete   | 2026-04-12 |

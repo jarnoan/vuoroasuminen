@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 04-google-calendar-sync 04-01-PLAN.md
-last_updated: "2026-04-08T18:59:38.216Z"
-last_activity: 2026-04-08
+status: executing
+stopped_at: Completed 04-google-calendar-sync 04-02-PLAN.md
+last_updated: "2026-04-12T18:33:46.679Z"
+last_activity: 2026-04-12
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 9
+  completed_plans: 9
   percent: 50
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-12 - Completed quick task 260412-fjd: fix child columns not showing after adding third child and renaming
+Phase: 04 (google-calendar-sync) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-12
 
 Progress: [█████░░░░░] 50%
 
@@ -61,6 +61,7 @@ Progress: [█████░░░░░] 50%
 | Phase 03-draft-publish-statistics P01 | 3 | 2 tasks | 5 files |
 | Phase 03-draft-publish-statistics P02 | 9 | 2 tasks | 6 files |
 | Phase 04-google-calendar-sync P04-01 | 52 | 3 tasks | 7 files |
+| Phase 04-google-calendar-sync P04-02 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,7 @@ Recent decisions affecting current work:
 - [Phase 03-draft-publish-statistics]: renderAbove render prop on ScheduleTable gives StatsPanel reactive access to days state without lifting state
 - [Phase 03-draft-publish-statistics]: computeStats is a pure function — no DB calls, no side effects, fully testable
 - [Phase 04-google-calendar-sync]: GCal sync is best-effort — failure does not roll back DB publish; token lookup joins users table on email; manual token exchange for fresh access_token; all-day event end.date is exclusive (addDays +1)
+- [Phase 04-google-calendar-sync]: GCal sync observability: [GCal sync] prefix on all console.log for grep-ability; 10s toast for sync failure warnings
 
 ### Pending Todos
 
@@ -116,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-08T18:55:35.589Z
-Stopped at: Completed 04-google-calendar-sync 04-01-PLAN.md
+Last session: 2026-04-12T18:33:46.677Z
+Stopped at: Completed 04-google-calendar-sync 04-02-PLAN.md
 Resume file: None
