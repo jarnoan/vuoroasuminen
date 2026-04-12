@@ -52,7 +52,10 @@ export async function syncCalendarsAfterPublish(): Promise<SyncResult> {
       )
     )
 
+  console.log("[GCal sync] Published entries in window:", publishedEntries.length)
+
   if (publishedEntries.length === 0) {
+    console.log("[GCal sync] No published entries — skipping sync")
     return {
       success: true,
       parentResults: config.parents.map(p => ({
@@ -98,6 +101,7 @@ export async function syncCalendarsAfterPublish(): Promise<SyncResult> {
   })
 
   const success = parentResults.every(r => !r.error)
+  console.log("[GCal sync] Sync complete:", JSON.stringify({ success, parentResults }, null, 2))
   return { success, parentResults }
 }
 
@@ -126,6 +130,9 @@ async function syncParentCalendar(
   let created = 0
   let deleted = 0
 
+  const parentEntryCount = publishedEntries.filter(e => e.parentId === parent.id).length
+  console.log(`[GCal sync] ${parent.name}: ${parentEntryCount} entries assigned, checking orphans and missing events`)
+
   // --- Step 1: Orphan cleanup ---
   // A gcal_events row is orphaned when the entry's current parentId no longer
   // matches this parent's calendarId. (per D-08)
@@ -153,6 +160,8 @@ async function syncParentCalendar(
     await db.delete(gcalEvents).where(eq(gcalEvents.id, orphan.id))
     deleted++
   }
+
+  console.log(`[GCal sync] ${parent.name}: deleted ${deleted} orphaned events`)
 
   // --- Step 2: Create missing events ---
   // Entries assigned to this parent that have no gcal_events row for this calendarId.
@@ -198,5 +207,6 @@ async function syncParentCalendar(
     created++
   }
 
+  console.log(`[GCal sync] ${parent.name}: created ${created} new events`)
   return { parentId: parent.id, created, deleted }
 }
