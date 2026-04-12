@@ -117,9 +117,10 @@ None yet.
 | 260412-fjd | fix child columns not showing after adding third child and renaming | 2026-04-12 | 7d397e7 | [260412-fjd-fix-child-columns-not-showing-after-addi](.planning/quick/260412-fjd-fix-child-columns-not-showing-after-addi/) |
 | 260412-u66 | fix sign-in button compatibility with next-auth@beta + Next.js | 2026-04-12 | f5320fa | [260412-u66-fix-sign-in-button-compatibility-with-ne](.planning/quick/260412-u66-fix-sign-in-button-compatibility-with-ne/) |
 | 260412-ud9 | fix GCal sync invalid_grant by persisting refreshed tokens to DB | 2026-04-12 | 1273119 | [260412-ud9-fix-gcal-sync-invalid-grant-by-persistin](.planning/quick/260412-ud9-fix-gcal-sync-invalid-grant-by-persistin/) |
+| 260412-ut3 | fix GCal sync rate limit errors with exponential backoff + 110ms throttle | 2026-04-12 | b050fdf | [260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp](.planning/quick/260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp/) |
 
 ## Session Continuity
 
 Last session: 2026-04-12T18:33:46.677Z
-Stopped at: Completed 04-google-calendar-sync 04-02-PLAN.md
+Stopped at: Completed quick task 260412-ut3 GCal sync rate limit fix
 Resume file: None
