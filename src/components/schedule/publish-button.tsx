@@ -50,6 +50,19 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
       const result = await publishDraft()
       if (result.success) {
         toast.success(`Published ${result.count} entries`)
+
+        // Surface GCal sync failures as warnings (sync is best-effort per D-05)
+        if (result.syncResult && !result.syncResult.success) {
+          const failedParents = result.syncResult.parentResults
+            .filter(pr => pr.error)
+            .map(pr => `${pr.parentId}: ${pr.error}`)
+          if (failedParents.length > 0) {
+            toast.warning(`Calendar sync failed: ${failedParents.join("; ")}`, {
+              duration: 10000,
+            })
+          }
+        }
+
         onPublished?.()
         setOpen(false)
       } else {
