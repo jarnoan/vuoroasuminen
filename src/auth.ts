@@ -3,6 +3,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import authConfig from "./auth.config"
 import { db } from "@/db"
 import { accounts, sessions, users, verificationTokens } from "@/db/schema/auth"
+import { eq, and } from "drizzle-orm"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -41,6 +42,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
         const newTokens = await response.json()
         if (!response.ok) throw new Error("Refresh failed")
+        // Persist refreshed tokens to DB so GCal sync reads valid tokens
+        const updatePayload: Record<string, string | number> = {
+          access_token: newTokens.access_token,
+          expires_at: Math.floor(Date.now() / 1000 + newTokens.expires_in),
+        }
+        if (newTokens.refresh_token) {
+          updatePayload.refresh_token = newTokens.refresh_token
+        }
+        db.update(accounts)
+          .set(updatePayload)
+          .where(
+            and(
+              eq(accounts.provider, "google"),
+              eq(accounts.providerAccountId, token.sub as string),
+            ),
+          )
+          .catch((err) => console.error("[Auth] Failed to persist refreshed tokens:", err))
         return {
           ...token,
           access_token: newTokens.access_token,
