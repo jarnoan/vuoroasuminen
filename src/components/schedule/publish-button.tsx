@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { publishDraft } from "@/actions/schedule"
+import { publishSchedule, syncCalendars } from "@/actions/schedule"
 import type { ScheduleDay } from "@/lib/schedule/types"
 import { format, parseISO } from "date-fns"
 
@@ -22,12 +22,35 @@ interface PublishButtonProps {
   onPublished?: () => void
 }
 
+function ProgressBar({ durationMs }: { durationMs: number }) {
+  const [width, setWidth] = useState("0%")
+
+  useEffect(() => {
+    // Trigger the CSS transition on next frame so it animates from 0 to 100
+    const raf = requestAnimationFrame(() => {
+      setWidth("100%")
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return (
+    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+      <div
+        className="h-full bg-primary rounded-full"
+        style={{
+          width,
+          transition: `width ${durationMs}ms linear`,
+        }}
+      />
+    </div>
+  )
+}
+
 export function PublishButton({ days, onPublished }: PublishButtonProps) {
   const [open, setOpen] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [phase, setPhase] = useState<"idle" | "publishing" | "syncing">("idle")
 
   // Derive draft count directly from live days prop — no ratchet state needed
-  // Derive draft count directly from live days prop
   const draftCells = days.flatMap(day =>
     day.cells.filter(cell => cell.status === "draft")
   )
@@ -44,38 +67,41 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
     ? `${format(parseISO(firstDraftDate), "d MMM")} \u2013 ${format(parseISO(lastDraftDate), "d MMM yyyy")}`
     : ""
 
+  // estimate: each entry needs ~110ms throttle delay × 2 parents, plus 3s overhead, capped at 60s
+  const estimatedSyncMs = Math.min(draftCount * 2 * 110 + 3000, 60000)
+
   async function handlePublish() {
-    setPublishing(true)
+    setPhase("publishing")
     try {
-      const result = await publishDraft()
-      if (result.success) {
-        toast.success(`Published ${result.count} entries`)
-
-        // Surface GCal sync failures as warnings (sync is best-effort per D-05)
-        if (result.syncResult && !result.syncResult.success) {
-          const failedParents = result.syncResult.parentResults
-            .filter(pr => pr.error)
-            .map(pr => `${pr.parentId}: ${pr.error}`)
-          if (failedParents.length > 0) {
-            toast.warning(`Calendar sync failed: ${failedParents.join("; ")}`, {
-              duration: 10000,
-            })
-          }
-        }
-
-        onPublished?.()
-        setOpen(false)
-      } else {
-        toast.error(result.error)
+      const publishResult = await publishSchedule()
+      if (!publishResult.success) {
+        toast.error(publishResult.error)
+        setPhase("idle")
+        return
       }
+      const count = publishResult.count
+
+      setPhase("syncing")
+      const syncResult = await syncCalendars()
+
+      toast.success(`Published ${count} entries`)
+      if (!syncResult.success) {
+        const failedParents = syncResult.parentResults
+          .filter(pr => pr.error)
+          .map(pr => `${pr.parentId}: ${pr.error}`)
+        if (failedParents.length > 0) {
+          toast.warning(`Calendar sync failed: ${failedParents.join("; ")}`, { duration: 10000 })
+        }
+      }
+      onPublished?.()
+      setOpen(false)
     } catch {
       toast.error("Failed to publish. Please try again.")
     } finally {
-      setPublishing(false)
+      setPhase("idle")
     }
   }
 
-  // Per D-08: disabled when no draft entries exist
   // Disabled when no draft entries exist
   if (draftCount === 0) {
     return (
@@ -99,12 +125,23 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" disabled={publishing} />}>
-            Cancel
-          </DialogClose>
-          <Button onClick={handlePublish} disabled={publishing}>
-            {publishing ? "Publishing..." : "Confirm"}
-          </Button>
+          {phase === "syncing" ? (
+            <div className="w-full">
+              <p className="text-sm text-muted-foreground mb-2">
+                Syncing {draftCount} events to Google Calendar…
+              </p>
+              <ProgressBar durationMs={estimatedSyncMs} />
+            </div>
+          ) : (
+            <>
+              <DialogClose render={<Button variant="outline" disabled={phase === "publishing"} />}>
+                Cancel
+              </DialogClose>
+              <Button onClick={handlePublish} disabled={phase !== "idle"}>
+                {phase === "publishing" ? "Publishing..." : "Confirm"}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
