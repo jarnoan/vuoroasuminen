@@ -11,7 +11,8 @@
     "db:generate": "npx drizzle-kit generate",
     "db:studio": "npx drizzle-kit studio",
     "db:seed": "npx tsx src/db/seed.ts",
-    "db:reset": "npx tsx src/db/reset.ts"
+    "db:reset": "npx tsx src/db/reset.ts",
+    "db:clear-tokens": "npx tsx src/db/clear-tokens.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
