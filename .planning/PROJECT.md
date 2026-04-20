@@ -2,7 +2,9 @@
 
 ## What This Is
 
-A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule, and the plan automatically syncs to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
+A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same 12-week schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
+
+The v1.0 MVP is feature-complete: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and full Google Calendar integration are all shipped.
 
 ## Core Value
 
@@ -12,47 +14,50 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Validated
 
-- [x] Google OAuth authentication — both parents log in with their own Google accounts *(Validated in Phase 01: foundation)*
-- [x] Both parents share the same schedule data (real-time collaborative view) — DB schema and Auth.js token persistence in place *(Validated in Phase 01: foundation)*
-
-### Validated
-
-- [x] Schedule table UI: rows = days (12-week rolling window), columns = children + shared notes column *(Validated in Phase 02: schedule-table-ui)*
-- [x] Each cell shows which parent the child is with that day; any child can independently be at either parent *(Validated in Phase 02: schedule-table-ui)*
-- [x] Default schedule pre-filled based on alternating weeks pattern; users edit exceptions *(Validated in Phase 02: schedule-table-ui)*
-- [x] Draft mode: plan future dates as drafts before publishing to real calendars *(Validated in Phase 02: schedule-table-ui)*
-- [x] Both parents see each other's edits in real time via Supabase Realtime (no refresh needed) *(Validated in Phase 02: schedule-table-ui)*
-- [x] Shared notes column per day (both parents can read and write) *(Validated in Phase 02: schedule-table-ui)*
-
-### Validated
-
-- [x] Either parent can approve a draft and publish it to Google Calendar *(Validated in Phase 03: draft-publish-statistics)*
-- [x] Google Calendar integration: one calendar per parent; one all-day event per child per day they are with that parent (e.g. "Emma @ Isä") *(Validated in Phase 04: google-calendar-sync)*
-- [x] Changes made in the UI are reflected in Google Calendar once published — idempotent sync with orphan cleanup on custody switch *(Validated in Phase 04: google-calendar-sync)*
-- [x] Statistics panel: full 12-week window totals per child per parent — days with each parent, days alone with each parent, child-free days and weekends per parent *(Validated in Phase 03: draft-publish-statistics)*
+- ✓ Google OAuth authentication — both parents log in with their own Google accounts — v1.0
+- ✓ Both parents share the same schedule data (real-time collaborative view) via Supabase Realtime — v1.0
+- ✓ Schedule table UI: rows = days (12-week rolling window), columns = children + shared notes — v1.0
+- ✓ Color-coded parent cells; children independently assignable to either parent on any day — v1.0
+- ✓ Default schedule pre-filled with alternating-week pattern; users edit exceptions — v1.0
+- ✓ Draft mode: edits create draft entries, visually distinct from published — v1.0
+- ✓ Shared notes per day (both parents can read and write, real-time sync) — v1.0
+- ✓ Either parent can publish the current draft; triggers Google Calendar sync — v1.0
+- ✓ Google Calendar integration: one calendar per parent; one all-day event per child per custody day — v1.0
+- ✓ Idempotent sync with orphan cleanup on custody switch — v1.0
+- ✓ Statistics panel: days/child/parent, solo days, child-free days and weekends — v1.0
+- ✓ Statistics computed from both draft and published entries — v1.0
 
 ### Active
 
-- [ ] Last-write-wins conflict resolution for simultaneous edits
+- [ ] Onboarding wizard: first-run UI to configure parents, children, and calendar IDs without editing config files (ONBR-01)
+- [ ] Mobile-optimized layout refinements (ONBR-02)
+- [ ] Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
 
 ### Out of Scope
 
-- Per-parent private notes — only shared notes are supported; keeps coordination simple
-- Conflict flagging / merge UI — last-write-wins is sufficient for this use case
-- Mobile app — web interface only; responsive design handles mobile browsers
-- Per-month or per-term counter breakdowns — full window totals are enough
+- Per-parent private notes — only shared notes supported; keeps coordination simple
+- Conflict flagging / merge UI — last-write-wins is sufficient for cooperative co-parents
+- Native mobile app — responsive web handles mobile browsers
+- Per-month or per-term statistics — full window totals are sufficient
+- iCal / Outlook export — Google Calendar is the hard integration target
+- Secure/adversarial messaging — wrong audience; this app is for cooperative parents
+- Third-party access (grandparents, lawyers) — two-parent design is intentional
+- Push notification system — Google Calendar handles reminders once events sync
 
 ## Context
 
 - Two parents share custody of multiple children; children can be split between parents on any day
-- Planning horizon is ~12 weeks ahead; default pattern is alternating weeks (each week all children go to the same parent, alternating)
+- Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- The Finnish word "vuoroasuminen" describes the domain (alternating custody living)
+- Shipped v1.0 with 2,272 LOC TypeScript; stack: Next.js 16, Auth.js v5, Drizzle ORM, Supabase, googleapis
+- Config-based parent/calendar setup (`src/config/app.ts`) — must be updated with real emails before deploying to two users
+- Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
+- Google OAuth app verification takes 3–5 business days — start before sharing with second user
 
 ## Constraints
 
-- **Auth**: Google OAuth only — no email/password auth; both parents need Google accounts
-- **Calendar**: Google Calendar API — integration is a hard requirement, not optional
+- **Auth**: Google OAuth only — no email/password; both parents need Google accounts
+- **Calendar**: Google Calendar API — integration is a hard requirement
 - **Collaboration**: Real-time shared data — both parents must see each other's changes promptly
 - **Conflict resolution**: Last-write-wins — no complex merge UI needed
 
@@ -60,12 +65,18 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Google OAuth for auth | Both parents already have Google accounts; avoids managing separate credentials | Auth.js v5 + DrizzleAdapter; JWT strategy for edge-compatible middleware |
-| One calendar per parent (not per child) | Parents want to see their own obligations in their calendar | — Pending |
-| One all-day event per child per day | Each child's location is independently visible in the calendar | — Pending |
-| Last-write-wins conflict resolution | Co-parents can coordinate informally; complex merge UI is overkill | — Pending |
-| Draft → approve flow, either parent can publish | Avoids deadlock; either parent taking initiative is enough to confirm a plan | — Pending |
-| Full 12-week window for statistics (no sub-period breakdown) | Simpler; total balance over the planning period is what matters | — Pending |
+| Google OAuth for auth | Both parents already have Google accounts; avoids managing separate credentials | ✓ Good — Auth.js v5 + DrizzleAdapter; JWT strategy for edge-compatible middleware |
+| One calendar per parent (not per child) | Parents want to see their own obligations in their calendar | ✓ Good — clean event isolation per parent |
+| One all-day event per child per day | Each child's location is independently visible in the calendar | ✓ Good — DATE format, exclusive end date, timezone-safe |
+| Last-write-wins conflict resolution | Co-parents can coordinate informally; complex merge UI is overkill | ✓ Good — no conflicts encountered in testing |
+| Draft → publish flow, either parent can publish | Avoids deadlock; either parent taking initiative is enough | ✓ Good — dialog confirmation prevents accidental publish |
+| Full 12-week window for statistics (no sub-period breakdown) | Simpler; total balance over the planning period is what matters | ✓ Good — computeStats is a pure function, easily extended |
+| Split Auth.js config (auth.config.ts + auth.ts) | Edge-safe middleware requires no adapter import | ✓ Good — required pattern for Next.js 15 middleware |
+| JWT strategy WITH DrizzleAdapter | JWT cookie for edge middleware; adapter persists OAuth tokens for GCal sync | ✓ Good — both concerns satisfied without compromise |
+| prompt:consent + access_type:offline on every sign-in | Forces refresh_token re-issue; prevents invalid_grant after token expiry | ✓ Good — solved real invalid_grant bug in testing |
+| GCal sync best-effort (failure doesn't roll back DB publish) | Sync failure shouldn't block confirmed plans | ✓ Good — warning toast informs user; next publish re-syncs |
+| gcal_events mirror table from day one | Needed for idempotent sync; avoids extra GCal API reads on republish | ✓ Good — UNIQUE constraint on (schedule_entry_id, calendar_id) enforces idempotency |
+| Config-based parent setup (not DB-driven) | Simplest approach for a known two-user app | ⚠ Revisit — blocks self-service onboarding for v1.1 |
 
 ## Evolution
 
@@ -85,8 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-08 — Phase 04 (google-calendar-sync) complete*
-
-## Current State
-
-Phase 04 complete. Full Google Calendar sync is live — `googleapis` installed, `buildGCalClient` exchanges refresh tokens per parent, `syncCalendarsAfterPublish` performs full 12-week window reconciliation (orphan cleanup + create missing events) via `Promise.allSettled` for failure isolation. `publishDraft` calls sync as best-effort; a GCal failure never rolls back the DB publish. All-day events use DATE format (timezone-safe, exclusive end date). Idempotency enforced by `gcal_events` UNIQUE constraint on `(schedule_entry_id, calendar_id)`. Human UAT (live credentials) required before launch.
+*Last updated: 2026-04-20 after v1.0 milestone*
