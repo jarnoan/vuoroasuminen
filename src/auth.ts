@@ -15,8 +15,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, account }) {
-      // First sign-in: store tokens from OAuth account
+      // First sign-in or re-sign-in: store tokens from OAuth account
       if (account) {
+        // Persist fresh tokens to DB so GCal sync reads valid tokens.
+        // DrizzleAdapter.linkAccount() only runs on first-ever sign-in,
+        // so re-sign-ins need this explicit update.
+        const signInPayload: Record<string, string | number> = {
+          access_token: account.access_token as string,
+          expires_at: account.expires_at as number,
+        }
+        if (account.refresh_token) {
+          signInPayload.refresh_token = account.refresh_token as string
+        }
+        db.update(accounts)
+          .set(signInPayload)
+          .where(
+            and(
+              eq(accounts.provider, "google"),
+              eq(accounts.providerAccountId, account.providerAccountId),
+            ),
+          )
+          .catch((err) => console.error("[Auth] Failed to persist sign-in tokens:", err))
         return {
           ...token,
           access_token: account.access_token,
