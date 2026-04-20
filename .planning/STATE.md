@@ -119,9 +119,10 @@ None yet.
 | 260412-ud9 | fix GCal sync invalid_grant by persisting refreshed tokens to DB | 2026-04-12 | 1273119 | [260412-ud9-fix-gcal-sync-invalid-grant-by-persistin](.planning/quick/260412-ud9-fix-gcal-sync-invalid-grant-by-persistin/) |
 | 260412-ut3 | fix GCal sync rate limit errors with exponential backoff + 110ms throttle | 2026-04-12 | b050fdf | [260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp](.planning/quick/260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp/) |
 | 260412-v2m | add sync progress indicator to publish button | 2026-04-12 | ffc09a2 | [260412-v2m-add-sync-progress-indicator-to-publish-b](.planning/quick/260412-v2m-add-sync-progress-indicator-to-publish-b/) |
+| 260420-p95 | fix re-sign-in not persisting fresh OAuth tokens to accounts table | 2026-04-20 | 3dedc7f | [260420-p95-fix-re-sign-in-not-persisting-fresh-oaut](.planning/quick/260420-p95-fix-re-sign-in-not-persisting-fresh-oaut/) |
 
 ## Session Continuity
 
-Last session: 2026-04-12T18:35:00.000Z
-Stopped at: Completed quick task 260412-v2m sync progress indicator
+Last session: 2026-04-20T00:00:00.000Z
+Stopped at: Completed quick task 260420-p95 re-sign-in token persistence
 Resume file: None
