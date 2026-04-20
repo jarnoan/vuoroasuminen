@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# app config — contains real emails and calendar IDs; copy app.example.ts → app.ts
+src/config/app.ts
+
+# claude code internal state
+.claude/
