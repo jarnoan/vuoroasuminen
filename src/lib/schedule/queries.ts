@@ -76,7 +76,7 @@ export async function getScheduleWindow(): Promise<DateWindow> {
 
     days.push({
       date: dateStr,
-      dayLabel: format(current, "EEE d.M.", { locale: fi }),
+      dayLabel: format(current, "EEEEEE d.M.", { locale: fi }),
       isToday: isTodayFn(current),
       isWeekStart: current.getDay() === 1,  // Monday
       cells,
