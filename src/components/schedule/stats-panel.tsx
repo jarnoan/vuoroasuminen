@@ -21,15 +21,15 @@ export function StatsPanel({ days }: StatsPanelProps) {
         <div key={child.childName} className="flex items-center gap-4">
           <span className="font-medium w-16">{child.childName}:</span>
           <span className="text-blue-700">
-            {parentName("father")} {child.father}d
+            {parentName("father")} {child.father} pv
           </span>
           <span className="text-muted-foreground">/</span>
           <span className="text-rose-700">
-            {parentName("mother")} {child.mother}d
+            {parentName("mother")} {child.mother} pv
           </span>
           <span className="text-muted-foreground ml-2">
-            (yksin: {parentName("father")} {child.soloFather}d /{" "}
-            {parentName("mother")} {child.soloMother}d)
+            (yksin: {parentName("father")} {child.soloFather} pv /{" "}
+            {parentName("mother")} {child.soloMother} pv)
           </span>
         </div>
       ))}
@@ -40,7 +40,7 @@ export function StatsPanel({ days }: StatsPanelProps) {
             key={ps.parentId}
             className={ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}
           >
-            {ps.parentName} {ps.childFreeDays}d ({ps.childFreeWeekends}{" "}
+            {ps.parentName} {ps.childFreeDays} pv ({ps.childFreeWeekends}{" "}
             vkl)
           </span>
         ))}

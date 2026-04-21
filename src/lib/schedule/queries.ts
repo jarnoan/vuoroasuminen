@@ -2,6 +2,7 @@ import { db } from "@/db"
 import { scheduleEntries, children, schedules } from "@/db/schema/domain"
 import { and, gte, lte } from "drizzle-orm"
 import { format, addDays, isToday as isTodayFn } from "date-fns"
+import { fi } from "date-fns/locale"
 import config from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
 import type { ScheduleDay, DateWindow, ScheduleCell, ParentId } from "./types"
@@ -75,7 +76,7 @@ export async function getScheduleWindow(): Promise<DateWindow> {
 
     days.push({
       date: dateStr,
-      dayLabel: format(current, "EEE d MMM"),  // "Mon 6 Apr"
+      dayLabel: format(current, "EEE d MMM", { locale: fi }),
       isToday: isTodayFn(current),
       isWeekStart: current.getDay() === 1,  // Monday
       cells,
