@@ -18,7 +18,7 @@ export default async function Header({ children }: { children?: React.ReactNode 
         {session.user.image && (
           <Image
             src={session.user.image}
-            alt={session.user.name ?? "User"}
+            alt={session.user.name ?? "Käyttäjä"}
             width={32}
             height={32}
             className="rounded-full"
@@ -27,7 +27,7 @@ export default async function Header({ children }: { children?: React.ReactNode 
         <span className="text-sm">{session.user.name}</span>
         <form action={signOutAction}>
           <Button variant="outline" size="sm" type="submit">
-            Sign out
+            Kirjaudu ulos
           </Button>
         </form>
       </div>

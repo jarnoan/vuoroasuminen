@@ -10,7 +10,7 @@ export default async function Home() {
     <main className="flex min-h-screen items-center justify-center">
       <div className="text-center space-y-6">
         <h1 className="text-4xl font-bold">Vuoroasuminen</h1>
-        <p className="text-muted-foreground">Shared custody schedule for co-parents</p>
+        <p className="text-muted-foreground">Yhteinen vuoroasumisaikataulu vanhemmille</p>
         <SignInButton />
       </div>
     </main>

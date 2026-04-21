@@ -28,20 +28,20 @@ export function StatsPanel({ days }: StatsPanelProps) {
             {parentName("mother")} {child.mother}d
           </span>
           <span className="text-muted-foreground ml-2">
-            (solo: {parentName("father")} {child.soloFather}d /{" "}
+            (yksin: {parentName("father")} {child.soloFather}d /{" "}
             {parentName("mother")} {child.soloMother}d)
           </span>
         </div>
       ))}
       <div className="border-t pt-1 mt-1 flex items-center gap-4">
-        <span className="font-medium w-16">Free:</span>
+        <span className="font-medium w-16">Vapaa:</span>
         {stats.parentFreeStats.map((ps) => (
           <span
             key={ps.parentId}
             className={ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}
           >
             {ps.parentName} {ps.childFreeDays}d ({ps.childFreeWeekends}{" "}
-            wknd{ps.childFreeWeekends !== 1 ? "s" : ""})
+            vkl)
           </span>
         ))}
       </div>

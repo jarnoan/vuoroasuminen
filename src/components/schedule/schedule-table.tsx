@@ -116,7 +116,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
           ),
         }))
       )
-      toast.error("Failed to save change. Please try again.")
+      toast.error("Tallennus epäonnistui. Yritä uudelleen.")
     }
   }
 
@@ -129,7 +129,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
     try {
       await saveNotes(entryId, notes)
     } catch {
-      toast.error("Failed to save note.")
+      toast.error("Muistiinpanon tallennus epäonnistui.")
     }
   }
 
@@ -148,7 +148,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
               <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b">
-                Date
+                Päivä
               </th>
               {childNames.map((name) => (
                 <th
@@ -159,7 +159,7 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
                 </th>
               ))}
               <th className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[160px]">
-                Notes
+                Muistiinpanot
               </th>
             </tr>
           </thead>

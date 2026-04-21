@@ -21,7 +21,7 @@ export function TodayButton({ todayDate }: TodayButtonProps) {
       className="fixed bottom-6 right-6 z-50 shadow-lg"
       onClick={handleClick}
     >
-      Today
+      Tänään
     </Button>
   )
 }

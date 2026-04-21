@@ -38,7 +38,7 @@ export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
       onChange={(e) => setLocalValue(e.target.value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      placeholder="Add note..."
+      placeholder="Lisää muistiinpano..."
       disabled={entryId === null}
       className="w-full border-0 bg-transparent text-sm px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring rounded disabled:cursor-not-allowed disabled:opacity-50"
     />

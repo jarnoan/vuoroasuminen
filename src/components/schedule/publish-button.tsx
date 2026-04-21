@@ -84,19 +84,19 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
       setPhase("syncing")
       const syncResult = await syncCalendars()
 
-      toast.success(`Published ${count} entries`)
+      toast.success(`Julkaistu ${count} merkintää`)
       if (!syncResult.success) {
         const failedParents = syncResult.parentResults
           .filter(pr => pr.error)
           .map(pr => `${pr.parentId}: ${pr.error}`)
         if (failedParents.length > 0) {
-          toast.warning(`Calendar sync failed: ${failedParents.join("; ")}`, { duration: 10000 })
+          toast.warning(`Kalenterin synkronointi epäonnistui: ${failedParents.join("; ")}`, { duration: 10000 })
         }
       }
       onPublished?.()
       setOpen(false)
     } catch {
-      toast.error("Failed to publish. Please try again.")
+      toast.error("Julkaisu epäonnistui. Yritä uudelleen.")
     } finally {
       setPhase("idle")
     }
@@ -106,7 +106,7 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
   if (draftCount === 0) {
     return (
       <Button variant="outline" size="sm" disabled>
-        Publish
+        Julkaise
       </Button>
     )
   }
@@ -114,31 +114,31 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="default" size="sm" />}>
-        Publish
+        Julkaise
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Publish Schedule</DialogTitle>
+          <DialogTitle>Julkaise aikataulu</DialogTitle>
           <DialogDescription>
-            Publish {draftCount} draft entries ({dateRangeLabel})?
-            This will lock the schedule and sync to Google Calendar.
+            Julkaise {draftCount} luonnosta ({dateRangeLabel})?
+            Tämä lukitsee aikataulun ja synkronoi Google Kalenteriin.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           {phase === "syncing" ? (
             <div className="w-full">
               <p className="text-sm text-muted-foreground mb-2">
-                Syncing {draftCount} events to Google Calendar…
+                Synkronoidaan {draftCount} tapahtumaa Google Kalenteriin…
               </p>
               <ProgressBar durationMs={estimatedSyncMs} />
             </div>
           ) : (
             <>
               <DialogClose render={<Button variant="outline" disabled={phase === "publishing"} />}>
-                Cancel
+                Peruuta
               </DialogClose>
               <Button onClick={handlePublish} disabled={phase !== "idle"}>
-                {phase === "publishing" ? "Publishing..." : "Confirm"}
+                {phase === "publishing" ? "Julkaistaan..." : "Vahvista"}
               </Button>
             </>
           )}

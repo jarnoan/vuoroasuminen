@@ -37,7 +37,7 @@ export function ScheduleCell({
       type="button"
       className={`w-full h-full min-h-[40px] rounded-md font-medium text-sm transition-colors ${colorClass}`}
       onClick={() => onToggle(entryId, newParentId)}
-      title={`${displayName} (${status}) — click to toggle`}
+      title={`${displayName} (${status}) — klikkaa vaihtaaksesi`}
     >
       {displayName}
     </button>
