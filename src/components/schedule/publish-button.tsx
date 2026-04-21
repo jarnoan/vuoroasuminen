@@ -16,7 +16,6 @@ import {
 import { publishSchedule, syncCalendars } from "@/actions/schedule"
 import type { ScheduleDay } from "@/lib/schedule/types"
 import { format, parseISO } from "date-fns"
-import { fi } from "date-fns/locale"
 
 interface PublishButtonProps {
   days: ScheduleDay[]
@@ -65,7 +64,7 @@ export function PublishButton({ days, onPublished }: PublishButtonProps) {
   const lastDraftDate = draftDays[draftDays.length - 1]?.date
 
   const dateRangeLabel = firstDraftDate && lastDraftDate
-    ? `${format(parseISO(firstDraftDate), "d. MMM", { locale: fi })} \u2013 ${format(parseISO(lastDraftDate), "d. MMMM yyyy", { locale: fi })}`
+    ? `${format(parseISO(firstDraftDate), "d.M.")} \u2013 ${format(parseISO(lastDraftDate), "d.M.yyyy")}`
     : ""
 
   // estimate: each entry needs ~110ms throttle delay × 2 parents, plus 3s overhead, capped at 60s
