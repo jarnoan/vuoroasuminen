@@ -70,8 +70,9 @@ Key architectural decisions for next milestone:
 | 260412-ut3 | Fix GCal sync rate limit with exponential backoff | 2026-04-12 | b050fdf |
 | 260412-v2m | Add sync progress indicator to publish button | 2026-04-12 | ffc09a2 |
 | 260420-p95 | Fix re-sign-in not persisting fresh OAuth tokens | 2026-04-20 | 3dedc7f |
+| 260425-g08 | Address all SECURITY-REVIEW.md findings (13 code fixes + 3 operator decisions) | 2026-04-25 | ae0ec6b |
 
 ## Session Continuity
 
-Last session: 2026-04-20
-Stopped at: v1.0 milestone archived — ready for /gsd:new-milestone
+Last session: 2026-04-25
+Stopped at: Security hardening complete — git history scrub (CR-01) pending force-push
