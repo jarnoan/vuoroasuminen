@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react"
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { ParentId } from "@/lib/schedule/types"
 
+const VALID_PARENT_IDS = ["father", "mother"] as const
+const VALID_STATUSES = ["draft", "published"] as const
+
 interface RealtimePayload {
   new: {
     id: string
@@ -45,6 +48,9 @@ export function RealtimeProvider({ children, onEntryChange }: RealtimeProviderPr
         },
         (payload: { new: Record<string, unknown> }) => {
           const row = payload.new as RealtimePayload["new"]
+          if (!row || typeof row.id !== "string" || typeof row.child_id !== "string" || typeof row.day !== "string") return
+          if (!VALID_PARENT_IDS.includes(row.parent_id as ParentId)) return
+          if (!VALID_STATUSES.includes(row.status as "draft" | "published")) return
           onEntryChangeRef.current({
             id: row.id,
             childId: row.child_id,

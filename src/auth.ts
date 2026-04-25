@@ -59,8 +59,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             refresh_token: token.refresh_token as string,
           }),
         })
-        const newTokens = await response.json()
         if (!response.ok) throw new Error("Refresh failed")
+        const newTokens = await response.json()
+        if (typeof newTokens?.access_token !== "string" || typeof newTokens?.expires_in !== "number") {
+          throw new Error("Unexpected token response shape")
+        }
         // Persist refreshed tokens to DB so GCal sync reads valid tokens
         const updatePayload: Record<string, string | number> = {
           access_token: newTokens.access_token,

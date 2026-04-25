@@ -10,6 +10,10 @@ import config from "../config/app"
  * The app will auto-seed fresh schedule entries on the next page load.
  */
 async function reset() {
+  if (!process.argv.includes("--yes")) {
+    console.error("Refusing to run: pass --yes to confirm this destructive operation.")
+    process.exit(1)
+  }
   console.log("Resetting schedule data...")
 
   // Delete in FK dependency order

@@ -10,6 +10,10 @@ import { accounts, sessions } from "./schema/auth"
  * After running, both parents must sign in again to populate fresh tokens.
  */
 async function clearTokens() {
+  if (!process.argv.includes("--yes")) {
+    console.error("Refusing to run: pass --yes to confirm this destructive operation.")
+    process.exit(1)
+  }
   console.log("Clearing OAuth tokens and sessions...")
 
   await db.delete(sessions)

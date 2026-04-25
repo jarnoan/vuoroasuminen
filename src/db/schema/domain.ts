@@ -34,7 +34,9 @@ export const scheduleEntries = pgTable("schedule_entries", {
   parentId: text("parent_id").notNull(), // 'father' | 'mother' (from config)
   status: scheduleStatusEnum("status").notNull().default("draft"),
   notes: text("notes"),
-})
+}, (table) => [
+  uniqueIndex("schedule_entries_child_day_unique").on(table.childId, table.day),
+])
 
 export const gcalEvents = pgTable("gcal_events", {
   id: text("id")
