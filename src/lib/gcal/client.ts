@@ -33,10 +33,8 @@ export async function buildGCalClient(
     .limit(1)
 
   if (!row?.refresh_token) {
-    throw new Error(
-      `No Google refresh token found for ${parentEmail}. ` +
-      `The parent must sign in with Google and grant Calendar access before sync can run.`
-    )
+    console.error(`[GCal] No refresh token found for ${parentEmail}`)
+    throw new Error("Calendar authentication required. Please sign in with Google again.")
   }
 
   // Exchange refresh_token for a fresh access_token (same pattern as auth.ts lines 32-47)
@@ -53,9 +51,8 @@ export async function buildGCalClient(
 
   if (!tokenResponse.ok) {
     const errBody = await tokenResponse.text()
-    throw new Error(
-      `Token exchange failed for ${parentEmail} (HTTP ${tokenResponse.status}): ${errBody}`
-    )
+    console.error(`[GCal] Token exchange failed for ${parentEmail} (HTTP ${tokenResponse.status}): ${errBody}`)
+    throw new Error("Calendar authentication failed. Please sign in with Google again.")
   }
 
   const { access_token, expires_in } = await tokenResponse.json() as {

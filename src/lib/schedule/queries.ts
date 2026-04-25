@@ -41,7 +41,7 @@ export async function getScheduleWindow(): Promise<DateWindow> {
     }))
 
     // Batch insert (Drizzle supports bulk insert)
-    await db.insert(scheduleEntries).values(insertValues)
+    await db.insert(scheduleEntries).values(insertValues).onConflictDoNothing()
 
     // Re-fetch to get IDs
     entries = await db.select().from(scheduleEntries)
