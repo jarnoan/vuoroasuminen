@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: defining_requirements
-stopped_at: ~
+status: ready_to_plan
+stopped_at: Phase 5
 last_updated: "2026-04-27T00:00:00.000Z"
 last_activity: 2026-04-27
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.1 milestone start)
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** v1.1 — Schedule Window Control
+**Current focus:** v1.1 — Phase 5: View Window Control
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-27 — Milestone v1.1 started
+Phase: 5 of 7 (View Window Control)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-27 — Roadmap created for v1.1 (3 phases, 9 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity (v1.0 reference):**
+- Total plans completed: 9
+- v1.0 phases: 4 phases across 9 plans
+
+**By Phase (v1.1):**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -36,25 +52,25 @@ Last activity: 2026-04-27 — Milestone v1.1 started
 
 All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
-Key architectural decisions to preserve:
-- Split Auth.js config pattern must be preserved in any future auth changes
-- `prompt:consent + access_type:offline` on every Google sign-in must be preserved to prevent invalid_grant
-- Config-based parent setup (`src/config/app.ts`) — marked ⚠ Revisit for future onboarding milestone
+Key decisions to preserve in v1.1 work:
+- Split Auth.js config pattern must not be changed
+- `prompt:consent + access_type:offline` on every Google sign-in must be preserved
+- VIEW-04 per-user storage strategy (localStorage vs DB user_preferences table) — deferred to Phase 5 planning
+- "Unassigned" state representation (null parent field vs deleted row) — deferred to Phase 7 planning
 
 ### Pending Todos (Operational — pre-deploy)
 
-- Update `src/config/app.ts` with mother's real email before deploying to two users (FINDING-03)
+- Update `src/config/app.ts` with mother's real email before deploying to two users
 - Start Google OAuth app verification process (3–5 business day wait)
 - Upgrade Supabase to Pro before sharing with real users (free tier pauses after 1 week inactivity)
 - CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending
 
-### v1.1 Scope
+### Blockers/Concerns
 
-- VIEW-01/02/03/04: Flexible per-user view window (Monday-start default, show previous week, explicit start date)
-- EXTEND-01/02/03: Extend schedule forward (add N weeks, show date range, explicit end date)
-- CLEAR-01/02: Clear single cell or date range to unassigned
+None currently.
 
 ## Session Continuity
 
 Last session: 2026-04-27
-Stopped at: v1.1 milestone started — defining requirements and roadmap
+Stopped at: Roadmap created — ready to plan Phase 5
+Resume file: None

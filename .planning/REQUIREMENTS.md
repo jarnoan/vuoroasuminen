@@ -49,25 +49,23 @@
 
 ## Traceability
 
-Populated by roadmapper.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIEW-01 | — | Pending |
-| VIEW-02 | — | Pending |
-| VIEW-03 | — | Pending |
-| VIEW-04 | — | Pending |
-| EXTEND-01 | — | Pending |
-| EXTEND-02 | — | Pending |
-| EXTEND-03 | — | Pending |
-| CLEAR-01 | — | Pending |
-| CLEAR-02 | — | Pending |
+| VIEW-01 | Phase 5 | Pending |
+| VIEW-02 | Phase 5 | Pending |
+| VIEW-03 | Phase 5 | Pending |
+| VIEW-04 | Phase 5 | Pending |
+| EXTEND-01 | Phase 6 | Pending |
+| EXTEND-02 | Phase 6 | Pending |
+| EXTEND-03 | Phase 6 | Pending |
+| CLEAR-01 | Phase 7 | Pending |
+| CLEAR-02 | Phase 7 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 9 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 9 ⚠
+- Mapped to phases: 9 (100%) ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-27*
-*Last updated: 2026-04-27 after initial definition*
+*Last updated: 2026-04-27 — traceability populated after roadmap creation*
