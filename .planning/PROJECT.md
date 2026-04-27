@@ -1,10 +1,19 @@
 # Vuoroasuminen
 
+## Current Milestone: v1.1 Schedule Window Control
+
+**Goal:** Give parents flexible control over what date range the schedule shows — past, present, and future — plus the ability to clear assignments.
+
+**Target features:**
+- Flexible view window — starts from Monday of current week by default; "show previous week" button; explicit start date picker; per-user preference
+- Extend schedule forward — button adds N weeks (default 12) with alternating-week defaults; shows date range before confirming; explicit end date option
+- Clear entries — clear single cell or date range to unassigned (empty)
+
 ## What This Is
 
-A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same 12-week schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
+A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-The v1.0 MVP is feature-complete: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and full Google Calendar integration are all shipped.
+The v1.0 MVP is feature-complete: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and full Google Calendar integration are all shipped. v1.1 adds flexible schedule window control.
 
 ## Core Value
 
@@ -29,6 +38,18 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Active
 
+**v1.1 — Schedule Window Control**
+- [ ] View window starts from Monday of current week by default — past days of current week visible (VIEW-01)
+- [ ] "Show previous week" button extends view start by one week; repeatable (VIEW-02)
+- [ ] User can set explicit start date for the view (VIEW-03)
+- [ ] View window preferences are per-user, not shared (VIEW-04)
+- [ ] "Add weeks" button extends schedule forward by N weeks (default 12) with alternating-week defaults (EXTEND-01)
+- [ ] Shows date range being added before confirming extension (EXTEND-02)
+- [ ] User can set explicit end date when extending (EXTEND-03)
+- [ ] User can clear a single cell to unassigned (empty) (CLEAR-01)
+- [ ] User can select a date range and clear all child assignments within it (CLEAR-02)
+
+**Future milestones**
 - [ ] Onboarding wizard: first-run UI to configure parents, children, and calendar IDs without editing config files (ONBR-01)
 - [ ] Mobile-optimized layout refinements (ONBR-02)
 - [ ] Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
@@ -96,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-20 after v1.0 milestone*
+*Last updated: 2026-04-27 — v1.1 milestone started*
