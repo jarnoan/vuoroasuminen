@@ -23,6 +23,7 @@ export default async function Dashboard({
 
   return (
     <DashboardShell
+      key={validatedStart ?? "default"}
       initialData={schedule}
       initialViewStart={validatedStart}
       header={<Header />}
