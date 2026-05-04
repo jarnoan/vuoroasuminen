@@ -60,14 +60,19 @@ Exceptions:
 
 Derived from existing component usage: `header.tsx`, `schedule-table.tsx`, `stats-panel.tsx`, `button.tsx`.
 
+**Declared weights: 2 (400 regular, 600 semibold). No other weights permitted in this phase.**
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / table cell | 14px (`text-sm`) | 400 (regular) | 1.5 |
 | Label / column header | 14px (`text-sm`) | 600 (semibold) | 1.5 |
-| App title | 20px (`text-xl`) | 700 (bold) | 1.2 |
-| Toolbar button text | 12.8px (`text-[0.8rem]`) | 500 (medium, via `size-sm` in buttonVariants) | 1.5 |
+| App title | 20px (`text-xl`) | 600 (semibold, `font-semibold`) | 1.2 |
+| Toolbar button text | 12.8px (`text-[0.8rem]`) | 600 (semibold, `font-semibold`) | 1.5 |
 
-Toolbar buttons use `size="sm"` which sets `text-[0.8rem]` — consistent with existing Publish button and Sign out button.
+Implementation notes:
+- App title: use `font-semibold` (600) instead of `font-bold` (700). No visible regression at 20px.
+- Toolbar buttons: `size="sm"` sets `font-medium` (500) via `buttonVariants`. Override with `font-semibold` Tailwind utility on each toolbar button element: `<Button size="sm" className="font-semibold">`.
+- Do not introduce `font-medium` (500) or `font-bold` (700) anywhere in this phase.
 
 ---
 
