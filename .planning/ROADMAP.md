@@ -38,7 +38,12 @@ Full archive: [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   2. User can click "Show previous week" and the view expands one week back; clicking again expands another week
   3. User can pick an explicit start date via a date picker and the view updates to that date
   4. After a parent adjusts the view start, the other parent's view is unaffected
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 05-01-PLAN.md — Refactor backend data layer (getWindowBounds, getScheduleWindow, page.tsx) to accept viewStart URL param
+- [ ] 05-02-PLAN.md — Install shadcn popover and calendar components
+- [ ] 05-03-PLAN.md — Create ViewToolbar Client Component and loading.tsx skeleton
+- [ ] 05-04-PLAN.md — Wire ViewToolbar into DashboardShell; remove legacy TodayButton
 **UI hint**: yes
 
 ### Phase 6: Extend Schedule
@@ -71,6 +76,6 @@ Full archive: [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 2. Schedule Table UI | v1.0 | 3/3 | Complete | 2026-04-05 |
 | 3. Draft/Publish + Statistics | v1.0 | 2/2 | Complete | 2026-04-07 |
 | 4. Google Calendar Sync | v1.0 | 2/2 | Complete | 2026-04-12 |
-| 5. View Window Control | v1.1 | 0/? | Not started | - |
+| 5. View Window Control | v1.1 | 0/4 | Not started | - |
 | 6. Extend Schedule | v1.1 | 0/? | Not started | - |
 | 7. Clear Entries | v1.1 | 0/? | Not started | - |
