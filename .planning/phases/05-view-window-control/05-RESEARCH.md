@@ -504,17 +504,19 @@ startOfWeek(parseISO("2026-05-06"), { weekStartsOn: 1 })
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `ScheduleTable` remount on RSC re-navigation, triggering its auto-scroll?**
    - What we know: The auto-scroll `useEffect` runs on mount with no deps array.
    - What's unclear: Whether `router.replace` causes a full component remount or a props-only update (React key behavior across RSC boundaries).
    - Recommendation: Implement without manual scroll first. If `Tänään` fails to scroll to today in testing, add a `useEffect` in `ViewToolbar` that watches `initialViewStart` prop change and fires scroll.
+   - **RESOLVED:** Implement without manual scroll first. Human checkpoint in Plan 05-04 (step 4) explicitly verifies Tänään behavior end-to-end. If auto-scroll fails at that checkpoint, add a `useEffect` in `ViewToolbar` watching `initialViewStart` changes before marking checkpoint complete.
 
 2. **Supabase Realtime — does the subscription survive RSC re-navigation?**
    - What we know: `RealtimeProvider` is a Client Component inside `ScheduleWithRealtime`. RSC re-render replaces server data but client components may or may not remount.
    - What's unclear: Whether the Supabase subscription is torn down and re-established on each `router.replace`.
    - Recommendation: No action in this phase. Realtime is a v1.0 feature that worked; if there are subscription issues after Phase 5 changes, they are a regression to investigate separately.
+   - **RESOLVED:** Deferred — no action in Phase 5. If realtime subscription issues emerge after Phase 5 changes, investigate as a regression separately from this phase.
 
 ---
 
