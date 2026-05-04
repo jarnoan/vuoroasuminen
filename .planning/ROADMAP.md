@@ -40,8 +40,8 @@ Full archive: [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   4. After a parent adjusts the view start, the other parent's view is unaffected
 **Plans**: 4 plans
 Plans:
-- [ ] 05-01-PLAN.md — Refactor backend data layer (getWindowBounds, getScheduleWindow, page.tsx) to accept viewStart URL param
-- [ ] 05-02-PLAN.md — Install shadcn popover and calendar components
+- [x] 05-01-PLAN.md — Refactor backend data layer (getWindowBounds, getScheduleWindow, page.tsx) to accept viewStart URL param
+- [x] 05-02-PLAN.md — Install shadcn popover and calendar components
 - [ ] 05-03-PLAN.md — Create ViewToolbar Client Component and loading.tsx skeleton
 - [ ] 05-04-PLAN.md — Wire ViewToolbar into DashboardShell; remove legacy TodayButton
 **UI hint**: yes
