@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: ready_to_plan
-stopped_at: Phase 5
-last_updated: "2026-04-27T00:00:00.000Z"
-last_activity: 2026-04-27
+status: planning
+stopped_at: Phase 5 context gathered
+last_updated: "2026-05-04T15:38:54.766Z"
+last_activity: 2026-04-27 — Roadmap created for v1.1 (3 phases, 9 requirements mapped)
 progress:
   total_phases: 3
   completed_phases: 0
@@ -35,6 +35,7 @@ Progress: [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Velocity (v1.0 reference):**
+
 - Total plans completed: 9
 - v1.0 phases: 4 phases across 9 plans
 
@@ -53,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
 Key decisions to preserve in v1.1 work:
+
 - Split Auth.js config pattern must not be changed
 - `prompt:consent + access_type:offline` on every Google sign-in must be preserved
 - VIEW-04 per-user storage strategy (localStorage vs DB user_preferences table) — deferred to Phase 5 planning
@@ -71,6 +73,6 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-04-27
-Stopped at: Roadmap created — ready to plan Phase 5
-Resume file: None
+Last session: --stopped-at
+Stopped at: Phase 5 context gathered
+Resume file: --resume-file
