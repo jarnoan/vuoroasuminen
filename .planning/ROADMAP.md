@@ -42,7 +42,7 @@ Full archive: [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 Plans:
 - [x] 05-01-PLAN.md — Refactor backend data layer (getWindowBounds, getScheduleWindow, page.tsx) to accept viewStart URL param
 - [x] 05-02-PLAN.md — Install shadcn popover and calendar components
-- [ ] 05-03-PLAN.md — Create ViewToolbar Client Component and loading.tsx skeleton
+- [x] 05-03-PLAN.md — Create ViewToolbar Client Component and loading.tsx skeleton
 - [ ] 05-04-PLAN.md — Wire ViewToolbar into DashboardShell; remove legacy TodayButton
 **UI hint**: yes
 
