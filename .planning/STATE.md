@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: planning
-stopped_at: Phase 5 planned — ready to execute
-last_updated: "2026-05-04T15:54:43.036Z"
-last_activity: 2026-04-27 — Roadmap created for v1.1 (3 phases, 9 requirements mapped)
+status: executing
+stopped_at: Completed 05-04-PLAN.md (Tasks 1-2; Task 3 checkpoint pending human verify)
+last_updated: "2026-05-04T20:52:19.635Z"
+last_activity: 2026-05-04 — Phase 5 planned (4 plans, 3 waves)
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: — (ready to execute)
 Status: Ready to execute
 Last activity: 2026-05-04 — Phase 5 planned (4 plans, 3 waves)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 *Updated after each plan completion*
+| Phase 05 P04 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,7 @@ Key decisions to preserve in v1.1 work:
 - `prompt:consent + access_type:offline` on every Google sign-in must be preserved
 - VIEW-04 per-user storage strategy (localStorage vs DB user_preferences table) — deferred to Phase 5 planning
 - "Unassigned" state representation (null parent field vs deleted row) — deferred to Phase 7 planning
+- ViewToolbar wired between header and publish bar in DashboardShell; today-button.tsx deleted
 
 ### Pending Todos (Operational — pre-deploy)
 
@@ -73,6 +75,6 @@ None currently.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 5 UI-SPEC approved
-Resume file: --resume-file
+Last session: 2026-05-04T20:52:16.799Z
+Stopped at: Completed 05-04-PLAN.md (Tasks 1-2; Task 3 checkpoint pending human verify)
+Resume file: None
