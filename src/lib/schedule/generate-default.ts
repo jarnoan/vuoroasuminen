@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarWeeks, startOfToday, startOfWeek, format } from "date-fns"
+import { addDays, differenceInCalendarWeeks, startOfToday, startOfWeek, format, parseISO } from "date-fns"
 import config from "@/config/app"
 import type { ParentId } from "./types"
 
@@ -36,11 +36,19 @@ export function generateDefaultEntries(
 }
 
 /**
- * Compute the 12-week rolling window starting from the Monday of the current week.
+ * Compute the 12-week rolling window.
+ * - When startDate is provided (pre-validated ISO string from page.tsx), use it directly.
+ * - When omitted, defaults to Monday of the current week.
  */
-export function getWindowBounds(): { start: Date; end: Date } {
-  const today = startOfToday()
-  const start = startOfWeek(today, { weekStartsOn: 1 }) // Monday
+export function getWindowBounds(startDate?: string): { start: Date; end: Date } {
+  let start: Date
+  if (startDate) {
+    // startDate already validated and snapped to Monday by page.tsx validateViewStart
+    start = parseISO(startDate)
+  } else {
+    const today = startOfToday()
+    start = startOfWeek(today, { weekStartsOn: 1 }) // Monday
+  }
   const end = addDays(start, 12 * 7 - 1) // 84 days, inclusive
   return { start, end }
 }

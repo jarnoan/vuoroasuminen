@@ -7,8 +7,8 @@ import config from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
 import type { ScheduleDay, DateWindow, ScheduleCell, ParentId } from "./types"
 
-export async function getScheduleWindow(): Promise<DateWindow> {
-  const { start, end } = getWindowBounds()
+export async function getScheduleWindow(startDate?: string): Promise<DateWindow> {
+  const { start, end } = getWindowBounds(startDate)
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
 
