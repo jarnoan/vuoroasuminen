@@ -6,7 +6,6 @@ import { toggleCell, saveNotes } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
 import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
-import { TodayButton } from "./today-button"
 
 type RealtimeEntry = {
   id: string
@@ -137,9 +136,6 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
   const childNames = days[0]?.cells.map((c) => c.childName) ?? []
   const colCount = childNames.length + 2 // Date + children + Notes
 
-  // Find today's date for the TodayButton
-  const todayDate = days.find((d) => d.isToday)?.date ?? ""
-
   return (
     <>
       {renderAbove?.(days)}
@@ -211,7 +207,6 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
           </tbody>
         </table>
       </div>
-      {todayDate && <TodayButton todayDate={todayDate} />}
     </>
   )
 }
