@@ -1,13 +1,13 @@
 "use server"
 
 import { db } from "@/db"
-import { scheduleEntries } from "@/db/schema/domain"
+import { scheduleEntries, schedules, children } from "@/db/schema/domain"
 import { and, eq, gte, lte } from "drizzle-orm"
 import { auth } from "@/auth"
 import type { ParentId } from "@/config/app"
 import config from "@/config/app"
-import { getWindowBounds } from "@/lib/schedule/generate-default"
-import { format } from "date-fns"
+import { getWindowBounds, generateDefaultEntries } from "@/lib/schedule/generate-default"
+import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCalendarDays } from "date-fns"
 import { syncCalendarsAfterPublish } from "@/lib/gcal/sync"
 import type { SyncResult } from "@/lib/gcal/sync"
 
@@ -91,4 +91,73 @@ export async function syncCalendars(): Promise<SyncResult> {
 
   console.log("[syncCalendars] syncResult:", JSON.stringify(syncResult, null, 2))
   return syncResult
+}
+
+export async function extendSchedule(input: {
+  scheduleEndDate: string   // ISO YYYY-MM-DD — current schedule's last day (inclusive)
+  weeks?: number            // EXTEND-01: number of weeks to add (default 12)
+  endDate?: string          // EXTEND-03: explicit ISO end date (already snapped to Sunday by client)
+}): Promise<
+  | { success: true; newStartDate: string }
+  | { success: false; error: string }
+> {
+  await requireAuthorizedParent()
+
+  // --- Input validation ---
+  const endParsed = parseISO(input.scheduleEndDate)
+  if (!input.scheduleEndDate || !isValid(endParsed)) {
+    return { success: false, error: "Virheellinen aikataulun päättymispäivä" }
+  }
+
+  let rangeEnd: Date
+  if (input.endDate !== undefined) {
+    const picked = parseISO(input.endDate)
+    if (!isValid(picked)) {
+      return { success: false, error: "Virheellinen päättymispäivä" }
+    }
+    const daysDelta = differenceInCalendarDays(picked, endParsed)
+    if (daysDelta < 1) {
+      return { success: false, error: "Päättymispäivän on oltava aikataulun loppupäivän jälkeen" }
+    }
+    if (daysDelta > 730) {
+      return { success: false, error: "Päättymispäivä on liian kaukana (max 2 vuotta)" }
+    }
+    rangeEnd = picked
+  } else {
+    const weeks = input.weeks ?? 12
+    if (!Number.isInteger(weeks) || weeks < 1 || weeks > 52) {
+      return { success: false, error: "Viikkojen määrän on oltava 1–52" }
+    }
+    const rangeStartTmp = addDays(endParsed, 1)
+    // weekStartsOn: 1 means Monday starts the week → Sunday ends it (D-07: snap to Sunday)
+    rangeEnd = endOfWeek(addWeeks(rangeStartTmp, weeks - 1), { weekStartsOn: 1 })
+  }
+
+  const rangeStart = addDays(endParsed, 1)
+  const newStartDate = format(rangeStart, "yyyy-MM-dd")
+
+  // --- Build child name → id map (mirrors queries.ts pattern) ---
+  const allChildren = await db.select().from(children)
+  const orderedChildren = config.children
+    .map(name => allChildren.find(c => c.name === name))
+    .filter((c): c is typeof allChildren[number] => c != null)
+  const childNameToId = new Map(orderedChildren.map(c => [c.name, c.id]))
+
+  // --- Create a schedules row (same as seeding logic in queries.ts) ---
+  const [schedule] = await db.insert(schedules).values({}).returning()
+
+  // --- Generate alternating-default entries for the new range ---
+  const defaults = generateDefaultEntries(rangeStart, rangeEnd, config.children)
+  const insertValues = defaults.map(d => ({
+    scheduleId: schedule.id,
+    childId: childNameToId.get(d.childName)!,
+    day: d.day,
+    parentId: d.parentId,
+    status: "draft" as const,
+  }))
+
+  // --- Batch insert; unique index (childId, day) makes this idempotent ---
+  await db.insert(scheduleEntries).values(insertValues).onConflictDoNothing()
+
+  return { success: true, newStartDate }
 }

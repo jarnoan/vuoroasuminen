@@ -43,19 +43,18 @@ const mockDb = vi.mocked(db)
 
 function setAuthorizedSession() {
   // "father@example.com" matches the example config used by vitest alias
-  mockAuth.mockResolvedValue({
-    user: { email: "father@example.com" },
-  } as Awaited<ReturnType<typeof auth>>)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockAuth.mockResolvedValue({ user: { email: "father@example.com" } } as any)
 }
 
 function setNoSession() {
-  mockAuth.mockResolvedValue(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockAuth.mockResolvedValue(null as any)
 }
 
 function setUnauthorizedSession() {
-  mockAuth.mockResolvedValue({
-    user: { email: "stranger@example.com" },
-  } as Awaited<ReturnType<typeof auth>>)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockAuth.mockResolvedValue({ user: { email: "stranger@example.com" } } as any)
 }
 
 // ─── DB mock helpers ─────────────────────────────────────────────────────────
@@ -75,18 +74,20 @@ function setupDbMocks() {
   capturedEntryValues = null
 
   // db.select().from(children) → children list
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockDb.select.mockReturnValue({
     from: vi.fn().mockResolvedValue([
       { id: "c1", name: "Child1" },
       { id: "c2", name: "Child2" },
     ]),
-  } as ReturnType<typeof mockDb.select>)
+  } as any)
 
   // db.insert() is called twice:
   //   1st call: schedules — returns { returning: () => [{ id }] }
   //   2nd call: scheduleEntries — captures values, returns { onConflictDoNothing: () => undefined }
   let insertCallCount = 0
-  mockDb.insert.mockImplementation(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockDb.insert.mockImplementation((): any => {
     insertCallCount++
     if (insertCallCount === 1) {
       // schedules insert
@@ -94,17 +95,17 @@ function setupDbMocks() {
         values: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([{ id: "fake-schedule-id" }]),
         }),
-      } as ReturnType<typeof mockDb.insert>
+      }
     } else {
       // scheduleEntries insert
       return {
-        values: vi.fn((vals) => {
-          capturedEntryValues = vals as typeof capturedEntryValues
+        values: vi.fn((vals: typeof capturedEntryValues) => {
+          capturedEntryValues = vals
           return {
             onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
           }
         }),
-      } as ReturnType<typeof mockDb.insert>
+      }
     }
   })
 }
