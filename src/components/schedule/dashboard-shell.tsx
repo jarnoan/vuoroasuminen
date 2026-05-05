@@ -10,10 +10,11 @@ import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
 interface DashboardShellProps {
   initialData: DateWindow
   initialViewStart?: string
+  scheduleEndDate: string
   header: React.ReactNode
 }
 
-export function DashboardShell({ initialData, initialViewStart, header }: DashboardShellProps) {
+export function DashboardShell({ initialData, initialViewStart, scheduleEndDate, header }: DashboardShellProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const publishRef = useRef<(() => void) | null>(null)
 
@@ -38,7 +39,7 @@ export function DashboardShell({ initialData, initialViewStart, header }: Dashbo
       </div>
       <main className="flex-1 p-4">
         <ScheduleWithRealtime initialData={initialData} onDaysChange={setDays} publishRef={publishRef} />
-        <ExtendPanel scheduleEndDate={initialData.endDate} />
+        <ExtendPanel scheduleEndDate={scheduleEndDate} />
       </main>
     </div>
   )

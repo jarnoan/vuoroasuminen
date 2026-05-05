@@ -1,5 +1,5 @@
 import { parseISO, isValid, startOfWeek, format } from "date-fns"
-import { getScheduleWindow } from "@/lib/schedule/queries"
+import { getScheduleWindow, getScheduleEndDate } from "@/lib/schedule/queries"
 import { DashboardShell } from "@/components/schedule/dashboard-shell"
 import Header from "@/components/layout/header"
 
@@ -19,13 +19,17 @@ export default async function Dashboard({
 }) {
   const { viewStart } = await searchParams
   const validatedStart = validateViewStart(viewStart)
-  const schedule = await getScheduleWindow(validatedStart)
+  const [schedule, scheduleEndDate] = await Promise.all([
+    getScheduleWindow(validatedStart),
+    getScheduleEndDate(),
+  ])
 
   return (
     <DashboardShell
       key={validatedStart ?? "default"}
       initialData={schedule}
       initialViewStart={validatedStart}
+      scheduleEndDate={scheduleEndDate ?? schedule.endDate}
       header={<Header />}
     />
   )

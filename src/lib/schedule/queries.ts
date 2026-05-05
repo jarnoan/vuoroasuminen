@@ -1,6 +1,6 @@
 import { db } from "@/db"
 import { scheduleEntries, children, schedules } from "@/db/schema/domain"
-import { and, gte, lte } from "drizzle-orm"
+import { and, gte, lte, max } from "drizzle-orm"
 import { format, addDays, isToday as isTodayFn } from "date-fns"
 import { fi } from "date-fns/locale"
 import config from "@/config/app"
@@ -88,4 +88,11 @@ export async function getScheduleWindow(startDate?: string): Promise<DateWindow>
   }
 
   return { startDate: startStr, endDate: endStr, days }
+}
+
+// Returns the actual last day that has schedule entries in the DB.
+// Used by ExtendPanel so the extend base is the real data end, not the view window end.
+export async function getScheduleEndDate(): Promise<string | null> {
+  const [row] = await db.select({ maxDay: max(scheduleEntries.day) }).from(scheduleEntries)
+  return row?.maxDay ?? null
 }
