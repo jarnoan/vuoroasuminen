@@ -4,6 +4,7 @@ import React, { useCallback, useRef, useState } from "react"
 import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
 import { ViewToolbar } from "./view-toolbar"
+import { ExtendPanel } from "./extend-panel"
 import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
 
 interface DashboardShellProps {
@@ -37,6 +38,7 @@ export function DashboardShell({ initialData, initialViewStart, header }: Dashbo
       </div>
       <main className="flex-1 p-4">
         <ScheduleWithRealtime initialData={initialData} onDaysChange={setDays} publishRef={publishRef} />
+        <ExtendPanel scheduleEndDate={initialData.endDate} />
       </main>
     </div>
   )
