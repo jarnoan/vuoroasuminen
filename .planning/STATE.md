@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: executing
+status: ready_to_plan
 stopped_at: Completed 05-04-PLAN.md (Tasks 1-2; Task 3 checkpoint pending human verify)
 last_updated: "2026-05-04T20:52:19.635Z"
 last_activity: 2026-05-04 — Phase 5 planned (4 plans, 3 waves)
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
   completed_plans: 4
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-27 after v1.1 milestone start)
 
 ## Current Position
 
-Phase: 5 of 7 (View Window Control)
-Plan: — (ready to execute)
-Status: Ready to execute
-Last activity: 2026-05-04 — Phase 5 planned (4 plans, 3 waves)
+Phase: 6 of 7 (extend schedule)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-05
 
 Progress: [██████████] 100%
 
@@ -36,14 +36,14 @@ Progress: [██████████] 100%
 
 **Velocity (v1.0 reference):**
 
-- Total plans completed: 9
+- Total plans completed: 13
 - v1.0 phases: 4 phases across 9 plans
 
 **By Phase (v1.1):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 05 | 4 | - | - |
 
 *Updated after each plan completion*
 | Phase 05 P04 | 5min | 2 tasks | 3 files |
