@@ -43,7 +43,7 @@ Plans:
 - [x] 05-01-PLAN.md — Refactor backend data layer (getWindowBounds, getScheduleWindow, page.tsx) to accept viewStart URL param
 - [x] 05-02-PLAN.md — Install shadcn popover and calendar components
 - [x] 05-03-PLAN.md — Create ViewToolbar Client Component and loading.tsx skeleton
-- [ ] 05-04-PLAN.md — Wire ViewToolbar into DashboardShell; remove legacy TodayButton
+- [x] 05-04-PLAN.md — Wire ViewToolbar into DashboardShell; remove legacy TodayButton
 **UI hint**: yes
 
 ### Phase 6: Extend Schedule
