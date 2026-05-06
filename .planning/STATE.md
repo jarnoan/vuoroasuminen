@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: milestone_complete
-stopped_at: Phase 7 UI-SPEC approved
-last_updated: "2026-05-06T18:13:41.296Z"
-last_activity: 2026-05-06 -- Phase 07 execution started
+status: archived
+stopped_at: Milestone v1.1 archived
+last_updated: "2026-05-06T19:44:51.976Z"
+last_activity: 2026-05-06 -- Milestone v1.1 archived
 progress:
   total_phases: 3
   completed_phases: 3
@@ -74,6 +74,32 @@ Key decisions to preserve in v1.1 work:
 ### Blockers/Concerns
 
 None currently.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-05-06:
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat_gap | Phase 07: 07-HUMAN-UAT.md (8 pending scenarios) | partial |
+| verification_gap | Phase 05: 05-VERIFICATION.md | human_needed |
+| verification_gap | Phase 06: 06-VERIFICATION.md | human_needed |
+| verification_gap | Phase 07: 07-VERIFICATION.md | human_needed |
+| quick_task | 260406-oca-fix-publishbutton-disabled-state-after-p | missing |
+| quick_task | 260406-ogw-fix-publishbutton-re-enable-after-new-dr | missing |
+| quick_task | 260407-r3q-fix-inline-use-server-in-header-tsx-brok | missing |
+| quick_task | 260407-rbx-publish-button-does-not-become-disabled | missing |
+| quick_task | 260407-rim-publish-button-still-does-not-become-dis | missing |
+| quick_task | 260412-fhd-fix-missing-key-prop-on-fragment-in-sche | missing |
+| quick_task | 260412-fjd-fix-child-columns-not-showing-after-addi | missing |
+| quick_task | 260412-u66-fix-sign-in-button-compatibility-with-ne | missing |
+| quick_task | 260412-ud9-fix-gcal-sync-invalid-grant-by-persistin | missing |
+| quick_task | 260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp | missing |
+| quick_task | 260412-v2m-add-sync-progress-indicator-to-publish-b | missing |
+| quick_task | 260420-p95-fix-re-sign-in-not-persisting-fresh-oaut | missing |
+| quick_task | 260420-qex-deploy-this-app | missing |
+| quick_task | 260421-finnish-date-formats | missing |
+| quick_task | 260425-g08-address-the-findings-in-security-review | missing |
 
 ## Session Continuity
 

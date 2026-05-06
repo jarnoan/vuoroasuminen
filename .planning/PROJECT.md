@@ -1,19 +1,10 @@
 # Vuoroasuminen
 
-## Current Milestone: v1.1 Schedule Window Control
-
-**Goal:** Give parents flexible control over what date range the schedule shows — past, present, and future — plus the ability to clear assignments.
-
-**Target features:**
-- Flexible view window — starts from Monday of current week by default; "show previous week" button; explicit start date picker; per-user preference
-- Extend schedule forward — button adds N weeks (default 12) with alternating-week defaults; shows date range before confirming; explicit end date option
-- Clear entries — clear single cell or date range to unassigned (empty)
-
 ## What This Is
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-The v1.0 MVP is feature-complete: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and full Google Calendar integration are all shipped. v1.1 adds flexible schedule window control.
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing.
 
 ## Core Value
 
@@ -35,19 +26,17 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ Idempotent sync with orphan cleanup on custody switch — v1.0
 - ✓ Statistics panel: days/child/parent, solo days, child-free days and weekends — v1.0
 - ✓ Statistics computed from both draft and published entries — v1.0
+- ✓ View window starts from Monday of current week by default; past days of current week visible — v1.1
+- ✓ "Show previous week" button extends view start by one week; repeatable — v1.1
+- ✓ User can set explicit start date for the view via date picker — v1.1
+- ✓ View window preferences are per-user, not shared — v1.1
+- ✓ "+ Lisää viikkoja" button extends schedule forward by N weeks with alternating-week defaults — v1.1
+- ✓ Live date range preview shown before confirming extension — v1.1
+- ✓ User can specify explicit end date when extending — v1.1
+- ✓ User can clear a single cell to unassigned (empty) — v1.1
+- ✓ User can select a date range and clear all child assignments within it — v1.1
 
 ### Active
-
-**v1.1 — Schedule Window Control**
-- [ ] View window starts from Monday of current week by default — past days of current week visible (VIEW-01)
-- [ ] "Show previous week" button extends view start by one week; repeatable (VIEW-02)
-- [ ] User can set explicit start date for the view (VIEW-03)
-- [ ] View window preferences are per-user, not shared (VIEW-04)
-- [ ] "Add weeks" button extends schedule forward by N weeks (default 12) with alternating-week defaults (EXTEND-01)
-- [ ] Shows date range being added before confirming extension (EXTEND-02)
-- [ ] User can set explicit end date when extending (EXTEND-03)
-- [ ] User can clear a single cell to unassigned (empty) (CLEAR-01)
-- [ ] User can select a date range and clear all child assignments within it (CLEAR-02)
 
 **Future milestones**
 - [ ] Onboarding wizard: first-run UI to configure parents, children, and calendar IDs without editing config files (ONBR-01)
@@ -64,16 +53,20 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - Secure/adversarial messaging — wrong audience; this app is for cooperative parents
 - Third-party access (grandparents, lawyers) — two-parent design is intentional
 - Push notification system — Google Calendar handles reminders once events sync
+- Clear to default pattern — user confirmed "clear = unassigned/empty", not reset-to-default
+- Auto-extend on scroll — explicit action preferred over implicit row generation
+- Shared view window — each parent controls their own view independently
 
 ## Context
 
 - Two parents share custody of multiple children; children can be split between parents on any day
 - Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- Shipped v1.0 with 2,272 LOC TypeScript; stack: Next.js 16, Auth.js v5, Drizzle ORM, Supabase, googleapis
+- Shipped v1.1 with ~3,879 LOC TypeScript; stack: Next.js 16, Auth.js v5, Drizzle ORM, Supabase, googleapis
 - Config-based parent/calendar setup (`src/config/app.ts`) — must be updated with real emails before deploying to two users
 - Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
 - Google OAuth app verification takes 3–5 business days — start before sharing with second user
+- Git history scrub still pending for `src/config/app.ts` (CR-01)
 
 ## Constraints
 
@@ -97,7 +90,10 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 | prompt:consent + access_type:offline on every sign-in | Forces refresh_token re-issue; prevents invalid_grant after token expiry | ✓ Good — solved real invalid_grant bug in testing |
 | GCal sync best-effort (failure doesn't roll back DB publish) | Sync failure shouldn't block confirmed plans | ✓ Good — warning toast informs user; next publish re-syncs |
 | gcal_events mirror table from day one | Needed for idempotent sync; avoids extra GCal API reads on republish | ✓ Good — UNIQUE constraint on (schedule_entry_id, calendar_id) enforces idempotency |
-| Config-based parent setup (not DB-driven) | Simplest approach for a known two-user app | ⚠ Revisit — blocks self-service onboarding for v1.1 |
+| Config-based parent setup (not DB-driven) | Simplest approach for a known two-user app | ⚠ Revisit — blocks self-service onboarding; next milestone priority |
+| viewStart as URL param (not DB preference) | Zero write path; per-user by nature (each browser independent); shareable link | ✓ Good — simple and effective for per-user view control |
+| parent_id nullable (unassigned = null, not deleted row) | Preserves draft row; unassigned is a first-class state | ✓ Good — clean semantics through draft/publish/GCal sync |
+| Inline expand panels for ExtendPanel and ClearPanel (not modals) | Consistent with schedule table context; no overlay needed | ✓ Good — established pattern for future panels |
 
 ## Evolution
 
@@ -117,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 — v1.1 milestone started*
+*Last updated: 2026-05-06 after v1.1 milestone*

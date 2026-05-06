@@ -60,6 +60,55 @@
 
 ---
 
+## Milestone: v1.1 — Schedule Window Control
+
+**Shipped:** 2026-05-06
+**Phases:** 3 (5–7) | **Plans:** 9 | **Timeline:** 16 days (2026-04-20 → 2026-05-06)
+
+### What Was Built
+
+- Per-user view window control: ViewToolbar with date picker, "Show previous week", Tänään button; viewStart as URL param
+- Schedule extension: ExtendPanel with week-count and explicit end-date modes, live Finnish date preview, Sunday snap, auto-navigation to first new week
+- Single-cell clear via × hover button; parent_id widened to nullable in schema + GCal sync
+- Bulk date-range clear: self-contained ClearPanel with two Finnish-locale date pickers and live day/child count preview
+- 15 quick tasks deferred to next milestone (Finnish date formats, deploy, security review findings, publish button edge cases)
+
+### What Worked
+
+- **Inline panel pattern** — establishing ExtendPanel as the template first, then ClearPanel as a clone, dramatically reduced Phase 7 complexity; "modeled exactly on ExtendPanel" in the plan paid off
+- **URL param for view state** — zero write path, zero backend work, naturally per-user; the simplest possible solution turned out to be exactly right
+- **Nullable parent_id from the start** — widening the schema in Plan 07-01 before any UI work meant Phase 7 never had to retrofit types; unassigned was first-class throughout
+- **fi locale aliasing pattern** — `fi as fiFormat` (date-fns) + `fi as fiPicker` (react-day-picker) resolved the dual-locale confusion cleanly; established in Phase 6, reused in Phase 7
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md traceability never updated** — all 9 requirements showed "Pending" at milestone close; only VIEW-01–04 were actually checked. Traceability should be updated at phase completion, not left for the milestone archive.
+- **15 deferred quick tasks** — several were from Phase 4 era (publish button state) and carried forward unresolved. Quick tasks accumulate; a brief triage pass before milestone close would surface which ones block real-user handoff.
+- **scheduleEndDate bug found in UAT** — Phase 6 passed all plan acceptance criteria but the wrong prop (view end vs DB max date) only surfaced when tested in browser. Earlier integration smoke-test would have caught it.
+- **Human verification left open** — all three phases have `human_needed` verification gaps; the test environment limitations are known, but a clearer protocol for what counts as "verified" would reduce ambiguity at milestone close.
+
+### Patterns Established
+
+- **Inline expand/collapse panel** (not Dialog/modal) — established as the standard for contextual actions below the schedule table; ClearPanel and ExtendPanel both follow it
+- **Self-contained action panel** — panels take minimal props, own their state, call Server Actions directly; no state lifting needed
+- **queueMicrotask focus restoration** — keyboard accessibility pattern after panel collapse; copy this for any future collapsible panel
+- **Finnish locale aliases** — `fi as fiFormat` for date-fns, `fi as fiPicker` for react-day-picker; required everywhere Finnish date pickers appear
+
+### Key Lessons
+
+1. **Clone successful patterns explicitly in plans.** Saying "model exactly on ExtendPanel" in the Phase 7 plan prevented reinvention and reduced execution time to 8 minutes for a complex component.
+2. **Update traceability tables at phase completion.** Stale "Pending" status in REQUIREMENTS.md created unnecessary uncertainty at milestone close; 30 seconds per phase would have kept it accurate.
+3. **UAT should include prop threading verification.** The scheduleEndDate bug was a prop-threading error (wrong source) not a logic error — easy to miss in unit tests, obvious in the browser. Add a "does the prop value look right?" check to UAT scripts.
+4. **Quick task triage before milestone close.** 15 deferred tasks at close is too many to ignore. A 15-minute triage pass would identify which are pre-deploy blockers vs nice-to-haves.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 throughout
+- Sessions: ~8 across the milestone
+- Notable: Phase 7 executed significantly faster than Phases 5–6 because the inline panel pattern was already established. Pattern reuse is a real velocity multiplier.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -67,15 +116,19 @@
 | Milestone | Phases | Plans | Quick Fixes | Key Change |
 |-----------|--------|-------|-------------|------------|
 | v1.0 | 4 | 9 | 12 | First milestone; established all patterns |
+| v1.1 | 3 | 9 | 15 deferred | Pattern reuse (inline panels) as velocity driver |
 
 ### Cumulative Quality
 
 | Milestone | LOC (TS) | Requirements | Human-Verified |
 |-----------|----------|--------------|----------------|
 | v1.0 | 2,272 | 25/25 | Partial (live env needed) |
+| v1.1 | 3,879 | 9/9 | Partial (live env needed) |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. External API failure isolation should be designed before the integration phase, not during it.
 2. Token lifecycle (OAuth refresh, re-issue on sign-in) must be smoke-tested before real-user handoff.
 3. Pure functions for computed state pay dividends immediately in testability and reactivity.
+4. Explicit pattern cloning in plans ("model exactly on X") cuts execution time — proven in v1.1 Phase 7.
+5. Update traceability and roadmap status at phase completion, not at milestone close.
