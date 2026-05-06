@@ -150,6 +150,15 @@ export async function extendSchedule(input: {
   // --- Create a schedules row (same as seeding logic in queries.ts) ---
   const [schedule] = await db.insert(schedules).values({}).returning()
 
+  // --- Verify all configured children exist in DB ---
+  const missingChildren = config.children.filter(name => !childNameToId.has(name))
+  if (missingChildren.length > 0) {
+    return {
+      success: false,
+      error: `Lapsia ei löydy tietokannasta: ${missingChildren.join(", ")}`,
+    }
+  }
+
   // --- Generate alternating-default entries for the new range ---
   const defaults = generateDefaultEntries(rangeStart, rangeEnd, config.children)
   const insertValues = defaults.map(d => ({
