@@ -69,7 +69,7 @@ export async function getScheduleWindow(startDate?: string): Promise<DateWindow>
         entryId: entry?.id ?? null,
         childId: child.id,
         childName: child.name,
-        parentId: (entry?.parentId ?? config.firstParent) as ParentId,
+        parentId: (entry ? (entry.parentId as ParentId | null) : config.firstParent) as ParentId | null,
         status: (entry?.status ?? "draft") as "draft" | "published",
       }
     })

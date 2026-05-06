@@ -54,6 +54,7 @@ export function computeStats(
 
     // STAT-01: days per child per parent (no status filtering — per STAT-05)
     for (const cell of day.cells) {
+      if (cell.parentId === null) continue
       const stats = childStatsMap.get(cell.childName)!
       stats[cell.parentId]++
     }
