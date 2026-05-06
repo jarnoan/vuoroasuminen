@@ -25,6 +25,8 @@ async function requireAuthorizedParent() {
 export async function toggleCell(entryId: string, newParentId: ParentId) {
   await requireAuthorizedParent()
 
+  if (!entryId) throw new Error("Missing entryId")
+
   if (!VALID_PARENT_IDS.includes(newParentId)) {
     throw new Error("Invalid parentId")
   }
