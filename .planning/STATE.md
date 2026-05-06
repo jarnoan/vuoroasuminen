@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
-status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-05-05T05:26:06.804Z"
-last_activity: 2026-05-05
+status: ready_to_plan
+stopped_at: Phase 6 UI-SPEC approved
+last_updated: "2026-05-05T15:20:08.095Z"
+last_activity: 2026-05-05 -- Phase --phase execution started
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 4
+  completed_phases: 2
+  total_plans: 6
   completed_plans: 4
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 after v1.1 milestone start)
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** v1.1 — Phase 5: View Window Control
+**Current focus:** Phase --phase — 06
 
 ## Current Position
 
-Phase: 6 of 7 (extend schedule)
+Phase: 7
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-05-05
+Last activity: 2026-05-06
 
 Progress: [██████████] 100%
 
@@ -36,7 +36,7 @@ Progress: [██████████] 100%
 
 **Velocity (v1.0 reference):**
 
-- Total plans completed: 13
+- Total plans completed: 15
 - v1.0 phases: 4 phases across 9 plans
 
 **By Phase (v1.1):**
@@ -44,6 +44,7 @@ Progress: [██████████] 100%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 05 | 4 | - | - |
+| 06 | 2 | - | - |
 
 *Updated after each plan completion*
 | Phase 05 P04 | 5min | 2 tasks | 3 files |
@@ -76,5 +77,7 @@ None currently.
 ## Session Continuity
 
 Last session: --stopped-at
-Stopped at: Phase 6 context gathered
+Stopped at: Phase 6 UI-SPEC approved
 Resume file: --resume-file
+
+**Planned Phase:** 6 (Extend Schedule) — 2 plans — 2026-05-05T15:18:03.240Z
