@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Schedule Window Control
 status: planning
-stopped_at: Phase 7 context gathered
-last_updated: "2026-05-06T05:02:42.041Z"
+stopped_at: Phase 7 UI-SPEC approved
+last_updated: "2026-05-06T18:10:50.402Z"
 last_activity: 2026-05-06
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
+  total_plans: 9
   completed_plans: 6
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -77,7 +77,7 @@ None currently.
 ## Session Continuity
 
 Last session: --stopped-at
-Stopped at: Phase 7 context gathered
+Stopped at: Phase 7 UI-SPEC approved
 Resume file: --resume-file
 
-**Planned Phase:** 6 (Extend Schedule) — 2 plans — 2026-05-05T15:18:03.240Z
+**Planned Phase:** 07 (clear-entries) — 3 plans — 2026-05-06T18:10:50.400Z
