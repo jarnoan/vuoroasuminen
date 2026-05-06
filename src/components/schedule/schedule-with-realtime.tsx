@@ -10,7 +10,7 @@ type EntryUpdate = {
   id: string
   childId: string
   day: string
-  parentId: ParentId
+  parentId: ParentId | null
   status: "draft" | "published"
   notes: string | null
 }

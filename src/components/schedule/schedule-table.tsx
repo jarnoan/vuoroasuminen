@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
-import { toggleCell, saveNotes } from "@/actions/schedule"
+import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
 import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
@@ -11,7 +11,7 @@ type RealtimeEntry = {
   id: string
   childId: string
   day: string
-  parentId: ParentId
+  parentId: ParentId | null
   status: "draft" | "published"
   notes: string | null
 }
@@ -119,6 +119,90 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
     }
   }
 
+  async function handleClear(entryId: string) {
+    // Capture prior state so we can revert on failure
+    let priorParentId: ParentId | null = null
+    let priorStatus: "draft" | "published" = "draft"
+    setDays((prev) => {
+      // Capture & optimistically null the cell in a single pass
+      return prev.map((day) => ({
+        ...day,
+        cells: day.cells.map((cell) => {
+          if (cell.entryId !== entryId) return cell
+          priorParentId = cell.parentId
+          priorStatus = cell.status
+          return { ...cell, parentId: null, status: "draft" as const }
+        }),
+      }))
+    })
+
+    try {
+      const result = await clearCell(entryId)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+    } catch {
+      // Revert on failure
+      setDays((prev) =>
+        prev.map((day) => ({
+          ...day,
+          cells: day.cells.map((cell) =>
+            cell.entryId === entryId
+              ? { ...cell, parentId: priorParentId, status: priorStatus }
+              : cell
+          ),
+        }))
+      )
+      toast.error("Tyhjennys epäonnistui. Yritä uudelleen.")
+    }
+  }
+
+  async function handleAssignEmpty(entryId: string | null, childId: string, day: string) {
+    if (!entryId) {
+      // No DB row exists for this (childId, day) yet — extremely rare given queries.ts seeds
+      // the full window. Fail silently with a toast; the user can re-publish to seed.
+      toast.error("Solua ei voi merkitä — aikatauluriviä ei löydy.")
+      return
+    }
+
+    // Capture for revert
+    let priorParentId: ParentId | null = null
+    let priorStatus: "draft" | "published" = "draft"
+    setDays((prev) =>
+      prev.map((d) => {
+        if (d.date !== day) return d
+        return {
+          ...d,
+          cells: d.cells.map((cell) => {
+            if (cell.childId !== childId) return cell
+            priorParentId = cell.parentId
+            priorStatus = cell.status
+            return { ...cell, parentId: "father" as ParentId, status: "draft" as const }
+          }),
+        }
+      })
+    )
+
+    try {
+      await toggleCell(entryId, "father")
+    } catch {
+      setDays((prev) =>
+        prev.map((d) => {
+          if (d.date !== day) return d
+          return {
+            ...d,
+            cells: d.cells.map((cell) =>
+              cell.childId === childId
+                ? { ...cell, parentId: priorParentId, status: priorStatus }
+                : cell
+            ),
+          }
+        })
+      )
+      toast.error("Tallennus epäonnistui. Yritä uudelleen.")
+    }
+  }
+
   async function handleNoteSave(entryId: string, notes: string) {
     setDays((prev) =>
       prev.map((day) =>
@@ -181,16 +265,25 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
                   </td>
                   {day.cells.map((cell) => (
                     <td key={cell.childId} className="px-1 py-1">
-                      {cell.entryId ? (
+                      {cell.entryId && cell.parentId ? (
                         <ScheduleCell
                           entryId={cell.entryId}
                           parentId={cell.parentId}
                           status={cell.status}
                           childName={cell.childName}
                           onToggle={handleToggle}
+                          onClear={handleClear}
                         />
                       ) : (
-                        <span className="text-xs text-muted-foreground px-2">—</span>
+                        <button
+                          type="button"
+                          className="w-full h-full min-h-[40px] rounded-md text-sm text-muted-foreground bg-muted/30 hover:bg-muted transition-colors"
+                          onClick={() => handleAssignEmpty(cell.entryId, cell.childId, day.date)}
+                          title="Lisää merkintä"
+                          aria-label={`Lisää merkintä — ${cell.childName} ${day.dayLabel}`}
+                        >
+                          —
+                        </button>
                       )}
                     </td>
                   ))}
