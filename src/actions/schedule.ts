@@ -176,3 +176,55 @@ export async function extendSchedule(input: {
 
   return { success: true, newStartDate }
 }
+
+export async function clearCell(entryId: string): Promise<
+  | { success: true }
+  | { success: false; error: string }
+> {
+  await requireAuthorizedParent()
+
+  if (!entryId) return { success: false, error: "Missing entryId" }
+
+  await db.update(scheduleEntries)
+    .set({ parentId: null, status: "draft" })
+    .where(eq(scheduleEntries.id, entryId))
+
+  return { success: true }
+}
+
+export async function clearRange(input: {
+  startDate: string  // ISO YYYY-MM-DD (inclusive)
+  endDate: string    // ISO YYYY-MM-DD (inclusive)
+}): Promise<
+  | { success: true; clearedCount: number }
+  | { success: false; error: string }
+> {
+  await requireAuthorizedParent()
+
+  const start = parseISO(input.startDate)
+  const end = parseISO(input.endDate)
+
+  if (!isValid(start) || !isValid(end)) {
+    return { success: false, error: "Virheellinen päivämäärä" }
+  }
+
+  const daysDelta = differenceInCalendarDays(end, start)
+  if (daysDelta < 0) {
+    return { success: false, error: "Päättymispäivän on oltava alkamispäivän jälkeen" }
+  }
+  if (daysDelta > 730) {
+    return { success: false, error: "Aikaväli on liian pitkä (max 2 vuotta)" }
+  }
+
+  const result = await db.update(scheduleEntries)
+    .set({ parentId: null, status: "draft" })
+    .where(
+      and(
+        gte(scheduleEntries.day, input.startDate),
+        lte(scheduleEntries.day, input.endDate),
+      )
+    )
+    .returning({ id: scheduleEntries.id })
+
+  return { success: true, clearedCount: result.length }
+}

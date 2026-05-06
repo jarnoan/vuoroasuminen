@@ -6,7 +6,7 @@ export interface ScheduleCell {
   entryId: string | null      // null = no DB row yet
   childId: string
   childName: string
-  parentId: ParentId
+  parentId: ParentId | null   // null = cleared (row exists, no parent assigned)
   status: "draft" | "published"
 }
 

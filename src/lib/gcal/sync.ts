@@ -139,7 +139,7 @@ export async function syncCalendarsAfterPublish(): Promise<SyncResult> {
 type PublishedEntry = {
   id: string
   day: string
-  parentId: string
+  parentId: string | null   // null = cleared entry; orphan filter naturally sweeps these
   childId: string
 }
 
