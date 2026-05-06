@@ -42,7 +42,7 @@ result: [pending]
 
 ### 8. Vahvista clears range, panel collapses, focus returns
 expected: clearRange called, panel collapses, focus returns to trigger button
-result: [pending]
+result: FAILED — panel collapses but view did not update; cells still showed assigned state. After page refresh, cells showed cleared (—) state. DB update confirmed correct; UI refresh missing.
 
 ### 9. >730-day range shows server error
 expected: "Aikaväli on liian pitkä (max 2 vuotta)" in role=alert destructive paragraph
@@ -52,9 +52,15 @@ result: [pending]
 
 total: 9
 passed: 0
-issues: 0
-pending: 9
+issues: 1
+pending: 8
 skipped: 0
 blocked: 0
 
 ## Gaps
+
+### Gap 1 — ClearPanel view not updated after clearRange
+status: open
+test: 8
+description: After clearRange succeeds the panel collapses but cleared cells remain visually assigned until page refresh. ClearPanel has no optimistic update and relies on Supabase realtime CDC which does not reliably propagate bulk updates.
+fix: Add router.refresh() in ClearPanel.handleConfirm() after resetPanel() to force server component re-fetch.
