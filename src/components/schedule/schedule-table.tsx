@@ -27,6 +27,11 @@ interface ScheduleTableProps {
 export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbove, onDaysChange }: ScheduleTableProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
 
+  // Re-sync when server refreshes (e.g. after clearRange + router.refresh())
+  useEffect(() => {
+    setDays(initialData.days)
+  }, [initialData])
+
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
     setDays(prev => prev.map(day => {
