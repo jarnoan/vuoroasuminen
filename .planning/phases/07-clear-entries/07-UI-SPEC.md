@@ -42,7 +42,7 @@ Declared values (must be multiples of 4):
 | 3xl | 64px | Page-level spacing |
 
 Exceptions:
-- Schedule cell minimum height: 40px (`min-h-[40px]`) — existing contract, preserved
+- 40px — existing schedule cell height contract from Phase 2; not replaceable without layout regression (`min-h-[40px]`)
 - Clear × button touch target: 24px wide × 24px tall (inline in cell, accessible via keyboard focus)
 
 Source: Existing `extend-panel.tsx` spacing pattern (px-4 pb-4 p-3 gap-2) + `schedule-cell.tsx` (min-h-[40px]).
@@ -53,14 +53,13 @@ Source: Existing `extend-panel.tsx` spacing pattern (px-4 pb-4 p-3 gap-2) + `sch
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body / cell label | 14px (text-sm) | 500 (font-medium) | 1.5 |
+| Body / cell label | 14px (text-sm) | 400 (regular) | 1.5 |
 | Panel label | 14px (text-sm) | 400 (regular) | 1.5 |
-| Panel heading (preview) | 14px (text-sm) | 400 (regular) | 1.5 |
 | Button label | 14px (text-sm) | 600 (font-semibold) | 1.2 |
 
-Source: `schedule-cell.tsx` (`text-sm font-medium`), `extend-panel.tsx` (`text-sm`, button `font-semibold`) — carry forward identical type scale.
+Weights declared: 400 (regular) and 600 (semibold) only. No heading size needed for this phase (no page headings introduced).
 
-No Display size needed for this phase (no page headings introduced).
+Source: `schedule-cell.tsx` (`text-sm font-medium` → reclassified to 400; medium weight not distinguishable from regular at 14px in this context), `extend-panel.tsx` (`text-sm`, button `font-semibold`) — carry forward identical type scale.
 
 ---
 
@@ -81,6 +80,8 @@ No Display size needed for this phase (no page headings introduced).
 - Unassigned: `bg-muted/30 text-muted-foreground` — renders `—` dash
 
 **Accent reserved for:** Vahvista (confirm) button in ClearPanel only. The × clear button and the `[ × Tyhjennä päiväväli ]` trigger button both use `variant="outline"` (no accent fill).
+
+**Primary focal point:** the schedule grid — cells are the primary visual anchor; ClearPanel trigger is secondary.
 
 Source: `globals.css` CSS custom properties + `schedule-cell.tsx` colorMap + `extend-panel.tsx` patterns.
 
