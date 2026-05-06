@@ -4,6 +4,12 @@ import path from "path"
 export default defineConfig({
   test: {
     environment: "node",
+    env: {
+      PARENT_FATHER_EMAIL: "father@example.com",
+      PARENT_MOTHER_EMAIL: "mother@example.com",
+      PARENT_FATHER_CALENDAR_ID: "father-calendar@group.calendar.google.com",
+      PARENT_MOTHER_CALENDAR_ID: "mother-calendar@group.calendar.google.com",
+    },
   },
   resolve: {
     alias: [
