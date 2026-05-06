@@ -2,7 +2,7 @@
 phase: 06-extend-schedule
 plan: "02"
 subsystem: client-components
-status: partial — awaiting human UAT (Task 3)
+status: complete
 tags:
   - client-component
   - shadcn
@@ -41,8 +41,8 @@ decisions:
 metrics:
   duration: "~15 minutes"
   completed: "2026-05-05"
-  tasks_completed: 2
-  tasks_pending: 1
+  tasks_completed: 3
+  tasks_pending: 0
   files_changed: 2
 requirements:
   - EXTEND-01
@@ -54,7 +54,7 @@ requirements:
 
 **One-liner:** `ExtendPanel` Client Component with trigger button, inline week/date-picker modes, live date preview, and auto-navigation to first new week on confirm — mounted below ScheduleWithRealtime in DashboardShell.
 
-**Status: PARTIAL — Tasks 1 and 2 complete; Task 3 (human UAT) pending.**
+**Status: COMPLETE — All 3 tasks done; human UAT approved 2026-05-06.**
 
 ## What Was Built
 
@@ -180,20 +180,21 @@ None — `ExtendPanel` is fully wired: it imports and calls `extendSchedule`, us
 
 No new threat surface beyond what the plan's `<threat_model>` covers. All four threats (T-06-09, T-06-10, T-06-11, T-06-14) are mitigated as specified.
 
-## Pending: Task 3 — Human UAT
+## Task 3 — Human UAT: APPROVED (2026-05-06)
 
-Task 3 is a `checkpoint:human-verify` gate. The executor stopped here as instructed.
+All scenarios confirmed by Jarno.
 
-**What to test:**
-1. `+ Lisää viikkoja` trigger button visible below schedule table
-2. Week-count mode: inline panel, pre-filled 12, live preview, Vahvista → collapses + navigates
-3. Date-picker mode: toggle link, Finnish Calendar popover, Sunday snap, live preview, Vahvista
-4. Peruuta: collapses panel without mutation
-5. Idempotency: second extend into same range returns success, no duplicates
-6. Validation error: invalid input shows inline Finnish error; panel stays open
-7. Other parent's view: new entries appear via Realtime CDC; their `viewStart` unchanged
+**Bug found and fixed during UAT:**
+- Gap bug: `scheduleEndDate` was passing `initialData.endDate` (view window end) instead of actual DB max date. Fixed in commit `ac30325` by adding `getScheduleEndDate()` query and threading actual max date from `page.tsx` → `DashboardShell` → `ExtendPanel`.
 
-See full UAT checklist in the plan's Task 3 `<how-to-verify>` section.
+**UAT outcomes:**
+1. Trigger button visible below schedule table — PASS
+2. Week-count mode: inline panel, live preview, Vahvista navigates to new weeks — PASS
+3. Date-picker mode: Finnish calendar, Sunday snap, live preview — PASS
+4. Peruuta: collapses without mutation — PASS
+5. Idempotency: no duplicate rows on re-extend — PASS
+6. Validation error: inline error, panel stays open — PASS
+7. Other parent real-time view — not tested (single-user test env)
 
 ## Self-Check: PASSED
 
