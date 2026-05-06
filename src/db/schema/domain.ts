@@ -31,7 +31,7 @@ export const scheduleEntries = pgTable("schedule_entries", {
     .notNull()
     .references(() => children.id),
   day: date("day", { mode: "string" }).notNull(), // DATE not TIMESTAMP — timezone-safe
-  parentId: text("parent_id").notNull(), // 'father' | 'mother' (from config)
+  parentId: text("parent_id"), // 'father' | 'mother' | null (null = cleared / unassigned)
   status: scheduleStatusEnum("status").notNull().default("draft"),
   notes: text("notes"),
 }, (table) => [
