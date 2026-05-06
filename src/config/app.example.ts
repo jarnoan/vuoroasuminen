@@ -17,14 +17,14 @@ const config: AppConfig = {
     {
       id: "father",
       name: "Father",
-      email: "father@example.com",              // Replace with father's real Google account email
-      calendarId: "YOUR_FATHER_CALENDAR_ID@group.calendar.google.com",  // Replace with father's calendar ID
+      email: process.env.PARENT_FATHER_EMAIL!,
+      calendarId: process.env.PARENT_FATHER_CALENDAR_ID!,
     },
     {
       id: "mother",
       name: "Mother",
-      email: "mother@example.com",              // Replace with mother's real Google account email
-      calendarId: "YOUR_MOTHER_CALENDAR_ID@group.calendar.google.com",  // Replace with mother's calendar ID
+      email: process.env.PARENT_MOTHER_EMAIL!,
+      calendarId: process.env.PARENT_MOTHER_CALENDAR_ID!,
     },
   ],
   children: ["Child1", "Child2"],
