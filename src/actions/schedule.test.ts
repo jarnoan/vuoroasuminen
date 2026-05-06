@@ -69,9 +69,11 @@ function setUnauthorizedSession() {
 // We capture the array passed to scheduleEntries.values() for boundary assertions.
 
 let capturedEntryValues: Array<{ day: string; childId: string; parentId: string; status: string; scheduleId: string }> | null = null
+let insertCallCount = 0
 
 function setupDbMocks() {
   capturedEntryValues = null
+  insertCallCount = 0
 
   // db.select().from(children) → children list
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +87,6 @@ function setupDbMocks() {
   // db.insert() is called twice:
   //   1st call: schedules — returns { returning: () => [{ id }] }
   //   2nd call: scheduleEntries — captures values, returns { onConflictDoNothing: () => undefined }
-  let insertCallCount = 0
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockDb.insert.mockImplementation((): any => {
     insertCallCount++
