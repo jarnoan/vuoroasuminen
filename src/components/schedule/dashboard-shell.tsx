@@ -5,6 +5,7 @@ import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
 import { ViewToolbar } from "./view-toolbar"
 import { ExtendPanel } from "./extend-panel"
+import { ClearPanel } from "./clear-panel"
 import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
 
 interface DashboardShellProps {
@@ -40,6 +41,7 @@ export function DashboardShell({ initialData, initialViewStart, scheduleEndDate,
       <main className="flex-1 p-4">
         <ScheduleWithRealtime initialData={initialData} onDaysChange={setDays} publishRef={publishRef} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
+        <ClearPanel />
       </main>
     </div>
   )
