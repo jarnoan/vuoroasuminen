@@ -25,7 +25,7 @@ Full archive: [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 - [ ] **Phase 5: View Window Control** — Per-user control over which date range is shown in the schedule
 - [ ] **Phase 6: Extend Schedule** — Add weeks beyond the current schedule end with pre-filled alternating defaults
-- [ ] **Phase 7: Clear Entries** — Clear single cells or date ranges to unassigned
+- [x] **Phase 7: Clear Entries** — Clear single cells or date ranges to unassigned
 
 ## Phase Details
 
@@ -65,7 +65,11 @@ Plans:
   1. User can clear a single cell — the cell shows an empty/unassigned state with no parent color
   2. User can select a start and end date and clear all child assignments within that range in one action
   3. Cleared cells are distinct from assigned cells in the UI and sync correctly through draft/publish
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 07-01-PLAN.md — Schema + Server Actions foundation (nullable parent_id, clearCell, clearRange)
+- [x] 07-02-PLAN.md — Cell × button UI (onClear prop, handleClear, handleAssignEmpty)
+- [x] 07-03-PLAN.md — Bulk clear panel (ClearPanel component, DashboardShell integration)
 **UI hint**: yes
 
 ## Progress
@@ -78,4 +82,4 @@ Plans:
 | 4. Google Calendar Sync | v1.0 | 2/2 | Complete | 2026-04-12 |
 | 5. View Window Control | v1.1 | 0/4 | Not started | - |
 | 6. Extend Schedule | v1.1 | 0/? | Not started | - |
-| 7. Clear Entries | v1.1 | 0/? | Not started | - |
+| 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
