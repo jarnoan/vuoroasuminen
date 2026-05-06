@@ -104,6 +104,10 @@ export async function extendSchedule(input: {
   await requireAuthorizedParent()
 
   // --- Input validation ---
+  if (input.endDate !== undefined && input.weeks !== undefined) {
+    return { success: false, error: "Anna joko viikot tai päättymispäivä, ei molempia" }
+  }
+
   const endParsed = parseISO(input.scheduleEndDate)
   if (!input.scheduleEndDate || !isValid(endParsed)) {
     return { success: false, error: "Virheellinen aikataulun päättymispäivä" }
