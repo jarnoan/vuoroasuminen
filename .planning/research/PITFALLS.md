@@ -1,12 +1,318 @@
 # Pitfalls Research
 
 **Domain:** Co-parenting custody scheduling web app with Google Calendar integration and real-time collaboration
-**Researched:** 2026-04-04
-**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources)
+**Researched:** 2026-04-04 (original); 2026-05-09 (v1.2 migration supplement)
+**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources; migration pitfalls verified against Supabase official docs and open GitHub issues)
 
 ---
 
-## Critical Pitfalls
+## v1.2 Migration Pitfalls — Auth.js → Supabase Auth
+
+These pitfalls are specific to the v1.2 milestone: replacing Auth.js v5 + DrizzleAdapter with Supabase Auth, enabling RLS, and migrating the GCal token storage model.
+
+---
+
+### M-1: provider_refresh_token Is Not Stored by Supabase and Vanishes After First Session Refresh (CRITICAL)
+
+**What goes wrong:**
+Supabase Auth does not persist `provider_token` or `provider_refresh_token` to its own database. They are available once — in the response of `exchangeCodeForSession()` inside the OAuth callback route — and never again. After the first Supabase session refresh, both fields disappear from the session object entirely. This is by design (security concern about keeping provider tokens in GoTrue), not a bug.
+
+The current GCal sync in `client.ts` reads `refresh_token` from the `accounts` table (Auth.js DrizzleAdapter schema). After removing Auth.js, that table is gone. If the new design relies on `supabase.auth.getSession().provider_refresh_token` at sync time, it will silently fail: the value is null or undefined on any request that is not the initial OAuth callback.
+
+**Why it happens:**
+GoTrue (Supabase's auth server) intentionally does not expose a `provider_token` refresh endpoint. The PKCE flow compounds this: the PKCE code verifier is tied to the origin that initiated the flow (Supabase's auth server), so your app's server code cannot use the provider's own PKCE refresh endpoint without also exposing the client secret in the browser — a security regression.
+
+GitHub issues confirming this is by design:
+- `supabase/supabase-js#934` — provider_token and provider_refresh_token missing after session refresh (confirmed by-design)
+- `supabase/auth#1387` — "Cross-Origin Refreshing of provider_token is not allowed under OAuth"
+- `supabase/supabase#21490` — "Using PKCE flow messes with the refreshing of the provider token"
+
+**Consequences:**
+- GCal sync breaks silently: `buildGCalClient()` will find no refresh token and throw.
+- No runtime error on sign-in — only fails when the first publish/sync is triggered.
+- Both parents may sign in successfully with the new auth stack and discover calendar sync is broken only when they try to publish.
+
+**Prevention — required design for v1.2:**
+The `user_google_tokens` table (already specified in PROJECT.md) must be populated inside the OAuth callback route handler (`/auth/callback`), at the moment `exchangeCodeForSession()` returns, which is the only time `provider_refresh_token` is available on the server.
+
+```typescript
+// /app/auth/callback/route.ts
+const { data: { session } } = await supabase.auth.exchangeCodeForSession(code)
+
+// provider_refresh_token is ONLY available here — capture it now
+if (session?.provider_refresh_token) {
+  await db.insert(userGoogleTokens)
+    .values({
+      email: session.user.email,
+      refresh_token: session.provider_refresh_token,
+      access_token: session.provider_token,
+      updated_at: new Date(),
+    })
+    .onConflictDoUpdate({ /* upsert by email */ })
+}
+```
+
+The `buildGCalClient()` function then reads from `user_google_tokens` instead of the old `accounts` table. The token refresh logic (manual POST to `oauth2.googleapis.com/token`) remains unchanged — Supabase Auth is not in that loop.
+
+**Critical sub-trap — subsequent logins without prompt:consent:**
+If `prompt: 'consent'` and `access_type: 'offline'` are not passed to `signInWithOAuth()`, Google will not return a `provider_refresh_token` on re-login. The callback route will see `provider_refresh_token: null` and must NOT overwrite the existing stored token with null. Only update the stored token when the incoming value is non-null.
+
+**Warning signs:**
+- GCal sync throws "No refresh token found for [email]" immediately after migration.
+- `session.provider_refresh_token` is logged as `null` or `undefined` outside the callback route.
+- The new code tries to read refresh tokens from `supabase.auth.getSession()` in a Server Action or Server Component — this will always be null post-callback.
+
+**Phase to address:** First phase of v1.2 migration — before removing the old `accounts` table. Token capture in the callback route must be tested before the DrizzleAdapter schema is dropped.
+
+---
+
+### M-2: Supabase Middleware Must Call getUser() Not getSession() — And Must Set Both Request and Response Cookies (CRITICAL)
+
+**What goes wrong:**
+The current `middleware.ts` uses Auth.js's `auth()` wrapper which handles cookie management internally. Supabase's equivalent requires explicit setup: `createServerClient` must be initialized with a `cookies` adapter that reads from `request.cookies` and writes to both `request.cookies` (for Server Components in the same request) and `response.cookies` (for the browser). If either write is missing, sessions silently expire without refreshing — users get logged out unpredictably.
+
+The second trap: `supabase.auth.getSession()` in middleware is explicitly documented as unsafe — the session comes from the cookie, which can be spoofed. Always use `supabase.auth.getUser()` (or `getClaims()` for local JWT validation) to protect routes.
+
+**Why it happens:**
+`@supabase/ssr`'s `createServerClient` requires manual cookie handling. The officially documented pattern requires three things that are easy to miss:
+1. `getAll()` — read all cookies from `request.cookies`
+2. `setAll()` on `request` — so Server Components later in the same request see the refreshed session
+3. `setAll()` on `response` — so the browser stores the refreshed JWT
+
+Missing step 2 means Server Components cannot see the refreshed session for the current request. Missing step 3 means the browser never stores the new token and the user gets logged out on next navigation.
+
+Additionally: `createServerClient` must be instantiated **inside** the middleware function body, never at module scope. Vercel's Fluid Compute keeps warm server instances alive between requests; a module-scope client will carry one user's session into another user's request.
+
+**Correct middleware skeleton:**
+
+```typescript
+// src/middleware.ts
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  // MUST be inside the function — never at module scope
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          // Write to request so Server Components see the update in this request
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          // Rebuild response so the browser also gets the updated cookies
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // NEVER use getSession() here — it trusts the cookie without revalidation
+  // getUser() validates against the Supabase Auth server on every call
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isOnHome = request.nextUrl.pathname === '/'
+  if (!user && !isOnHome) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  return supabaseResponse
+}
+```
+
+**Warning signs:**
+- Users are intermittently logged out even though their Supabase session should be valid.
+- Session works in the browser but Server Components see a null user.
+- A singleton `supabase` client is initialized outside the middleware function.
+- Middleware uses `supabase.auth.getSession()` for route protection.
+
+**Phase to address:** Middleware replacement — the first thing to wire in v1.2 before removing Auth.js.
+
+---
+
+### M-3: Drizzle ORM Bypasses RLS When Using the service_role Key — By Design (HIGH)
+
+**What goes wrong:**
+The existing Drizzle `db` client in `src/db/index.ts` connects to Postgres using the Supabase connection string (likely the `POSTGRES_URL` / direct connection with the database password, or via the `pg` driver with Supabase credentials). After enabling RLS on domain tables, this client will continue to bypass RLS entirely if it authenticates as the `service_role` PostgreSQL user.
+
+A common v1.2 mistake: enable RLS on `schedule_entries` and add `auth.uid()` policies, then run the app and see queries still work — not because RLS is correctly enforced, but because the Drizzle client has the `service_role` key and silently bypasses every policy.
+
+**Why it happens:**
+Supabase's `service_role` key grants the `service_role` Postgres role, which has `BYPASSRLS = TRUE`. Any client authenticated with this key will never see an RLS policy trigger. For Server Actions that should run as an authenticated user, this means your policies are effectively dead. Conversely, if you switch Drizzle to the `anon` key, it will fail for server-side operations that legitimately need elevated access (migrations, seeding, GCal sync reading tokens).
+
+**The correct two-client model for v1.2:**
+- **Drizzle admin client** (service_role key): used only for migrations (`drizzle-kit`), seed scripts, and GCal sync (reading from `user_google_tokens` as a server-side trusted operation). Never used in Server Actions that operate on user-owned data.
+- **Supabase client with JWT context** (for user-owned data): either use the `@supabase/ssr` `createServerClient` with the anon key and the user's session cookie (which sets `auth.uid()` correctly), or if using Drizzle queries under RLS, inject the JWT claims per-transaction using `set_config('request.jwt.claims', ...)`.
+
+For v1.2's stated goal of "authenticated users only" RLS (not per-row user ownership), the simplest approach is:
+```sql
+-- All authenticated users can read and write all rows
+CREATE POLICY "authenticated_access" ON schedule_entries
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+```
+
+This means the Supabase client's anon key + active session cookie satisfies `TO authenticated`, and the Drizzle service_role client continues to work for background operations. No per-transaction JWT injection needed for v1.2 scope.
+
+**Warning sign — the silent bypass trap:**
+After enabling RLS, test with a request that has NO authentication (e.g., `curl` with no auth header). If the query still returns data, the Drizzle client is using service_role and bypassing RLS. RLS is only enforced on the `anon` and `authenticated` roles.
+
+**Warning signs:**
+- Enabling RLS on a table makes no observable difference to Server Action queries.
+- The Drizzle `db` client uses `SUPABASE_SERVICE_ROLE_KEY` or the direct Postgres URL with the database password.
+- No per-transaction `set_config` calls exist but per-user RLS policies are written.
+
+**Phase to address:** RLS enablement phase. Test RLS enforcement by connecting with the anon key before declaring it done.
+
+---
+
+### M-4: Auth.js Table Removal Must Be Ordered to Avoid FK Constraint Failures
+
+**What goes wrong:**
+The Auth.js schema has a dependency chain: `accounts.userId → users.id` and `sessions.userId → users.id`. If a migration tries to drop `users` before dropping `accounts` and `sessions`, Postgres rejects it with:
+```
+ERROR: cannot drop table users because other objects depend on it
+DETAIL: constraint accounts_userId_users_id_fk on table accounts depends on table users
+```
+
+Additionally, Drizzle Kit's schema diffing may emit a migration that drops the tables in the wrong order if the `auth.ts` schema file is simply deleted and `drizzle-kit generate` is run. Drizzle Kit has had bugs where FK-constrained table drops are not reordered.
+
+A second concern: the domain tables (`schedule_entries`, `gcal_events`, `children`, `schedules`) do not currently reference the Auth.js `users` table by foreign key. Verify this before migration — if any domain table added a `user_id TEXT REFERENCES users(id)` during a previous phase, it must be migrated or nulled out before the `users` table can be dropped.
+
+**Correct migration ordering:**
+1. Drop `verificationTokens` (no FK dependencies)
+2. Drop `sessions` (FK → `users`, safe to drop before users if accounts is still present)
+3. Drop `accounts` (FK → `users`)
+4. Drop `users` last
+
+If using `drizzle-kit generate`, inspect the emitted SQL before applying. If the order is wrong, manually reorder the DROP TABLE statements. Alternatively, use `DROP TABLE IF EXISTS accounts, sessions, verificationTokens, users CASCADE;` — CASCADE handles the order automatically but will also drop any FK-dependent objects you may not have anticipated.
+
+**Warning signs:**
+- Migration fails with `cannot drop table users because other objects depend on it`.
+- `drizzle-kit generate` emits a migration that drops `users` in the first statement.
+- Domain tables were extended with `user_id` references in a previous phase.
+
+**Phase to address:** Schema cleanup sub-task. Run in a dedicated migration, not combined with other schema changes.
+
+---
+
+### M-5: Existing Signed-In Users Are Invalidated Immediately on Auth Stack Replacement — No Graceful Transition
+
+**What goes wrong:**
+Auth.js sessions are stored as JWTs in the `__Secure-next-auth.session-token` cookie (or `next-auth.session-token` in dev). Supabase Auth sessions are stored in `sb-[project-ref]-auth-token` cookies. These are completely separate namespaces. The moment the new middleware goes live, all existing Auth.js cookies become meaningless — `supabase.auth.getUser()` will return null for every user who was signed in under Auth.js, and they will be silently redirected to the login page.
+
+For a two-user production app mid-live, this is a forced re-login for both parents on the first deployment.
+
+**Why it happens:**
+There is no migration path for JWT sessions between auth libraries. The token formats, signing secrets, and cookie names are incompatible.
+
+**What to do:**
+Accept that both parents will need to sign in again after the v1.2 deployment. This is not recoverable — it is the expected behavior. The mitigation is operational: communicate to both parents before deploying ("after tonight's update, please sign in again with Google"). The re-sign-in is also the mechanism by which `provider_refresh_token` is captured into the new `user_google_tokens` table for the first time.
+
+**Sub-trap: First sign-in after migration must succeed before GCal sync is available.** If one parent deploys and signs in but the other has not yet signed in under Supabase Auth, the GCal sync for the second parent's calendar will fail (no refresh token in `user_google_tokens` yet). This is expected behavior, but the error toast should be informative ("Parent B's calendar is not connected yet — please ask them to sign in") rather than a generic failure.
+
+**Warning signs:**
+- Both parents are logged out immediately after first deployment with new auth stack.
+- GCal sync fails for one parent's calendar after the other parent initiates publish.
+- The `user_google_tokens` table is empty for one parent after migration.
+
+**Phase to address:** Deployment strategy. Coordinate sign-in for both parents immediately after v1.2 deploy before any publish/sync is attempted.
+
+---
+
+### M-6: ISR-Cached Pages + Supabase Cookie Refresh = Session Cross-Contamination
+
+**What goes wrong:**
+If any page in the `/dashboard` route has ISR enabled (even inadvertently, via a parent layout that lacks `export const dynamic = 'force-dynamic'`), Next.js may cache a response that includes a `Set-Cookie` header containing a freshly-refreshed Supabase JWT. When that cached response is served to the other parent, their browser stores the token and they are temporarily signed in as the wrong person.
+
+**Why it happens:**
+Supabase's middleware refreshes the session JWT and writes it to the response via `Set-Cookie`. If the response is cached by Next.js's ISR cache or a CDN before it reaches the browser, the cookie goes with it. The next request that receives that cached response will have the wrong JWT installed.
+
+**Prevention:**
+Add `export const dynamic = 'force-dynamic'` to all route segments that require authentication. For this app, that means `app/dashboard/page.tsx` and `app/dashboard/layout.tsx` at minimum. Add `Cache-Control: private, no-store` to all authenticated API routes.
+
+Also, for `realtime-provider.tsx` and any other Client Components that call `supabase.auth.getSession()` directly: note that `getClaims()` performs local JWT signature verification and is preferred over `getSession()` for security-sensitive checks, but does not contact the auth server. For the two-user app at hand, this distinction is low risk, but correct usage is `getUser()` (server validation) in Server Components and middleware, and `getSession()` only in Client Components where the session is already established.
+
+**Warning signs:**
+- Both parents share a session intermittently after publishing schedule changes.
+- Next.js build logs show ISR for `/dashboard` (no `dynamic = 'force-dynamic'` export).
+- A CDN sits in front of Vercel without `Cache-Control: private, no-store` on auth routes.
+
+**Phase to address:** Auth setup phase, before deploying to production. For this two-user app on Vercel free tier with no CDN, ISR is off by default for dynamic routes — but the explicit export is a safety guarantee worth adding.
+
+---
+
+### M-7: The Supabase Callback Route Is the Only Place to Capture provider_refresh_token — Callback Route Failures Silently Skip Token Storage
+
+**What goes wrong:**
+The `/auth/callback` route handler is the only server-side location where `provider_refresh_token` is present. If this route handler throws an error, encounters a DB constraint, or returns early before the token upsert executes, the token is silently lost. The user is still signed in to the app via Supabase Auth (the session cookie is set), but `user_google_tokens` has no entry for them, and GCal sync fails.
+
+The failure is particularly insidious because:
+1. The user sees a successful sign-in (redirect to `/dashboard` works).
+2. Supabase Auth session is valid.
+3. The error only manifests when publishing a schedule change.
+
+**Why it happens:**
+The `exchangeCodeForSession()` call and the `user_google_tokens` upsert are two separate operations. If they are not in an explicit error boundary, a DB write failure (e.g., schema mismatch, wrong column name) silently swallows the token.
+
+**Prevention:**
+```typescript
+// In /auth/callback/route.ts
+const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
+if (sessionError) {
+  // redirect to error page
+}
+
+const { session } = data
+if (session?.provider_refresh_token) {
+  try {
+    await db.insert(userGoogleTokens)
+      .values({ ... })
+      .onConflictDoUpdate({ ... })
+  } catch (err) {
+    // Log loudly — token storage failure = broken GCal sync
+    console.error('[auth/callback] CRITICAL: Failed to store Google refresh token', err)
+    // Decide: redirect to error page, or continue with a banner?
+    // For v1.2, redirect to an error page is safer than silently continuing
+  }
+} else {
+  // provider_refresh_token absent — user already has one stored, or consented without offline scope
+  console.warn('[auth/callback] No provider_refresh_token in session — existing token preserved')
+}
+```
+
+Verify the stored token immediately after the callback in the test suite: sign in with a fresh test account, check `user_google_tokens` row exists, sign in again without `prompt: 'consent'` (simulating re-login), verify existing token was NOT overwritten with null.
+
+**Warning signs:**
+- GCal sync fails for a user immediately after their first sign-in with the new auth stack.
+- `user_google_tokens` is empty even after a successful login.
+- The callback route has no error handling around the DB write for token storage.
+- `console.error` is absent from the token storage path.
+
+**Phase to address:** Callback route implementation, v1.2. Token storage must be tested before the Auth.js `accounts` table is removed.
+
+---
+
+### M-8: Domain Tables Currently Use TEXT IDs — Supabase Auth Uses UUID — No Direct FK Link Exists (LOW RISK, CONFIRM)
+
+**What goes wrong:**
+The existing domain tables (`schedule_entries`, `children`, `schedules`, `gcal_events`) use `TEXT` primary keys generated by `crypto.randomUUID()`. The `users` table in Auth.js also uses `TEXT` IDs. Supabase Auth's `auth.users` table uses `UUID` type.
+
+For v1.2, there is no FK relationship between domain tables and `auth.users` — the app identifies users by `config.parents[].email` (config-driven, not DB-driven). This design is unchanged in v1.2 and poses no FK migration risk. The new `user_google_tokens` table links by email, not by `auth.users.id`.
+
+**Confirm before migration:** Run `SELECT tc.table_name, ccu.table_name AS referenced_table FROM information_schema.table_constraints tc JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name IN ('users', 'accounts', 'sessions');` to verify no domain table holds a FK into the Auth.js `users` table. If any FK exists, it must be handled before dropping the Auth.js schema.
+
+**Phase to address:** Pre-migration audit step.
+
+---
+
+## Original Pitfalls — Calendar Integration and Real-Time
 
 ### Pitfall 1: Refresh Token Not Returned on Subsequent Logins
 
@@ -259,6 +565,8 @@ Shortcuts that seem reasonable but create long-term problems.
 | Keep OAuth app in "Testing" publishing status | Skip verification process | Refresh tokens expire every 7 days; users must re-authorize weekly | Never for real users — move to Production before first external user |
 | Request the full `calendar` scope instead of `calendar.events.owned` | One scope, no thought required | Users see a more alarming permissions screen; harder to pass OAuth verification | Never — use minimum required scope |
 | No reconnection re-fetch after WebSocket drop | Simpler client code | Stale data served as live; edits based on stale state get silently overwritten | Never — always re-fetch on reconnect |
+| Read provider_refresh_token from supabase.auth.getSession() in Server Actions | Familiar session API pattern | Always null outside the initial OAuth callback — token was never there | Never — store tokens in user_google_tokens at callback time |
+| Use service_role Drizzle client for user-facing Server Actions under RLS | Works immediately, no RLS setup needed | RLS policies are silently bypassed — security goal of v1.2 not achieved | Never once RLS is required — use anon key client or set JWT context per transaction |
 
 ---
 
@@ -275,115 +583,45 @@ Common mistakes when connecting to external services.
 | Google Calendar API | All-day event end date equals start date | End date must be the day after the event: a single-day event on April 15 needs `end.date: "2026-04-16"` |
 | Google Calendar API | Using POST (insert) for retries without checking existence | Store the returned event ID; use PATCH/update for existing events, INSERT only for new ones |
 | Google Calendar API | Firing all sync writes concurrently | Serialize with delay or batch to stay within per-minute quota |
-| Google Calendar API | Not storing `extendedProperties.private` with your internal ID | Tag every created event with your custody-day ID so you can find it without a full list scan |
+| Supabase Auth | Reading provider_refresh_token from session in Server Actions | Capture once at `/auth/callback` in `exchangeCodeForSession()` response; store to `user_google_tokens` |
+| Supabase Auth | Using `getSession()` in middleware for route protection | Use `getUser()` in middleware — `getSession()` trusts spoofable cookies |
+| Supabase Auth | Initializing `createServerClient` at module scope | Always initialize inside the request handler body to prevent cross-request session leakage |
+| Supabase RLS | Enabling RLS but using service_role client for all queries | Service_role bypasses RLS entirely; use anon key client for user-authenticated queries |
 | Supabase Realtime | Assuming no changes were missed after reconnect | Re-fetch full schedule window on every reconnect event |
 
 ---
 
-## Performance Traps
+## Phase-Specific Warnings — v1.2 Migration
 
-Patterns that work at small scale but fail as usage grows.
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Synchronous bulk Calendar API calls on publish | UI hangs for 10-60s during large publishes; intermittent 429 errors | Move to async background job with per-event status tracking | Any publish of more than ~20 days |
-| Statistics computed from full table scan on every view | Stats panel is slow for larger date windows | Compute via indexed query on `DATE` column with a covering index on `(child_id, parent_id, status, day)` | Not a concern at 2-user scale; fine for MVP |
-| Re-syncing all calendar events on every publish (not just changed ones) | Quota exhausted on moderate-sized publishes | Track `is_dirty` or `last_synced_at` per custody day; only sync rows that changed since last sync | Any incremental edit-and-publish cycle |
-
----
-
-## Security Mistakes
-
-Domain-specific security issues beyond general web security.
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Storing Google refresh tokens in client-accessible storage (localStorage, cookies without `httpOnly`) | Token theft allows attacker to read/write both parents' Google Calendars | Store refresh tokens server-side only, never sent to the browser |
-| Not validating that the user making a schedule edit belongs to this specific co-parenting pair | User A could edit User C's custody schedule if IDs are enumerable | Enforce at RLS/query level: every custody day write must verify the user is one of the two parents in the household |
-| Accepting any Google account as valid — not restricting to the two known parents | Any Google user who discovers the app URL could register and create a new "household" | Application-layer: after OAuth login, check if the Google user is pre-registered as parent A or B; reject unknown accounts |
-| Logging refresh tokens or access tokens in application logs | Tokens in logs = tokens in log aggregation services = wide exposure | Never log token values; log only token presence (e.g., `refresh_token: [present]`) |
-
----
-
-## UX Pitfalls
-
-Common user experience mistakes in this domain.
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| No indication of real-time connection status | Parent edits thinking they're seeing live data; edits overwritten without notice | Show a subtle "live" / "reconnecting" / "offline" indicator in the schedule header |
-| Calendar sync progress not communicated during large publish | Parent clicks "Publish" and sees a spinner for 30+ seconds with no feedback | Show per-day sync progress, or "Syncing X of Y events to Google Calendar" |
-| Ambiguous "publish" button with no confirmation of scope | Parent accidentally publishes 12 weeks of draft changes | Show summary: "Publishing 14 changes across 2 children for Apr 15 – Jul 15" with a confirm step |
-| No indication when another parent's edit overwrites your recent change | Parent acts on stale data, coordination breaks down | Flash changed cells in the schedule table when a remote update arrives |
-| Refresh token revocation (password change, app uninstall) causes silent calendar sync failure | Custody schedule updates stop appearing in Google Calendar without explanation | Detect 401/403 on sync calls, surface a banner: "Google Calendar connection lost — reconnect your account" |
-
----
-
-## "Looks Done But Isn't" Checklist
-
-Things that appear complete but are missing critical pieces.
-
-- [ ] **Google OAuth:** Appears to work in dev/testing — verify that `access_type=offline` is set and a refresh token is actually stored in the database (not just in session).
-- [ ] **Calendar sync:** Events appear in Google Calendar — verify that each created event has its ID stored in the database AND tagged with `extendedProperties.private` containing your internal day ID.
-- [ ] **Orphan cleanup:** Events are updated when custody changes — verify that when a child moves from parent A to parent B, the old event is DELETED from parent A's calendar (not just a new one created on parent B's).
-- [ ] **All-day event dates:** Events appear on the correct day — verify with a user in UTC+3 and a user in UTC-8 that the same day renders identically in both Google Calendars.
-- [ ] **Reconnect behavior:** Real-time updates appear live — verify that if you close the laptop lid and reopen it 5 minutes later, the schedule re-fetches current state before accepting new edits.
-- [ ] **OAuth publishing status:** Calendar sync works in testing — verify the Google Cloud Console shows "Production" (not "Testing") publishing status before giving app to real users.
-- [ ] **Draft/publish state:** Publish button works — verify that re-publishing an already-published day calls `events.patch` (not `events.insert`, which would create a duplicate).
-- [ ] **Statistics:** Stats panel shows correct numbers — verify the query counts days by the `DATE` column value, not by timestamp-derived date.
-
----
-
-## Recovery Strategies
-
-When pitfalls occur despite prevention, how to recover.
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Duplicate calendar events | MEDIUM | Query Google Calendar for all events with your internal `extendedProperties` tag; identify duplicates by same day/child/parent; delete extras; update database IDs |
-| Orphaned calendar events (missing from DB) | MEDIUM | Run a reconciliation script: for each DB row with a non-null `gcal_event_id`, verify the event still exists in Google Calendar; for events not in DB, search by `extendedProperties` tag and re-link or delete |
-| Lost refresh token (user must re-authorize) | LOW | Implement "Reconnect Google Calendar" button that forces `prompt=consent`; one-time user action |
-| Partial sync after rate limit hit | LOW | Per-event `gcal_synced_at` tracking means re-running sync only retries unsynced rows; no full resync needed |
-| Wrong dates on calendar events (UTC vs local date bug) | HIGH | Requires data migration: delete all Google Calendar events, fix the `DATE` column type in DB, re-sync everything |
-| OAuth app stuck in Testing mode (7-day token expiry) | MEDIUM | Update publishing status to Production in Google Cloud Console; affected users must re-authorize once |
-
----
-
-## Pitfall-to-Phase Mapping
-
-How roadmap phases should address these pitfalls.
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Refresh token not stored on re-login | Auth setup | Verify DB has `refresh_token` column; confirm token is stored after OAuth callback; confirm existing token is NOT overwritten with null |
-| 7-day token expiry in Testing mode | Pre-launch / deployment | Verify Google Cloud Console shows Production publishing status |
-| OAuth sensitive scope verification | Auth setup (start process early) | Verify OAuth consent screen passes without "unverified app" warning for non-test-user accounts |
-| Duplicate events from retried inserts | Calendar sync implementation | Verify: re-running sync on already-synced days does not create new events |
-| Orphaned events on custody reassignment | Calendar sync implementation | Verify: changing a day from parent A to parent B deletes the old event from parent A's calendar |
-| Date rendered on wrong day due to UTC/local mismatch | Data model design | Verify: schema uses `DATE` type; test with users in different timezones; confirm calendar shows same date for both |
-| Stale data after WebSocket reconnect | Real-time collaboration | Verify: simulate disconnect (disable network 30s), reconnect, confirm schedule re-fetches |
-| Silent overwrite without visual feedback | Real-time collaboration | Verify: two browser sessions, one edits a cell, other session sees cell flash as updated |
-| Draft/publish implemented as boolean flags | Data model design | Verify: schema has single `status` enum, not `is_draft`/`is_published` booleans |
-| Rate limit hit during bulk publish | Calendar sync implementation | Verify: publishing a 12-week window completes without 429 errors; per-event sync status tracked in DB |
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| OAuth callback route | provider_refresh_token unavailable outside callback (M-1) | Capture and persist to `user_google_tokens` immediately in callback handler |
+| Middleware replacement | Missing double cookie write, module-scope client, getSession() usage (M-2) | Follow exact Supabase SSR middleware pattern; test session refresh across requests |
+| RLS enablement | service_role client silently bypasses all policies (M-3) | Test with anon key / unauthenticated request to verify policies block access |
+| Schema cleanup | FK constraint order on Auth.js table drop (M-4) | Drop in order: verificationTokens → sessions → accounts → users; or use CASCADE |
+| Deployment | Both parents forced re-login; GCal sync unavailable until both sign in (M-5) | Communicate to both parents; deploy when both available to sign in together |
+| Dashboard caching | ISR cache leaks refreshed JWT cookies across users (M-6) | Add `export const dynamic = 'force-dynamic'` to all authenticated route segments |
+| GCal token handoff | v1.2 sync reads `user_google_tokens`, not old `accounts` table (M-1, M-7) | Build and test new `buildGCalClient()` before dropping Auth.js schema |
 
 ---
 
 ## Sources
 
-- Google OAuth 2.0 for Web Server Applications (official, verified): https://developers.google.com/identity/protocols/oauth2/web-server
+- Supabase Docs — Login with Google (official): https://supabase.com/docs/guides/auth/social-login/auth-google
+- Supabase Docs — Server-Side Auth for Next.js (official): https://supabase.com/docs/guides/auth/server-side/nextjs
+- Supabase Docs — Advanced SSR Auth Guide (official): https://supabase.com/docs/guides/auth/server-side/advanced-guide
+- Supabase Docs — Row Level Security (official): https://supabase.com/docs/guides/database/postgres/row-level-security
+- Drizzle ORM Docs — RLS support (official): https://orm.drizzle.team/docs/rls
+- GitHub: supabase/supabase-js#934 — provider_refresh_token missing after session refresh (by-design): https://github.com/supabase/supabase-js/issues/934
+- GitHub: supabase/auth#1387 — Cross-origin refreshing of provider_token not allowed: https://github.com/supabase/auth/issues/1387
+- GitHub: supabase/supabase#21490 — PKCE flow messes with provider_token refresh: https://github.com/supabase/supabase/issues/21490
+- GitHub: orgs/supabase/discussions#22653 — How to store provider_refresh_token: https://github.com/orgs/supabase/discussions/22653
+- rphlmr/drizzle-supabase-rls — Community RLS+Drizzle pattern: https://github.com/rphlmr/drizzle-supabase-rls
+- MakerKit — Using Drizzle as Supabase client (RLS pattern, January 2025): https://makerkit.dev/docs/next-supabase-turbo/recipes/drizzle-supabase
+- Google OAuth 2.0 for Web Server Applications (official): https://developers.google.com/identity/protocols/oauth2/web-server
 - Google Calendar API Scopes (official): https://developers.google.com/workspace/calendar/api/auth
-- Google Sensitive Scope Verification (official): https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification
-- Google Calendar Sync Guide — sync tokens, 410 handling, incremental sync (official): https://developers.google.com/workspace/calendar/api/guides/sync
-- Google Calendar API Events Reference — date vs dateTime fields (official): https://developers.google.com/workspace/calendar/api/v3/reference/events
-- Google Calendar Extended Properties Guide (official): https://developers.google.com/workspace/calendar/api/guides/extended-properties
-- Google Calendar API Quota Management (official): https://developers.google.com/workspace/calendar/api/guides/quota
-- Google Automatic OAuth Token Revocation on Password Change (official): https://support.google.com/a/answer/6328616
-- Supabase Realtime Limits (official): https://supabase.com/docs/guides/realtime/limits
-- Supabase Realtime Authorization / RLS (official): https://supabase.com/docs/guides/realtime/authorization
-- Google OAuth Testing Mode 7-day expiry (community, corroborated by multiple sources): https://forums.homeseer.com/forum/internet-or-network-related-plug-ins/internet-or-network-discussion/ak-google-calendar-alexbk66/1545936-refresh-token-expires-in-7-days-if-oauth-consent-screen-publishing-status-is-testing
-- Nango Blog — "invalid_grant: Token has been expired or revoked" patterns (community, MEDIUM confidence): https://nango.dev/blog/google-oauth-invalid-grant-token-has-been-expired-or-revoked
 
 ---
 
 *Pitfalls research for: Co-parenting custody scheduling app with Google Calendar integration (vuoroasuminen)*
-*Researched: 2026-04-04*
+*Original research: 2026-04-04 | v1.2 migration supplement: 2026-05-09*
