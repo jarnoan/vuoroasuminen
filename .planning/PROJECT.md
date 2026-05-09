@@ -4,7 +4,19 @@
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing.
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables.
+
+## Current Milestone: v1.2 Supabase Auth Migration
+
+**Goal:** Replace Auth.js v5 with Supabase Auth to unify the auth stack and enable Row Level Security on all domain tables.
+
+**Target features:**
+- Supabase Google OAuth replaces Auth.js v5 + DrizzleAdapter
+- Supabase cookie-based session management in Next.js App Router
+- Custom `user_google_tokens` table — stores Google refresh tokens by email; calendar owner model (one owner sufficient for all calendars)
+- `app.ts` gains `ownerEmail` per calendar; GCal sync uses owner's token regardless of which parent publishes
+- Auth.js schema tables removed (users, accounts, sessions, verificationTokens)
+- Row Level Security enabled on all domain tables (authenticated users only for v1.2)
 
 ## Core Value
 

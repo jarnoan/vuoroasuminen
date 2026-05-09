@@ -1,34 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Schedule Window Control
-status: archived
-stopped_at: Milestone v1.1 archived
-last_updated: "2026-05-06T19:44:51.976Z"
-last_activity: 2026-05-06 -- Milestone v1.1 archived
+milestone: v1.2
+milestone_name: Supabase Auth Migration
+status: active
+stopped_at: ~
+last_updated: "2026-05-09T00:00:00.000Z"
+last_activity: 2026-05-09 -- Milestone v1.2 started
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 6
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-27 after v1.1 milestone start)
+See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 07 — clear-entries
+**Current focus:** Defining requirements for v1.2
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-06
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-09
 
 Progress: [██████████] 100%
 
