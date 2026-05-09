@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Supabase Auth Migration
-status: active
-stopped_at: ~
-last_updated: "2026-05-09T00:00:00.000Z"
-last_activity: 2026-05-09 -- Roadmap created for v1.2
+status: planning
+stopped_at: Phase 8 context gathered
+last_updated: "2026-05-09T10:58:09.505Z"
+last_activity: 2026-05-09 — Roadmap created; v1.2 phases 8–10 defined
 progress:
   total_phases: 3
   completed_phases: 0
@@ -108,6 +108,6 @@ Items carried forward from v1.1 milestone close (2026-05-06):
 
 ## Session Continuity
 
-Last session: 2026-05-09
-Stopped at: Roadmap created for v1.2 (phases 8–10 defined)
-Resume file: None
+Last session: --stopped-at
+Stopped at: Phase 8 context gathered
+Resume file: --resume-file
