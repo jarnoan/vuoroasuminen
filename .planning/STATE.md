@@ -5,9 +5,9 @@ milestone_name: Supabase Auth Migration
 status: active
 stopped_at: ~
 last_updated: "2026-05-09T00:00:00.000Z"
-last_activity: 2026-05-09 -- Milestone v1.2 started
+last_activity: 2026-05-09 -- Roadmap created for v1.2
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,34 +21,32 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Defining requirements for v1.2
+**Current focus:** Phase 8 — Supabase Auth Stack (ready to plan)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-09
+Phase: 8 of 10 (Supabase Auth Stack)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-05-09 — Roadmap created; v1.2 phases 8–10 defined
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-**Velocity (v1.0 reference):**
+**Velocity (v1.1 reference):**
 
-- Total plans completed: 18
-- v1.0 phases: 4 phases across 9 plans
+- Total plans completed: 27 (v1.0: 9, v1.1: 9 across 3 phases)
 
-**By Phase (v1.1):**
+**By Phase (v1.2):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 05 | 4 | - | - |
-| 06 | 2 | - | - |
-| 07 | 3 | - | - |
+| 08 | TBD | - | - |
+| 09 | TBD | - | - |
+| 10 | TBD | - | - |
 
 *Updated after each plan completion*
-| Phase 05 P04 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -56,13 +54,16 @@ Progress: [██████████] 100%
 
 All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
-Key decisions to preserve in v1.1 work:
+Key decisions and constraints for v1.2 work:
 
-- Split Auth.js config pattern must not be changed
-- `prompt:consent + access_type:offline` on every Google sign-in must be preserved
-- VIEW-04 per-user storage strategy (localStorage vs DB user_preferences table) — deferred to Phase 5 planning
-- "Unassigned" state representation (null parent field vs deleted row) — deferred to Phase 7 planning
-- ViewToolbar wired between header and publish bar in DashboardShell; today-button.tsx deleted
+- `prompt:consent + access_type:offline` on every Google sign-in MUST be preserved — solved real `invalid_grant` bug in v1.0
+- `provider_refresh_token` is available exactly once: inside `/auth/callback` during `exchangeCodeForSession`; never readable from later `getSession()` calls
+- Middleware must use `getUser()` (not `getSession()`) for route protection — `getSession()` trusts a spoofable cookie
+- Supabase client must NOT be initialized at module scope in middleware — Vercel warm instances share module scope and can leak sessions between users
+- `withRLS` wrapper uses `set_config(..., TRUE)` (transaction-local) — never `FALSE`, which persists for the connection and leaks auth context
+- GCal sync and `user_google_tokens` reads always use the admin Drizzle connection (service_role), not `withRLS`
+- Auth.js table drop order: `verificationTokens` → `sessions` → `accounts` → `users` (FK chain)
+- GATE between Phase 8 and Phase 9: sign in end-to-end + confirm token row exists + confirm GCal sync works BEFORE enabling RLS
 
 ### Pending Todos (Operational — pre-deploy)
 
@@ -70,6 +71,10 @@ Key decisions to preserve in v1.1 work:
 - Start Google OAuth app verification process (3–5 business day wait)
 - Upgrade Supabase to Pro before sharing with real users (free tier pauses after 1 week inactivity)
 - CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending
+- Configure Google OAuth redirect URI in Google Cloud Console to point to `https://<ref>.supabase.co/auth/v1/callback` (Supabase's auth server), NOT the Next.js `/auth/callback`
+- Add `https://*.vercel.app/auth/callback` to Supabase allowlist if preview deployments are used
+- Add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (required for admin Drizzle connection)
+- Coordinate simultaneous re-sign-in by both parents immediately after Phase 10 deployment — auth cookies are incompatible with Auth.js; GCal sync fails until both parents have new Supabase sessions
 
 ### Blockers/Concerns
 
@@ -77,7 +82,7 @@ None currently.
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-05-06:
+Items carried forward from v1.1 milestone close (2026-05-06):
 
 | Category | Item | Status |
 |----------|------|--------|
@@ -103,8 +108,6 @@ Items acknowledged and deferred at milestone close on 2026-05-06:
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 7 UI-SPEC approved
-Resume file: --resume-file
-
-**Planned Phase:** 07 (clear-entries) — 3 plans — 2026-05-06T18:10:50.400Z
+Last session: 2026-05-09
+Stopped at: Roadmap created for v1.2 (phases 8–10 defined)
+Resume file: None

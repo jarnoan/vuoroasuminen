@@ -57,10 +57,21 @@
 
 ## Traceability
 
-| Requirement | Phase |
-|-------------|-------|
-| SAUTH-01–07, GCAL-01–02, RLS-04 | Phase 8 |
-| RLS-01–03 | Phase 9 |
-| CLEAN-01–03 | Phase 10 |
-
-*Filled by roadmapper.*
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SAUTH-01 | Phase 8 | Pending |
+| SAUTH-02 | Phase 8 | Pending |
+| SAUTH-03 | Phase 8 | Pending |
+| SAUTH-04 | Phase 8 | Pending |
+| SAUTH-05 | Phase 8 | Pending |
+| SAUTH-06 | Phase 8 | Pending |
+| SAUTH-07 | Phase 8 | Pending |
+| GCAL-01 | Phase 8 | Pending |
+| GCAL-02 | Phase 8 | Pending |
+| RLS-01 | Phase 9 | Pending |
+| RLS-02 | Phase 9 | Pending |
+| RLS-03 | Phase 9 | Pending |
+| RLS-04 | Phase 9 | Pending |
+| CLEAN-01 | Phase 10 | Pending |
+| CLEAN-02 | Phase 10 | Pending |
+| CLEAN-03 | Phase 10 | Pending |
