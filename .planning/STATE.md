@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Supabase Auth Migration
-status: planning
-stopped_at: Phase 8 context gathered
-last_updated: "2026-05-09T10:58:09.505Z"
-last_activity: 2026-05-09 — Roadmap created; v1.2 phases 8–10 defined
+status: executing
+stopped_at: Phase 8 UI-SPEC approved
+last_updated: "2026-05-09T17:52:41.408Z"
+last_activity: 2026-05-09 -- Phase 08 execution started
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 8
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 8 — Supabase Auth Stack (ready to plan)
+**Current focus:** Phase 08 — supabase-auth-stack
 
 ## Current Position
 
-Phase: 8 of 10 (Supabase Auth Stack)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-05-09 — Roadmap created; v1.2 phases 8–10 defined
+Phase: 08 (supabase-auth-stack) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 08
+Last activity: 2026-05-09 -- Phase 08 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -109,5 +109,7 @@ Items carried forward from v1.1 milestone close (2026-05-06):
 ## Session Continuity
 
 Last session: --stopped-at
-Stopped at: Phase 8 context gathered
+Stopped at: Phase 8 UI-SPEC approved
 Resume file: --resume-file
+
+**Planned Phase:** 8 (Supabase Auth Stack) — 8 plans — 2026-05-09T17:50:44.764Z
