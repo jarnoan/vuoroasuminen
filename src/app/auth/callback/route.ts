@@ -48,27 +48,33 @@ export async function GET(request: NextRequest) {
   const providerRefreshToken = data.session.provider_refresh_token
   const userEmail = data.session.user.email
 
+  console.log("[auth/callback] provider_refresh_token present:", !!providerRefreshToken, "email:", userEmail)
+
   if (!providerRefreshToken || !userEmail) {
+    console.log("[auth/callback] missing provider_refresh_token or email → redirecting to /auth/error")
     return NextResponse.redirect(new URL("/auth/error", request.url))
   }
 
-  // D-11: write via the admin Drizzle connection (DATABASE_URL bypasses RLS).
-  // onConflictDoUpdate handles re-sign-ins as upserts on the email PK,
-  // avoiding race conditions if the user signs in twice in quick succession.
-  await db
-    .insert(userGoogleTokens)
-    .values({
-      email: userEmail,
-      refreshToken: providerRefreshToken,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: userGoogleTokens.email,
-      set: {
+  try {
+    await db
+      .insert(userGoogleTokens)
+      .values({
+        email: userEmail,
         refreshToken: providerRefreshToken,
         updatedAt: new Date(),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: userGoogleTokens.email,
+        set: {
+          refreshToken: providerRefreshToken,
+          updatedAt: new Date(),
+        },
+      })
+    console.log("[auth/callback] token row upserted for", userEmail)
+  } catch (err) {
+    console.error("[auth/callback] db insert failed:", err)
+    return NextResponse.redirect(new URL("/auth/error", request.url))
+  }
 
   return response
 }

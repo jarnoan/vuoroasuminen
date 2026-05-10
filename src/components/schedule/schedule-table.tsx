@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -91,10 +91,14 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
     }
   }, [])
 
+  // Keep ref in sync so the effect below never has onDaysChange in its deps
+  const onDaysChangeRef = useRef(onDaysChange)
+  useLayoutEffect(() => { onDaysChangeRef.current = onDaysChange })
+
   // Notify parent of days changes (optimistic updates, realtime, initial mount)
   useEffect(() => {
-    onDaysChange?.(days)
-  }, [days, onDaysChange])
+    onDaysChangeRef.current?.(days)
+  }, [days])
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
     // Optimistic update
