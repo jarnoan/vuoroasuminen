@@ -1,17 +1,32 @@
-import NextAuth from "next-auth"
-import authConfig from "./auth.config"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware"
 
-const { auth } = NextAuth(authConfig)
+export async function middleware(request: NextRequest) {
+  // CRITICAL (D-10): create the response and Supabase client INSIDE the handler.
+  // Module-scope clients leak sessions between users on Vercel warm instances.
+  const response = NextResponse.next()
+  const supabase = createSupabaseMiddlewareClient(request, response)
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth
-  const isOnHome = req.nextUrl.pathname === "/"
+  // CRITICAL (D-09): getUser() validates the JWT server-side. getSession() trusts
+  // a spoofable cookie and MUST NOT be used for route protection.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!isLoggedIn && !isOnHome) {
-    return Response.redirect(new URL("/", req.url))
+  const pathname = request.nextUrl.pathname
+  const isOnHome = pathname === "/"
+  const isOnAuthRoute = pathname.startsWith("/auth/")
+
+  if (!user && !isOnHome && !isOnAuthRoute) {
+    return NextResponse.redirect(new URL("/", request.url))
   }
-})
+
+  return response
+}
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Pitfall 4: exclude api/auth (NOT just api) so the Auth.js [...nextauth] route
+  // handler at /api/auth/* keeps working while Auth.js coexists in Phase 8.
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 }
