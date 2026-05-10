@@ -2,7 +2,9 @@
 // Generates src/config/app.ts from environment variables at build time.
 // Required env vars: APP_FATHER_NAME, APP_FATHER_EMAIL, APP_FATHER_CALENDAR_ID,
 //   APP_MOTHER_NAME, APP_MOTHER_EMAIL, APP_MOTHER_CALENDAR_ID,
-//   APP_CHILDREN (comma-separated), APP_START_DATE, APP_FIRST_PARENT
+//   APP_CHILDREN (comma-separated), APP_START_DATE, APP_FIRST_PARENT,
+//   APP_CALENDAR_OWNER_EMAIL (Phase 8 D-01: email whose user_google_tokens row
+//   provides the GCal token for both calendars; same email goes on both parent entries).
 
 const fs = require("fs")
 const path = require("path")
@@ -17,6 +19,7 @@ const required = [
   "APP_CHILDREN",
   "APP_START_DATE",
   "APP_FIRST_PARENT",
+  "APP_CALENDAR_OWNER_EMAIL",
 ]
 
 const missing = required.filter((k) => !process.env[k])
@@ -39,6 +42,7 @@ export interface AppConfig {
     name: string
     email: string
     calendarId: string
+    ownerEmail: string
   }>
   children: string[]
   startDate: string
@@ -52,12 +56,14 @@ const config: AppConfig = {
       name: ${JSON.stringify(process.env.APP_FATHER_NAME)},
       email: ${JSON.stringify(process.env.APP_FATHER_EMAIL)},
       calendarId: ${JSON.stringify(process.env.APP_FATHER_CALENDAR_ID)},
+      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL)},
     },
     {
       id: "mother",
       name: ${JSON.stringify(process.env.APP_MOTHER_NAME)},
       email: ${JSON.stringify(process.env.APP_MOTHER_EMAIL)},
       calendarId: ${JSON.stringify(process.env.APP_MOTHER_CALENDAR_ID)},
+      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL)},
     },
   ],
   children: ${JSON.stringify(children)},

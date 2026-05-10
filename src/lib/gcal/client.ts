@@ -1,43 +1,43 @@
 import { google } from "googleapis"
 import type { calendar_v3 } from "googleapis"
 import { db } from "@/db"
-import { accounts } from "@/db/schema/auth"
-import { users } from "@/db/schema/auth"
-import { eq, and } from "drizzle-orm"
+import { userGoogleTokens } from "@/db/schema/tokens"
+import { eq } from "drizzle-orm"
 
 /**
- * Build an authenticated googleapis Calendar client for the given parent.
+ * Build an authenticated googleapis Calendar client for the given calendar owner.
  *
- * Token lookup strategy (per D-03, corrected from CONTEXT.md):
- * - accounts.providerAccountId stores Google's numeric sub ID, NOT the email.
- * - Join users → accounts on userId, filter by users.email.
+ * Token lookup strategy (Phase 8 D-01, D-11):
+ * - user_google_tokens stores Google refresh tokens captured by /auth/callback.
+ * - Lookup is by email (PK on user_google_tokens), regardless of which parent
+ *   triggered publish — the calendar owner's token is always used.
+ * - Reads via the admin Drizzle connection (DATABASE_URL) — bypasses RLS,
+ *   which is correct because Phase 9 RLS policies will restrict user_google_tokens
+ *   reads to the row owner; the GCal sync runs server-side with full DB access.
  *
- * Token exchange strategy (per D-04, consistent with auth.ts jwt callback):
+ * Token exchange strategy (preserved from v1.0):
  * - Call Google token endpoint manually with the stored refresh_token.
  * - Pass access_token + expiry_date to setCredentials so googleapis does not
- *   attempt a second auto-refresh that could fail silently if expiry_date is absent.
+ *   attempt a second auto-refresh that could fail silently if expiry_date is absent
+ *   (Issue #2350).
  */
 export async function buildGCalClient(
-  parentEmail: string
+  ownerEmail: string
 ): Promise<calendar_v3.Calendar> {
   const [row] = await db
-    .select({ refresh_token: accounts.refresh_token })
-    .from(accounts)
-    .innerJoin(users, eq(accounts.userId, users.id))
-    .where(
-      and(
-        eq(users.email, parentEmail),
-        eq(accounts.provider, "google")
-      )
-    )
+    .select({ refreshToken: userGoogleTokens.refreshToken })
+    .from(userGoogleTokens)
+    .where(eq(userGoogleTokens.email, ownerEmail))
     .limit(1)
 
-  if (!row?.refresh_token) {
-    console.error(`[GCal] No refresh token found for ${parentEmail}`)
-    throw new Error("Calendar authentication required. Please sign in with Google again.")
+  if (!row?.refreshToken) {
+    console.error(`[GCal] No refresh token found for ${ownerEmail}`)
+    throw new Error(
+      `No refresh token found for ${ownerEmail}. Calendar owner must sign in.`
+    )
   }
 
-  // Exchange refresh_token for a fresh access_token (same pattern as auth.ts lines 32-47)
+  // Exchange refresh_token for a fresh access_token (same pattern as auth.ts jwt callback)
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -45,17 +45,21 @@ export async function buildGCalClient(
       client_id: process.env.AUTH_GOOGLE_ID!,
       client_secret: process.env.AUTH_GOOGLE_SECRET!,
       grant_type: "refresh_token",
-      refresh_token: row.refresh_token,
+      refresh_token: row.refreshToken,
     }),
   })
 
   if (!tokenResponse.ok) {
     const errBody = await tokenResponse.text()
-    console.error(`[GCal] Token exchange failed for ${parentEmail} (HTTP ${tokenResponse.status}): ${errBody}`)
-    throw new Error("Calendar authentication failed. Please sign in with Google again.")
+    console.error(
+      `[GCal] Token exchange failed for ${ownerEmail} (HTTP ${tokenResponse.status}): ${errBody}`
+    )
+    throw new Error(
+      `Calendar authentication failed for ${ownerEmail}. Owner must sign in again.`
+    )
   }
 
-  const { access_token, expires_in } = await tokenResponse.json() as {
+  const { access_token, expires_in } = (await tokenResponse.json()) as {
     access_token: string
     expires_in: number
   }

@@ -157,7 +157,7 @@ async function syncParentCalendar(
   existingGcalRows: GcalRow[],
   childNameMap: Map<string, string>
 ): Promise<ParentSyncResult> {
-  const calendar = await buildGCalClient(parent.email)
+  const calendar = await buildGCalClient(parent.ownerEmail)
   let created = 0
   let deleted = 0
 
