@@ -53,12 +53,12 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   5. Dashboard shows a dismissible warning banner when the calendar owner's token row is absent
   6. GATE — these five criteria must all be verified before Phase 9 begins; RLS must not be enabled until GCal sync is confirmed working against `user_google_tokens`
 **Plans**: 8 plans
-  - [ ] 08-01-PLAN.md — Drizzle schema for user_google_tokens + db client registration
-  - [ ] 08-02-PLAN.md — Supabase server + middleware client helpers (cookie-wired)
-  - [ ] 08-03-PLAN.md — [BLOCKING] db:push to create user_google_tokens table
-  - [ ] 08-04-PLAN.md — Middleware + OAuth callback route + error page + sign-in button + home page
-  - [ ] 08-05-PLAN.md — Header + signOutAction + requireAuthorizedParent on Supabase getUser()
-  - [ ] 08-06-PLAN.md — AppConfig.ownerEmail + buildGCalClient(ownerEmail) + sync.ts owner refactor
+  - [x] 08-01-PLAN.md — Drizzle schema for user_google_tokens + db client registration
+  - [x] 08-02-PLAN.md — Supabase server + middleware client helpers (cookie-wired)
+  - [x] 08-03-PLAN.md — [BLOCKING] db:push to create user_google_tokens table
+  - [x] 08-04-PLAN.md — Middleware + OAuth callback route + error page + sign-in button + home page
+  - [x] 08-05-PLAN.md — Header + signOutAction + requireAuthorizedParent on Supabase getUser()
+  - [x] 08-06-PLAN.md — AppConfig.ownerEmail + buildGCalClient(ownerEmail) + sync.ts owner refactor
   - [ ] 08-07-PLAN.md — Dashboard owner-token warning banner (shadcn Alert)
   - [ ] 08-08-PLAN.md — [GATE] Human verification of all 5 success criteria before Phase 9
 **UI hint**: yes
