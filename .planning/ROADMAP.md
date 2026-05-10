@@ -35,7 +35,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 **Milestone Goal:** Replace Auth.js v5 with Supabase Auth and enable Row Level Security on all domain tables.
 
-- [ ] **Phase 8: Supabase Auth Stack** - Wire Supabase Auth in parallel with Auth.js (non-destructive); validate end-to-end before proceeding
+- [x] **Phase 8: Supabase Auth Stack** - Wire Supabase Auth in parallel with Auth.js (non-destructive); validate end-to-end before proceeding
 - [ ] **Phase 9: Row Level Security** - Enable RLS on all domain tables; enforce authenticated access only
 - [ ] **Phase 10: Auth.js Removal** - Drop Auth.js tables, uninstall packages, remove dead config and imports
 
@@ -60,7 +60,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   - [x] 08-05-PLAN.md — Header + signOutAction + requireAuthorizedParent on Supabase getUser()
   - [x] 08-06-PLAN.md — AppConfig.ownerEmail + buildGCalClient(ownerEmail) + sync.ts owner refactor
   - [x] 08-07-PLAN.md — Dashboard owner-token warning banner (shadcn Alert)
-  - [ ] 08-08-PLAN.md — [GATE] Human verification of all 5 success criteria before Phase 9
+  - [x] 08-08-PLAN.md — [GATE] Human verification of all 5 success criteria before Phase 9 ✓ PASSED 2026-05-10
 **UI hint**: yes
 
 ### Phase 9: Row Level Security
