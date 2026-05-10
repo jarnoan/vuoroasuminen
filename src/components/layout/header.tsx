@@ -1,12 +1,18 @@
 import React from "react"
-import { auth } from "@/auth"
+import Image from "next/image"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { signOutAction } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
 
 export default async function Header({ children }: { children?: React.ReactNode }) {
-  const session = await auth()
-  if (!session?.user) return null
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
+  const fullName = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "Käyttäjä"
 
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b">
@@ -15,16 +21,16 @@ export default async function Header({ children }: { children?: React.ReactNode 
       </div>
       <div className="flex items-center gap-4">
         {children}
-        {session.user.image && (
+        {avatarUrl && (
           <Image
-            src={session.user.image}
-            alt={session.user.name ?? "Käyttäjä"}
+            src={avatarUrl}
+            alt={fullName}
             width={32}
             height={32}
             className="rounded-full"
           />
         )}
-        <span className="text-sm">{session.user.name}</span>
+        <span className="text-sm">{fullName}</span>
         <form action={signOutAction}>
           <Button variant="outline" size="sm" type="submit">
             Kirjaudu ulos
