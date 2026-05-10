@@ -10,18 +10,18 @@
 
 ### Supabase Auth (SAUTH)
 
-- [ ] **SAUTH-01**: User can sign in with Google via Supabase OAuth flow (PKCE)
-- [ ] **SAUTH-02**: User session persists across page refreshes via Supabase cookie-based session
-- [ ] **SAUTH-03**: User can sign out
-- [ ] **SAUTH-04**: Unauthenticated users are redirected to sign-in when accessing protected routes
-- [ ] **SAUTH-05**: Sign-in always forces `access_type:offline` + `prompt:consent` so Google re-issues a refresh token on every sign-in (prevents `invalid_grant`)
-- [ ] **SAUTH-06**: Google refresh token is captured from the OAuth callback and stored in `user_google_tokens` table; failed capture redirects to an explicit error page (not silent dashboard redirect)
-- [ ] **SAUTH-07**: Dashboard shows a dismissible warning when the calendar owner's token row is absent (GCal sync would fail on publish)
+- [x] **SAUTH-01**: User can sign in with Google via Supabase OAuth flow (PKCE)
+- [x] **SAUTH-02**: User session persists across page refreshes via Supabase cookie-based session
+- [x] **SAUTH-03**: User can sign out
+- [x] **SAUTH-04**: Unauthenticated users are redirected to sign-in when accessing protected routes
+- [x] **SAUTH-05**: Sign-in always forces `access_type:offline` + `prompt:consent` so Google re-issues a refresh token on every sign-in (prevents `invalid_grant`)
+- [x] **SAUTH-06**: Google refresh token is captured from the OAuth callback and stored in `user_google_tokens` table; failed capture redirects to an explicit error page (not silent dashboard redirect)
+- [x] **SAUTH-07**: Dashboard shows a dismissible warning when the calendar owner's token row is absent (GCal sync would fail on publish)
 
 ### GCal Owner Model (GCAL)
 
-- [ ] **GCAL-01**: GCal sync uses `ownerEmail` from calendar config to look up credentials, regardless of which parent triggers publish
-- [ ] **GCAL-02**: `app.ts` calendar config includes an `ownerEmail` field per calendar entry
+- [x] **GCAL-01**: GCal sync uses `ownerEmail` from calendar config to look up credentials, regardless of which parent triggers publish
+- [x] **GCAL-02**: `app.ts` calendar config includes an `ownerEmail` field per calendar entry
 
 ### Row Level Security (RLS)
 
@@ -59,15 +59,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SAUTH-01 | Phase 8 | Pending |
-| SAUTH-02 | Phase 8 | Pending |
-| SAUTH-03 | Phase 8 | Pending |
-| SAUTH-04 | Phase 8 | Pending |
-| SAUTH-05 | Phase 8 | Pending |
-| SAUTH-06 | Phase 8 | Pending |
-| SAUTH-07 | Phase 8 | Pending |
-| GCAL-01 | Phase 8 | Pending |
-| GCAL-02 | Phase 8 | Pending |
+| SAUTH-01 | Phase 8 | Complete |
+| SAUTH-02 | Phase 8 | Complete |
+| SAUTH-03 | Phase 8 | Complete |
+| SAUTH-04 | Phase 8 | Complete |
+| SAUTH-05 | Phase 8 | Complete |
+| SAUTH-06 | Phase 8 | Complete |
+| SAUTH-07 | Phase 8 | Complete |
+| GCAL-01 | Phase 8 | Complete |
+| GCAL-02 | Phase 8 | Complete |
 | RLS-01 | Phase 9 | Pending |
 | RLS-02 | Phase 9 | Pending |
 | RLS-03 | Phase 9 | Pending |

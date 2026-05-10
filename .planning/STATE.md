@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Supabase Auth Migration
-status: executing
+status: ready_to_plan
 stopped_at: Phase 8 complete — GATE passed 2026-05-10
 last_updated: "2026-05-10T09:00:00.000Z"
 last_activity: 2026-05-10 — Phase 08 GATE passed, Phase 9 unblocked
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 8
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 08 — COMPLETE (GATE passed 2026-05-10)
+Phase: 9
 Next: Phase 09 — Row Level Security
-Status: Phase 08 complete, Phase 09 ready to plan
+Status: Ready to plan
 
 Progress: [███░░░░░░░] 33%
 
@@ -35,7 +35,7 @@ Progress: [███░░░░░░░] 33%
 
 **Velocity (v1.1 reference):**
 
-- Total plans completed: 27 (v1.0: 9, v1.1: 9 across 3 phases)
+- Total plans completed: 35 (v1.0: 9, v1.1: 9 across 3 phases)
 
 **By Phase (v1.2):**
 
@@ -44,6 +44,7 @@ Progress: [███░░░░░░░] 33%
 | 08 | TBD | - | - |
 | 09 | TBD | - | - |
 | 10 | TBD | - | - |
+| 8 | 8 | - | - |
 
 *Updated after each plan completion*
 

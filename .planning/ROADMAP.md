@@ -96,6 +96,6 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 5. View Window Control | v1.1 | 4/4 | Complete | 2026-05-04 |
 | 6. Extend Schedule | v1.1 | 2/2 | Complete | 2026-05-05 |
 | 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
-| 8. Supabase Auth Stack | v1.2 | 0/? | Not started | - |
+| 8. Supabase Auth Stack | v1.2 | 8/8 | Complete    | 2026-05-10 |
 | 9. Row Level Security | v1.2 | 0/? | Not started | - |
 | 10. Auth.js Removal | v1.2 | 0/? | Not started | - |
