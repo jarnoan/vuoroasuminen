@@ -59,7 +59,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   - [x] 08-04-PLAN.md — Middleware + OAuth callback route + error page + sign-in button + home page
   - [x] 08-05-PLAN.md — Header + signOutAction + requireAuthorizedParent on Supabase getUser()
   - [x] 08-06-PLAN.md — AppConfig.ownerEmail + buildGCalClient(ownerEmail) + sync.ts owner refactor
-  - [ ] 08-07-PLAN.md — Dashboard owner-token warning banner (shadcn Alert)
+  - [x] 08-07-PLAN.md — Dashboard owner-token warning banner (shadcn Alert)
   - [ ] 08-08-PLAN.md — [GATE] Human verification of all 5 success criteria before Phase 9
 **UI hint**: yes
 
