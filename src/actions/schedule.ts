@@ -3,7 +3,7 @@
 import { db } from "@/db"
 import { scheduleEntries, schedules, children } from "@/db/schema/domain"
 import { and, eq, gte, lte } from "drizzle-orm"
-import { auth } from "@/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { ParentId } from "@/config/app"
 import config from "@/config/app"
 import { getWindowBounds, generateDefaultEntries } from "@/lib/schedule/generate-default"
@@ -14,12 +14,15 @@ import type { SyncResult } from "@/lib/gcal/sync"
 const VALID_PARENT_IDS: ParentId[] = ["father", "mother"]
 
 async function requireAuthorizedParent() {
-  const session = await auth()
-  const email = session?.user?.email
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const email = user?.email
   if (!email) throw new Error("Not authenticated")
   const isAuthorized = config.parents.some((p) => p.email === email)
   if (!isAuthorized) throw new Error("Forbidden")
-  return { session, email }
+  return { user, email }
 }
 
 export async function toggleCell(entryId: string, newParentId: ParentId) {
