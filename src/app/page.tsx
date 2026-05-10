@@ -1,10 +1,13 @@
-import { auth } from "@/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import SignInButton from "@/components/sign-in-button"
 
 export default async function Home() {
-  const session = await auth()
-  if (session?.user) redirect("/dashboard")
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (user) redirect("/dashboard")
 
   return (
     <main className="flex min-h-screen items-center justify-center">
