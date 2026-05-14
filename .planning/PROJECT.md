@@ -47,6 +47,9 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ User can specify explicit end date when extending — v1.1
 - ✓ User can clear a single cell to unassigned (empty) — v1.1
 - ✓ User can select a date range and clear all child assignments within it — v1.1
+- ✓ Row Level Security enabled on all 5 domain tables (children, schedules, schedule_entries, gcal_events, user_google_tokens) — v1.2 Phase 9
+- ✓ Unauthenticated PostgREST requests return empty arrays (anon blocked by RLS) — v1.2 Phase 9
+- ✓ Realtime subscription authenticated via JWT before channel subscribe (race condition fixed) — v1.2 Phase 9
 
 ### Active
 
