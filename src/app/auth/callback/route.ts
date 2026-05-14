@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
-import { db } from "@/db"
-import { userGoogleTokens } from "@/db/schema/tokens"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -55,26 +53,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/error", request.url))
   }
 
-  try {
-    await db
-      .insert(userGoogleTokens)
-      .values({
+  const { error: upsertError } = await supabase
+    .from('user_google_tokens')
+    .upsert(
+      {
         email: userEmail,
-        refreshToken: providerRefreshToken,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: userGoogleTokens.email,
-        set: {
-          refreshToken: providerRefreshToken,
-          updatedAt: new Date(),
-        },
-      })
-    console.log("[auth/callback] token row upserted for", userEmail)
-  } catch (err) {
-    console.error("[auth/callback] db insert failed:", err)
+        refresh_token: providerRefreshToken,   // snake_case — raw DB column name
+        updated_at: new Date().toISOString(),  // snake_case — raw DB column name
+      },
+      { onConflict: 'email' },
+    )
+
+  if (upsertError) {
+    console.error("[auth/callback] token upsert failed:", upsertError)
     return NextResponse.redirect(new URL("/auth/error", request.url))
   }
+  console.log("[auth/callback] token row upserted for", userEmail)
 
   return response
 }
