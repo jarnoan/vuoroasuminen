@@ -73,9 +73,9 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. Each user can read and write only their own row in `user_google_tokens`; attempting to access the other parent's row returns no data
   4. Supabase Realtime live updates continue to work correctly for both parents after the authenticated JWT is passed to the subscription
 **Plans**: 4 plans
-  - [ ] 09-01-PLAN.md — Consolidate browser Supabase client to @supabase/ssr re-export + update RealtimeProvider and sign-in-button callers (RLS-04 client side)
-  - [ ] 09-02-PLAN.md — Switch OAuth callback token upsert from admin Drizzle to authenticated Supabase client (RLS-03 write path)
-  - [ ] 09-03-PLAN.md — Author supabase/policies.sql with ENABLE RLS + 19 policies + supabase_realtime publication ALTER
+  - [x] 09-01-PLAN.md — Consolidate browser Supabase client to @supabase/ssr re-export + update RealtimeProvider and sign-in-button callers (RLS-04 client side)
+  - [x] 09-02-PLAN.md — Switch OAuth callback token upsert from admin Drizzle to authenticated Supabase client (RLS-03 write path)
+  - [x] 09-03-PLAN.md — Author supabase/policies.sql with ENABLE RLS + 19 policies + supabase_realtime publication ALTER
   - [ ] 09-04-PLAN.md — [BLOCKING] Human applies policies.sql in Supabase Dashboard + UAT verifies RLS-01..RLS-04 + GCal regression
 
 ### Phase 10: Auth.js Removal
@@ -101,5 +101,5 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 6. Extend Schedule | v1.1 | 2/2 | Complete | 2026-05-05 |
 | 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete    | 2026-05-10 |
-| 9. Row Level Security | v1.2 | 0/4 | Planned | - |
+| 9. Row Level Security | v1.2 | 3/4 | Executing | - |
 | 10. Auth.js Removal | v1.2 | 0/? | Not started | - |
