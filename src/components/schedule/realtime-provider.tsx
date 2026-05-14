@@ -40,34 +40,44 @@ export function RealtimeProvider({ children, onEntryChange }: RealtimeProviderPr
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     )
 
-    const channel = supabase
-      .channel("schedule-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",        // INSERT and UPDATE
-          schema: "public",
-          table: "schedule_entries",
-        },
-        (payload: { new: Record<string, unknown> }) => {
-          const row = payload.new as RealtimePayload["new"]
-          if (!row || typeof row.id !== "string" || typeof row.child_id !== "string" || typeof row.day !== "string") return
-          if (!VALID_PARENT_IDS.includes(row.parent_id as ParentId)) return
-          if (!VALID_STATUSES.includes(row.status as "draft" | "published")) return
-          onEntryChangeRef.current({
-            id: row.id,
-            childId: row.child_id,
-            day: row.day,
-            parentId: row.parent_id as ParentId,
-            status: row.status as "draft" | "published",
-            notes: row.notes,
-          })
-        }
-      )
-      .subscribe()
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let cancelled = false
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return
+      if (session?.access_token) {
+        supabase.realtime.setAuth(session.access_token)
+      }
+      channel = supabase
+        .channel("schedule-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "schedule_entries",
+          },
+          (payload: { new: Record<string, unknown> }) => {
+            const row = payload.new as RealtimePayload["new"]
+            if (!row || typeof row.id !== "string" || typeof row.child_id !== "string" || typeof row.day !== "string") return
+            if (!VALID_PARENT_IDS.includes(row.parent_id as ParentId)) return
+            if (!VALID_STATUSES.includes(row.status as "draft" | "published")) return
+            onEntryChangeRef.current({
+              id: row.id,
+              childId: row.child_id,
+              day: row.day,
+              parentId: row.parent_id as ParentId,
+              status: row.status as "draft" | "published",
+              notes: row.notes,
+            })
+          }
+        )
+        .subscribe()
+    })
 
     return () => {
-      supabase.removeChannel(channel)
+      cancelled = true
+      if (channel) supabase.removeChannel(channel)
     }
   }, [])
 
