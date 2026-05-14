@@ -45,9 +45,8 @@ export function RealtimeProvider({ children, onEntryChange }: RealtimeProviderPr
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return
-      if (session?.access_token) {
-        supabase.realtime.setAuth(session.access_token)
-      }
+      if (!session?.access_token) return
+      supabase.realtime.setAuth(session.access_token)
       channel = supabase
         .channel("schedule-changes")
         .on(
