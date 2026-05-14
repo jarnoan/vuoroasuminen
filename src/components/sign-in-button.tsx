@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button"
 
 export default function SignInButton() {
   async function handleSignIn() {
-    const supabase = createBrowserClient()
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
