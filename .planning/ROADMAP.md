@@ -36,7 +36,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Milestone Goal:** Replace Auth.js v5 with Supabase Auth and enable Row Level Security on all domain tables.
 
 - [x] **Phase 8: Supabase Auth Stack** - Wire Supabase Auth in parallel with Auth.js (non-destructive); validate end-to-end before proceeding
-- [ ] **Phase 9: Row Level Security** - Enable RLS on all domain tables; enforce authenticated access only
+- [x] **Phase 9: Row Level Security** - Enable RLS on all domain tables; enforce authenticated access only (completed 2026-05-14)
 - [x] **Phase 10: Auth.js Removal** - Drop Auth.js tables, uninstall packages, remove dead config and imports (completed 2026-05-15)
 
 ## Phase Details
@@ -76,7 +76,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   - [x] 09-01-PLAN.md — Consolidate browser Supabase client to @supabase/ssr re-export + update RealtimeProvider and sign-in-button callers (RLS-04 client side)
   - [x] 09-02-PLAN.md — Switch OAuth callback token upsert from admin Drizzle to authenticated Supabase client (RLS-03 write path)
   - [x] 09-03-PLAN.md — Author supabase/policies.sql with ENABLE RLS + 19 policies + supabase_realtime publication ALTER
-  - [ ] 09-04-PLAN.md — [BLOCKING] Human applies policies.sql in Supabase Dashboard + UAT verifies RLS-01..RLS-04 + GCal regression
+  - [x] 09-04-PLAN.md — [BLOCKING] Human applies policies.sql in Supabase Dashboard + UAT verifies RLS-01..RLS-04 + GCal regression ✓ PASSED 2026-05-14
 
 ### Phase 10: Auth.js Removal
 **Goal**: Auth.js is fully removed — packages uninstalled, schema tables dropped, all import sites cleaned
@@ -105,5 +105,5 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 6. Extend Schedule | v1.1 | 2/2 | Complete | 2026-05-05 |
 | 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete    | 2026-05-10 |
-| 9. Row Level Security | v1.2 | 3/4 | Executing | - |
+| 9. Row Level Security | v1.2 | 4/4 | Complete    | 2026-05-14 |
 | 10. Auth.js Removal | v1.2 | 4/4 | Complete    | 2026-05-15 |
