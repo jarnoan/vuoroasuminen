@@ -10,6 +10,11 @@ export default defineConfig({
       PARENT_FATHER_CALENDAR_ID: "father-calendar@group.calendar.google.com",
       PARENT_MOTHER_CALENDAR_ID: "mother-calendar@group.calendar.google.com",
     },
+    // Exclude abandoned parallel-agent git worktrees that still contain old source
+    exclude: [
+      "**/node_modules/**",
+      "**/.{git,claude}/**",
+    ],
   },
   resolve: {
     alias: [
