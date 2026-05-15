@@ -6,16 +6,15 @@ A shared web application for co-parents to plan and track which children stay wi
 
 v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables.
 
-## Current Milestone: v1.3 (Planning)
+## Current Milestone: v1.3 Vercel Deployment
 
-**Previous milestone:** v1.2 Supabase Auth Migration — shipped 2026-05-15  
-Auth.js fully replaced by Supabase Auth; RLS on all 5 domain tables; both parents on new stack.
+**Goal:** Deploy vuoroasuminen to production on Vercel with fully separated preview and production environments.
 
-**Next milestone goals (candidates):**
-- Deploy to Vercel (production URL, env vars, OAuth redirect URIs)
-- Finnish date format improvements
-- Address Phase 9 code review findings (CR-01 Realtime guard, WR-02 DELETE policies, WR-03 policies.sql idempotency)
-- Git history scrub for `src/config/app.ts` (real emails in tracked file)
+**Target features:**
+- Two separate Supabase projects — one for staging/preview, one for production (different DB, auth config, service role keys)
+- Vercel deployment with Preview and Production environments (per-environment env vars wired to correct Supabase project)
+- Google OAuth configured correctly per environment (redirect URIs, Supabase Auth callback URLs)
+- App live at a production URL accessible to both parents
 
 ## Core Value
 
