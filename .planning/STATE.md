@@ -97,6 +97,7 @@ Items carried forward to v1.3:
 | verification_gap | Phase 07: 07-VERIFICATION.md | human_needed — v1.1 era |
 | quick_task | 260420-qex-deploy-this-app | pending — plan stale (refs old Auth.js env vars); needs replan for v1.2 stack |
 | quick_task | 260421-finnish-date-formats | pending — no plan yet |
+| quick_task | 20260515-env-local-dedup | complete — removed 9 unused APP_* vars from .env.local |
 
 Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
 - 260406-oca, 260406-ogw, 260407-r3q, 260407-rbx, 260407-rim
