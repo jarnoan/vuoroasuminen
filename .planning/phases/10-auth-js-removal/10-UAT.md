@@ -30,9 +30,8 @@ result: pass
 
 ### 5. GCal Publish Round-Trip
 expected: Click "Julkaise" (Publish). The events appear in the signed-in parent's Google Calendar. No errors shown in the UI.
-result: issue
-reported: "Maximum update depth exceeded in ScheduleTable.useEffect at schedule-table.tsx:100 — onDaysChangeRef.current?.(days) inside useEffect with [days] dependency"
-severity: major
+result: pass
+note: "Initially failed — Maximum update depth exceeded (useEffect notification loop). Fixed by lifting days state to DashboardShell + adding PARENT_FATHER_EMAIL/PARENT_MOTHER_EMAIL to .env.local."
 
 ### 6. Old Auth Routes Return 404
 expected: Visit `/api/auth/signin` (or any `/api/auth/*` URL). The browser shows a 404 response — no NextAuth handler exists anymore.
@@ -41,17 +40,11 @@ result: pass
 ## Summary
 
 total: 6
-passed: 5
-issues: 1
+passed: 6
+issues: 0
 pending: 0
 skipped: 0
 
 ## Gaps
 
-- truth: "Click Julkaise — events appear in Google Calendar, no errors in UI"
-  status: failed
-  reason: "User reported: Maximum update depth exceeded in ScheduleTable.useEffect at schedule-table.tsx:100 — onDaysChangeRef.current?.(days) inside useEffect with [days] dependency"
-  severity: major
-  test: 5
-  artifacts: [src/components/schedule/schedule-table.tsx]
-  missing: []
+[none — all issues resolved during UAT]
