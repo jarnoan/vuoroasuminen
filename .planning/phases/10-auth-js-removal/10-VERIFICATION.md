@@ -1,20 +1,16 @@
 ---
 phase: 10-auth-js-removal
-verified: 2026-05-15T15:51:17Z
-status: gaps_found
-score: 3/4 must-haves verified
+verified: 2026-05-15T16:30:00Z
+status: passed
+score: 4/4 must-haves verified
 overrides_applied: 0
-gaps:
-  - truth: "next-auth and @auth/drizzle-adapter are absent from package.json (dependencies) and from node_modules"
-    status: partial
-    reason: "Both packages are absent from package.json and package-lock.json, but physically remain on disk in node_modules/ as extraneous packages. npm ls --depth=0 reports them as 'extraneous'. npm uninstall removed the package.json entries but did not prune the node_modules directories. No source file imports them and the production build is clean, but the PLAN must_have explicitly requires them absent from node_modules."
-    artifacts:
-      - path: "node_modules/next-auth"
-        issue: "Directory present on disk (version 5.0.0-beta.30); npm marks it extraneous — not in package.json or package-lock.json but physically importable via Node.js module resolution"
-      - path: "node_modules/@auth/drizzle-adapter"
-        issue: "Directory present on disk (version 1.11.1); npm marks it extraneous"
-    missing:
-      - "Run `npm prune` to remove extraneous packages from node_modules, then verify `test -d node_modules/next-auth` returns non-zero"
+re_verification:
+  previous_status: gaps_found
+  previous_score: 3/4
+  gaps_closed:
+    - "next-auth and @auth/drizzle-adapter absent from node_modules (npm prune removed extraneous packages)"
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Both parents re-signed in and GCal publish round-trip succeeds"
     expected: "Operator confirms both parents can sign in via Supabase OAuth, dashboard loads, 'Julkaise' triggers GCal event creation, /api/auth/* returns 404"
@@ -24,9 +20,9 @@ human_verification:
 # Phase 10: Auth.js Removal Verification Report
 
 **Phase Goal:** Auth.js is fully removed — packages uninstalled, schema tables dropped, all import sites cleaned
-**Verified:** 2026-05-15T15:51:17Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-05-15T16:30:00Z
+**Status:** passed
+**Re-verification:** Yes — after gap closure (npm prune removed extraneous node_modules)
 
 ## Goal Achievement
 
@@ -34,7 +30,7 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|---------|
-| SC1 | `next-auth` and `@auth/drizzle-adapter` absent from `package.json` and `node_modules` | PARTIAL | Absent from package.json and package-lock.json; still present on disk in node_modules/ as extraneous packages (npm ls shows "extraneous") |
+| SC1 | `next-auth` and `@auth/drizzle-adapter` absent from `package.json` and `node_modules` | VERIFIED | Absent from package.json and package-lock.json; `npm prune` run on 2026-05-15 physically removed both directories — `test -d node_modules/next-auth` and `test -d node_modules/@auth/drizzle-adapter` both exit non-zero |
 | SC2 | Auth.js DB tables (`verificationTokens`, `sessions`, `accounts`, `users`) dropped; no orphaned FK constraints | VERIFIED | 10-01-DROP.sql exists with 4-table FK-reverse-order transaction; SUMMARY confirms post-drop verification returned 0 rows; db:push confirms no schema changes |
 | SC3 | All Auth.js env vars (`AUTH_SECRET`, `NEXTAUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`) removed from source and deployment config | VERIFIED | grep across all tracked .ts/.tsx/.js/.json/.example files returns zero matches; GOOGLE_CLIENT_ID/SECRET correctly present in src/env.ts, src/lib/gcal/client.ts, .env.example |
 | SC4 | Both parents re-signed in under new auth stack; GCal sync works on first publish | VERIFIED (human) | Operator approved on 2026-05-15 per 10-04-SUMMARY.md; not re-verifiable programmatically |
@@ -52,7 +48,7 @@ Additional plan-level truths:
 | P7 | src/lib/gcal/client.ts reads GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET | VERIFIED | 4 call sites confirmed: process.env.GOOGLE_CLIENT_ID and process.env.GOOGLE_CLIENT_SECRET each appear twice; no AUTH_GOOGLE_* remains |
 | P8 | package.json has no db:clear-tokens script | VERIFIED | `node -e` check: `db:clear-tokens in scripts: false` |
 
-**Score:** 3/4 ROADMAP success criteria verified (SC4 verified via operator approval on file; SC1 partial due to extraneous node_modules)
+**Score:** 4/4 ROADMAP success criteria verified
 
 ### Required Artifacts
 
@@ -65,7 +61,7 @@ Additional plan-level truths:
 | `src/env.ts` | Runtime env validation without Auth.js vars | VERIFIED | EXISTS; REQUIRED_ENV_VARS has 5 entries: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY |
 | `src/lib/gcal/client.ts` | GCal OAuth2 client using renamed env vars | VERIFIED | EXISTS; process.env.GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET at all 4 call sites |
 | `.env.example` | Public template with no Auth.js vars | VERIFIED | EXISTS; GOOGLE_CLIENT_ID= and GOOGLE_CLIENT_SECRET= present; AUTH_GOOGLE_*, AUTH_SECRET, AUTH_URL absent |
-| `package.json` | Dependencies without Auth.js packages | PARTIAL | next-auth and @auth/drizzle-adapter absent from dependencies section; however extraneous copies remain in node_modules/ |
+| `package.json` | Dependencies without Auth.js packages | VERIFIED | next-auth and @auth/drizzle-adapter absent from dependencies section; node_modules directories removed via npm prune |
 
 ### Key Link Verification
 
@@ -88,14 +84,14 @@ Not applicable — Phase 10 contains no data-rendering components. All artifacts
 | All tests pass | `npx vitest run` | PASS (33) FAIL (0) | PASS |
 | No Auth.js source imports remain | `grep -rn "next-auth|@auth/drizzle-adapter|@/auth" src/` | zero matches | PASS |
 | Middleware matcher excludes api/auth | `grep "matcher" src/middleware.ts` | `["/((?!_next/static|_next/image|favicon.ico).*)"]` | PASS |
-| node_modules/next-auth absent | `test -d node_modules/next-auth` | EXISTS (extraneous) | FAIL |
-| node_modules/@auth/drizzle-adapter absent | `test -d node_modules/@auth/drizzle-adapter` | EXISTS (extraneous) | FAIL |
+| node_modules/next-auth absent | `test -d node_modules/next-auth` | ABSENT (exits non-zero) | PASS |
+| node_modules/@auth/drizzle-adapter absent | `test -d node_modules/@auth/drizzle-adapter` | ABSENT (exits non-zero) | PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|---------|
-| CLEAN-01 | 10-02, 10-03, 10-04 | `next-auth` and `@auth/drizzle-adapter` packages uninstalled | PARTIAL | Absent from package.json/lock; extraneous in node_modules/ — `npm prune` needed |
+| CLEAN-01 | 10-02, 10-03, 10-04 | `next-auth` and `@auth/drizzle-adapter` packages uninstalled | SATISFIED | Absent from package.json/lock; node_modules directories removed via `npm prune` on 2026-05-15 |
 | CLEAN-02 | 10-01, 10-02, 10-04 | Auth.js DB tables dropped in FK-reverse order | SATISFIED | DROP.sql committed; SUMMARY confirms 0 auth tables post-drop; db:push is a no-op |
 | CLEAN-03 | 10-03, 10-04 | Auth.js env vars removed; Google OAuth vars renamed to GOOGLE_CLIENT_* | SATISFIED | Zero AUTH_* in any tracked source; GOOGLE_CLIENT_* present in all three required locations |
 
@@ -103,11 +99,7 @@ All three CLEAN requirement IDs declared in the plans are present in REQUIREMENT
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| `node_modules/next-auth/` | — | Package on disk despite removal from package.json (extraneous) | Warning | npm marked as extraneous; no source file imports it; production build is clean; `npm prune` removes it |
-
-No TODO/FIXME/PLACEHOLDER comments found in any Phase 10 modified files. No stub return patterns. No empty handlers.
+No anti-patterns found. No TODO/FIXME/PLACEHOLDER comments in any Phase 10 modified files. No stub return patterns. No empty handlers. Extraneous node_modules packages resolved via npm prune.
 
 ### Human Verification Required
 
@@ -119,20 +111,9 @@ No TODO/FIXME/PLACEHOLDER comments found in any Phase 10 modified files. No stub
 
 ### Gaps Summary
 
-**One gap requires action before this phase can be marked fully complete:**
-
-**SC1/CLEAN-01 — Extraneous packages in node_modules**
-
-`npm uninstall` successfully removed `next-auth` and `@auth/drizzle-adapter` from `package.json` and `package-lock.json`, but did not physically delete their directories from `node_modules/`. The directories remain on disk with npm reporting them as "extraneous". No source file imports them, the production build does not reference them, and they cannot be accidentally re-introduced via `npm install` (they are not in the lock file). However:
-
-1. The PLAN 03 must_have explicitly states: absent from `package.json` **and from node_modules**
-2. The PLAN 04 acceptance criteria explicitly states: `test -d node_modules/next-auth` exits non-zero
-3. A developer running `npm ls --depth=0` sees them listed, which is confusing
-4. They are physically importable by Node.js (though no code does so)
-
-**Fix:** Run `npm prune` from the repo root. This is a one-command fix with no other changes needed.
+No gaps remain. The single gap from the initial verification (SC1/CLEAN-01 — extraneous packages in node_modules) was resolved by running `npm prune` on 2026-05-15. Both `node_modules/next-auth` and `node_modules/@auth/drizzle-adapter` are confirmed absent from disk.
 
 ---
 
-_Verified: 2026-05-15T15:51:17Z_
+_Verified: 2026-05-15T16:30:00Z_
 _Verifier: Claude (gsd-verifier)_
