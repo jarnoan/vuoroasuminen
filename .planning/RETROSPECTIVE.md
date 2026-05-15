@@ -109,6 +109,56 @@
 
 ---
 
+## Milestone: v1.2 — Supabase Auth Migration
+
+**Shipped:** 2026-05-15
+**Phases:** 3 (8–10) | **Plans:** 16 | **Timeline:** 6 days (2026-05-09 → 2026-05-15)
+
+### What Was Built
+
+- Supabase Google OAuth (PKCE) replaces Auth.js v5 — cookie session, `getUser()` middleware, sign-out, error page for failed token capture
+- `user_google_tokens` table — captures Google refresh token once in `/auth/callback`; `ownerEmail` per calendar so any parent can publish
+- Dashboard warning banner when calendar owner's token row is absent
+- `supabase/policies.sql` — 5 ENABLE RLS + 19 policies applied to live Supabase project; anon requests now return `[]`
+- Realtime JWT race condition fixed — `RealtimeProvider` awaits `getSession()` + `setAuth()` before subscribing
+- Auth.js fully removed — 4 DB tables dropped (FK order), 6 source files deleted, packages pruned, env vars renamed; both parents re-authenticated on new stack, GCal publish confirmed
+
+### What Worked
+
+- **GATE pattern between phases** — Phase 8 GATE (08-08) and Phase 9 GATE (09-04) enforced sequential verification before each phase unlocked. GCal sync was confirmed working before RLS was enabled; RLS was verified before Auth.js was removed. No regressions across the transition.
+- **Human checkpoint plans** — blocking plans that require human action (08-08, 09-04) were first-class in the roadmap and clearly scoped. The agent creates the template, the human runs the scenario, the agent records the outcome — clean division of labor.
+- **service_role bypass by design** — server-side code (Server Actions, GCal sync) uses admin Drizzle throughout; RLS only applies to browser/Realtime clients. This decision (D-07/D-10) was locked early and never revisited, simplifying every subsequent plan.
+- **`npm prune` post-install hygiene** — `npm uninstall` removed packages from package.json but left node_modules on disk. Catching this in verification (Phase 10 gap) and fixing it with `npm prune` before milestone close kept the artifact clean.
+
+### What Was Inefficient
+
+- **Phase 9 SUMMARY.md not created in original session** — Phase 9 UAT was completed (all results committed to `09-VERIFICATION.md`) but `09-04-SUMMARY.md` was never written. The next session had to reconstruct the plan completion status, re-run the milestone close flow from scratch, and fix ROADMAP.md/STATE.md manually. **SUMMARY.md must be committed before leaving a session.**
+- **STATE.md deferred items table never updated** — 13 quick tasks had been completed (with `{slug}-SUMMARY.md` on disk) but STATE.md still showed them as "missing". The audit tool flagged all 15 at milestone close, requiring triage. Update the deferred items table when quick tasks complete, not at milestone close.
+- **REQUIREMENTS.md traceability not updated during Phase 9** — RLS-01..04 remained "Pending" at milestone close; had to be manually checked before archiving. Third time this pattern has appeared — traceability must be updated at phase completion.
+- **RLS-03 impersonation test incomplete** — Supabase Dashboard "Impersonate user" requires Pro plan. The policy DDL is correct (confirmed via pg_policies) but the end-to-end cross-read test was not performed. Document plan-level environment requirements (Dashboard features, paid tiers) before the human-action plan runs.
+
+### Patterns Established
+
+- **GATE plan as phase terminator** — a blocking `autonomous: false` plan at the end of each phase enforces human sign-off before the next phase starts. Proved its value in v1.2 (caught three bugs during Phase 8 GATE, one during Phase 9 GATE).
+- **`withRLS` wrapper for transaction-local auth context** — `set_config(..., TRUE)` (not FALSE) for transaction-local scope; FALSE persists to connection and leaks auth context across requests.
+- **`gsd-sdk query commit` for planning artifacts** — only commit named planning files, not the entire working tree; prevents accidental staging of secrets or transient files.
+- **vitest glob exclusion for `.claude/`** — abandoned parallel-agent worktrees in `.claude/` can contain stale test files that fail with deleted imports. Add `exclude: ["**/.{git,claude}/**"]` to vitest.config.ts when using parallel execution.
+
+### Key Lessons
+
+1. **Write SUMMARY.md before ending any session that completes a plan.** Without it, the plan shows as incomplete in the next session and requires manual reconstruction of state.
+2. **Update deferred items and traceability at phase completion, not milestone close.** This is the third milestone where stale tracking tables caused unnecessary triage work.
+3. **Document plan-level environment prerequisites.** "Requires Supabase Pro plan" is a blocking dependency that should appear in the plan's `<context>` before the human runs it.
+4. **`npm prune` after `npm uninstall`.** `npm uninstall` updates package.json and lockfile but does not remove directories from node_modules. The verification step must check disk, not just package.json.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 throughout
+- Sessions: ~6 across the milestone (6 days)
+- Notable: 6 days for a complete auth stack migration + RLS enablement + package removal, with zero regressions on GCal sync. The GATE pattern was the key risk mitigation — each dangerous transition had a human-verified checkpoint.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -117,6 +167,7 @@
 |-----------|--------|-------|-------------|------------|
 | v1.0 | 4 | 9 | 12 | First milestone; established all patterns |
 | v1.1 | 3 | 9 | 15 deferred | Pattern reuse (inline panels) as velocity driver |
+| v1.2 | 3 | 16 | 0 new | GATE pattern enforced sequential verification; auth stack replaced cleanly |
 
 ### Cumulative Quality
 
@@ -124,6 +175,7 @@
 |-----------|----------|--------------|----------------|
 | v1.0 | 2,272 | 25/25 | Partial (live env needed) |
 | v1.1 | 3,879 | 9/9 | Partial (live env needed) |
+| v1.2 | 4,079 | 16/16 | Partial (RLS-03 impersonation deferred; human GCal approved) |
 
 ### Top Lessons (Verified Across Milestones)
 

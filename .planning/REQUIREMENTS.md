@@ -25,10 +25,10 @@
 
 ### Row Level Security (RLS)
 
-- [ ] **RLS-01**: RLS enabled on all domain tables (`children`, `schedules`, `schedule_entries`, `gcal_events`) — unauthenticated requests return no data
-- [ ] **RLS-02**: Any authenticated user can read and write all rows on domain tables (v1.2 baseline; per-household isolation is future work)
-- [ ] **RLS-03**: Each user can read and write only their own row in `user_google_tokens`
-- [ ] **RLS-04**: Supabase Realtime subscription uses authenticated Supabase JWT so RLS is enforced on live updates
+- [x] **RLS-01**: RLS enabled on all domain tables (`children`, `schedules`, `schedule_entries`, `gcal_events`) — unauthenticated requests return no data
+- [x] **RLS-02**: Any authenticated user can read and write all rows on domain tables (v1.2 baseline; per-household isolation is future work)
+- [x] **RLS-03**: Each user can read and write only their own row in `user_google_tokens`
+- [x] **RLS-04**: Supabase Realtime subscription uses authenticated Supabase JWT so RLS is enforced on live updates
 
 ### Auth.js Cleanup (CLEAN)
 
@@ -71,10 +71,10 @@
 | SAUTH-07 | Phase 8 | Complete |
 | GCAL-01 | Phase 8 | Complete |
 | GCAL-02 | Phase 8 | Complete |
-| RLS-01 | Phase 9 | Pending |
-| RLS-02 | Phase 9 | Pending |
-| RLS-03 | Phase 9 | Pending |
-| RLS-04 | Phase 9 | Pending |
+| RLS-01 | Phase 9 | Complete |
+| RLS-02 | Phase 9 | Complete |
+| RLS-03 | Phase 9 | Complete |
+| RLS-04 | Phase 9 | Complete |
 | CLEAN-01 | Phase 10 | Complete |
 | CLEAN-02 | Phase 10 | Complete |
 | CLEAN-03 | Phase 10 | Complete |

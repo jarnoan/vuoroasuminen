@@ -6,17 +6,16 @@ A shared web application for co-parents to plan and track which children stay wi
 
 v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables.
 
-## Current Milestone: v1.2 Supabase Auth Migration
+## Current Milestone: v1.3 (Planning)
 
-**Goal:** Replace Auth.js v5 with Supabase Auth to unify the auth stack and enable Row Level Security on all domain tables.
+**Previous milestone:** v1.2 Supabase Auth Migration — shipped 2026-05-15  
+Auth.js fully replaced by Supabase Auth; RLS on all 5 domain tables; both parents on new stack.
 
-**Target features:**
-- Supabase Google OAuth replaces Auth.js v5 + DrizzleAdapter
-- Supabase cookie-based session management in Next.js App Router
-- Custom `user_google_tokens` table — stores Google refresh tokens by email; calendar owner model (one owner sufficient for all calendars)
-- `app.ts` gains `ownerEmail` per calendar; GCal sync uses owner's token regardless of which parent publishes
-- Auth.js schema tables removed (users, accounts, sessions, verificationTokens)
-- Row Level Security enabled on all domain tables (authenticated users only for v1.2)
+**Next milestone goals (candidates):**
+- Deploy to Vercel (production URL, env vars, OAuth redirect URIs)
+- Finnish date format improvements
+- Address Phase 9 code review findings (CR-01 Realtime guard, WR-02 DELETE policies, WR-03 policies.sql idempotency)
+- Git history scrub for `src/config/app.ts` (real emails in tracked file)
 
 ## Core Value
 
@@ -130,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 after Phase 10 (v1.2 Auth.js Removal)*
+*Last updated: 2026-05-15 after v1.2 milestone close*

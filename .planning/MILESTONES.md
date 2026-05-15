@@ -33,3 +33,21 @@
 **Known deferred items at close: 20 (see STATE.md Deferred Items)**
 
 ---
+
+## v1.2 Supabase Auth Migration (Shipped: 2026-05-15)
+
+**Phases completed:** 3 phases (8–10), 16 plans, 50 commits  
+**Files changed:** 37 files (+754 / -534 lines) | Codebase: ~4,079 LOC TypeScript  
+**Timeline:** 6 days (2026-05-09 → 2026-05-15)
+
+**Key accomplishments:**
+
+- Supabase Google OAuth replaces Auth.js v5 — PKCE flow, cookie-based session, route protection via `getUser()`, sign-out, and error page for failed token capture (SAUTH-01..04)
+- Google refresh token captured once in `/auth/callback` → `user_google_tokens` table; GCal sync uses `ownerEmail` per calendar so either parent can publish (SAUTH-05..07, GCAL-01..02)
+- Row Level Security enabled on all 5 domain tables — 19 policies applied via `supabase/policies.sql`; anon requests return `[]`; `user_google_tokens` isolated per-user by JWT email claim (RLS-01..04)
+- Realtime JWT race condition fixed — `RealtimeProvider` now awaits `getSession()` and calls `setAuth(access_token)` before subscribing so live updates use authenticated role (RLS-04)
+- Auth.js fully removed — 4 DB tables dropped (FK order), 6 source files deleted, packages uninstalled + pruned, env vars renamed to `GOOGLE_CLIENT_*`; both parents re-signed-in under Supabase Auth, GCal publish round-trip confirmed (CLEAN-01..03)
+
+**Known deferred items at close: 6 (see STATE.md Deferred Items)**
+
+---
