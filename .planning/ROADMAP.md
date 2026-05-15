@@ -87,7 +87,11 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   2. Auth.js database tables (`verificationTokens`, `sessions`, `accounts`, `users`) are dropped from the database; no orphaned FK constraints remain
   3. All Auth.js environment variables (`AUTH_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`) are removed from `.env` and deployment config
   4. Both parents have re-signed in under the new auth stack and GCal sync works correctly on first publish after deployment
-**Plans**: TBD
+**Plans**: 4 plans
+  - [x] 10-01-PLAN.md — [BLOCKING] Drop Auth.js tables (verificationTokens → sessions → accounts → users) via raw SQL while FK chain is still in source
+  - [x] 10-02-PLAN.md — Delete Auth.js source files (auth.ts, auth.config.ts, [...nextauth] route, next-auth.d.ts, schema/auth.ts, clear-tokens.ts) + fix db/index.ts, middleware.ts, schedule.test.ts
+  - [x] 10-03-PLAN.md — Uninstall next-auth + @auth/drizzle-adapter, rename AUTH_GOOGLE_* env vars to GOOGLE_CLIENT_*, remove AUTH_SECRET/AUTH_URL from env.ts + .env.example, drop db:clear-tokens script
+  - [ ] 10-04-PLAN.md — [BLOCKING] Verify build + tests + db:push green; repo-wide grep gate; human checkpoint for both-parent re-sign-in + GCal publish round-trip
 
 ## Progress
 
@@ -102,4 +106,4 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete    | 2026-05-10 |
 | 9. Row Level Security | v1.2 | 3/4 | Executing | - |
-| 10. Auth.js Removal | v1.2 | 0/? | Not started | - |
+| 10. Auth.js Removal | v1.2 | 0/4 | Planned | - |
