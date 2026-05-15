@@ -50,6 +50,8 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ Row Level Security enabled on all 5 domain tables (children, schedules, schedule_entries, gcal_events, user_google_tokens) — v1.2 Phase 9
 - ✓ Unauthenticated PostgREST requests return empty arrays (anon blocked by RLS) — v1.2 Phase 9
 - ✓ Realtime subscription authenticated via JWT before channel subscribe (race condition fixed) — v1.2 Phase 9
+- ✓ Auth.js fully removed — next-auth + @auth/drizzle-adapter uninstalled, Auth.js DB tables dropped, all import sites cleaned, env vars renamed to GOOGLE_CLIENT_* — v1.2 Phase 10
+- ✓ Both parents re-signed in under Supabase Auth; GCal publish round-trip confirmed post-removal — v1.2 Phase 10
 
 ### Active
 
@@ -77,7 +79,7 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - Two parents share custody of multiple children; children can be split between parents on any day
 - Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- Shipped v1.1 with ~3,879 LOC TypeScript; stack: Next.js 16, Auth.js v5, Drizzle ORM, Supabase, googleapis
+- Shipped v1.2 with Auth.js fully removed; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis
 - Config-based parent/calendar setup (`src/config/app.ts`) — must be updated with real emails before deploying to two users
 - Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
 - Google OAuth app verification takes 3–5 business days — start before sharing with second user
@@ -128,4 +130,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after v1.1 milestone*
+*Last updated: 2026-05-15 after Phase 10 (v1.2 Auth.js Removal)*
