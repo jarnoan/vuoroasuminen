@@ -20,7 +20,7 @@ provides:
   - "Zero Auth.js references in tracked TypeScript/JavaScript source files"
   - "Database confirmed: 5 domain tables present, 0 Auth.js tables present"
   - "vitest exclude pattern for .claude worktrees (prevents false-positive suite failures)"
-  - "PENDING: human operator verification of both-parent re-sign-in + GCal publish round-trip"
+  - "CONFIRMED: human operator verification of both-parent re-sign-in + GCal publish round-trip (approved 2026-05-15)"
 
 affects:
   - production-deployment
@@ -52,14 +52,14 @@ completed: "2026-05-15"
 
 # Phase 10 Plan 04: End-to-End Verification Summary
 
-**Build exits 0, 33 tests pass, db:push confirms no schema changes, zero Auth.js references in tracked source — awaiting human verification of both-parent re-sign-in + GCal publish round-trip**
+**Build exits 0, 33 tests pass, db:push confirms no schema changes, zero Auth.js references in tracked source — operator approved both-parent re-sign-in + GCal publish round-trip on 2026-05-15**
 
 ## Performance
 
 - **Duration:** 6 min
 - **Started:** 2026-05-15T03:03:06Z
-- **Completed:** 2026-05-15T03:08:35Z (automated tasks)
-- **Tasks:** 2 automated complete; 1 pending human verification
+- **Completed:** 2026-05-15T03:08:35Z (automated); human verified 2026-05-15
+- **Tasks:** 3 complete (2 automated + 1 human verified)
 - **Files modified:** 1 (vitest.config.ts)
 
 ## Accomplishments
@@ -67,7 +67,7 @@ completed: "2026-05-15"
 - Task 1: Repo-wide grep gauntlet passed — zero Auth.js references in any tracked `.ts`/`.tsx`/`.js`/`.json` source file
 - Task 2: `npm run build` exits 0 (TypeScript compile successful); `npx vitest run` exits 0 (33 tests pass); `npm run db:push` confirms no schema changes; database has exactly 5 expected domain tables and 0 Auth.js tables
 - Auto-fixed: vitest config updated to exclude `.claude/worktrees/` (abandoned parallel-agent worktrees caused 22 false-positive suite failures)
-- Task 3: Automated setup complete — PENDING human operator verification
+- Task 3: Operator verified — both parents re-signed-in, GCal publish round-trip confirmed, `/api/auth/*` returns 404. Operator reply: **"approved"**
 
 ## Task Commits
 
@@ -161,19 +161,17 @@ user_google_tokens
 
 ## Task 3: Human Checkpoint Status
 
-**STATUS: AWAITING OPERATOR VERIFICATION**
+**STATUS: APPROVED**
 
-The following verification steps must be completed by the operator:
+Verification steps completed by operator:
 
-1. **Father signs in** — fresh incognito window, complete Google OAuth consent, confirm dashboard loads
-2. **Mother signs in** — separate incognito window, same checks
-3. **Publish round-trip** — click "Julkaise", confirm GCal events appear in calendar owner's account
-4. **Middleware regression** — navigate to `/api/auth/anything`, confirm 404 response
-5. **Operator reply** — `approved` or `failed: <details>`
+1. **Father signs in** — confirmed dashboard loads after Google OAuth consent
+2. **Mother signs in** — confirmed dashboard loads after Google OAuth consent
+3. **Publish round-trip** — "Julkaise" clicked, GCal events confirmed in calendar owner's account
+4. **Middleware regression** — `/api/auth/anything` returns 404
+5. **Operator reply** — `approved`
 
-Pre-requisite: Vercel env vars must be renamed (`AUTH_GOOGLE_ID` → `GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_SECRET` → `GOOGLE_CLIENT_SECRET`; remove `AUTH_SECRET` and `AUTH_URL`) before performing sign-in verification.
-
-Operator verification result: **[PENDING]**
+Operator verification result: **approved** (received 2026-05-15)
 
 ## Files Created/Modified
 
@@ -209,7 +207,7 @@ Operator verification result: **[PENDING]**
 | CLEAN-01 | Auth.js source files deleted | ✓ Verified (grep gate: 0 source matches) |
 | CLEAN-02 | Auth.js DB tables dropped | ✓ Verified (db:push no-op; 0 auth tables in pg_tables) |
 | CLEAN-03 | Auth.js env vars removed | ✓ Verified (grep gate: 0 AUTH_GOOGLE_* / AUTH_SECRET in source) |
-| Human Gate | Both parents re-sign-in + GCal sync | PENDING |
+| Human Gate | Both parents re-sign-in + GCal sync | ✓ Approved (2026-05-15) |
 
 ## Known Stubs
 
@@ -232,4 +230,4 @@ No new network endpoints, auth paths, or schema changes introduced. `vitest.conf
 
 ---
 *Phase: 10-auth-js-removal*
-*Completed: 2026-05-15 (automated tasks); Human checkpoint pending*
+*Completed: 2026-05-15 — all tasks done, operator approved*

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Supabase Auth Migration
 status: executing
-stopped_at: "Completed 10-04-PLAN.md automated tasks; checkpoint:human-verify pending for Task 3"
-last_updated: "2026-05-15T03:10:08.569Z"
+stopped_at: Completed 10-04-PLAN.md — operator approved human verification; Phase 10 Auth.js Removal complete
+last_updated: "2026-05-15T15:42:34.032Z"
 progress:
   total_phases: 3
   completed_phases: 2
@@ -68,6 +68,7 @@ Key decisions and constraints for v1.2 work:
 - vitest.config.ts must exclude **/.{git,claude}/** to prevent abandoned parallel-agent worktrees from causing false-positive suite failures
 - db:push verbose mode must be used to confirm no-op; the non-verbose Changes applied message is drizzle-kit completion UX, not DDL execution
 - CLAUDE.md grep hits for @auth/drizzle-adapter and next-auth are documentation artifacts in tech stack evaluation tables — accepted, not active code references
+- Phase 10 complete: Auth.js fully removed — packages uninstalled, DB tables dropped, env vars renamed, both parents re-signed-in via Supabase OAuth, GCal publish round-trip confirmed
 
 ### Pending Todos (Operational — pre-deploy)
 
@@ -112,8 +113,8 @@ Items carried forward from v1.1 milestone close (2026-05-06):
 
 ## Session Continuity
 
-Last session: 2026-05-15T03:10:08.567Z
-Stopped at: Completed 10-04-PLAN.md automated tasks; checkpoint:human-verify pending for Task 3
+Last session: 2026-05-15T15:42:24.317Z
+Stopped at: Completed 10-04-PLAN.md — operator approved human verification; Phase 10 Auth.js Removal complete
 Resume file: None
 
 **Planned Phase:** 10 (Auth.js Removal) — 4 plans — 2026-05-14T20:37:10.042Z
