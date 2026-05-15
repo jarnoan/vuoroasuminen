@@ -17,22 +17,22 @@ const config: AppConfig = {
   parents: [
     {
       id: "father",
-      name: "Father",
+      name: process.env.PARENT_FATHER_NAME ?? "Father",
       email: process.env.PARENT_FATHER_EMAIL!,
       calendarId: process.env.PARENT_FATHER_CALENDAR_ID!,
       ownerEmail: process.env.APP_CALENDAR_OWNER_EMAIL ?? process.env.PARENT_FATHER_EMAIL!,
     },
     {
       id: "mother",
-      name: "Mother",
+      name: process.env.PARENT_MOTHER_NAME ?? "Mother",
       email: process.env.PARENT_MOTHER_EMAIL!,
       calendarId: process.env.PARENT_MOTHER_CALENDAR_ID!,
       ownerEmail: process.env.APP_CALENDAR_OWNER_EMAIL ?? process.env.PARENT_MOTHER_EMAIL!,
     },
   ],
-  children: ["Child1", "Child2"],
-  startDate: "2026-01-05",  // First Monday of the alternating pattern
-  firstParent: "father",
+  children: (process.env.APP_CHILDREN ?? "").split(",").map(s => s.trim()).filter(Boolean),
+  startDate: process.env.APP_START_DATE!,
+  firstParent: (process.env.APP_FIRST_PARENT ?? "father") as ParentId,
 }
 
 export default config

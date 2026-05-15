@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Supabase Auth Migration
-status: complete
-stopped_at: Completed 09-04-PLAN.md — policies.sql applied, all RLS criteria verified; Phase 9 Row Level Security complete
-last_updated: "2026-05-15T18:00:00.000Z"
+milestone: v1.0
+milestone_name: milestone
+status: completed
+stopped_at: Completed 260515-u3b — moved hardcoded config to env vars, app.ts now tracked in git
+last_updated: "2026-05-15T18:55:32.416Z"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -69,6 +69,7 @@ Key decisions and constraints for v1.2 work:
 - db:push verbose mode must be used to confirm no-op; the non-verbose Changes applied message is drizzle-kit completion UX, not DDL execution
 - CLAUDE.md grep hits for @auth/drizzle-adapter and next-auth are documentation artifacts in tech stack evaluation tables — accepted, not active code references
 - Phase 10 complete: Auth.js fully removed — packages uninstalled, DB tables dropped, env vars renamed, both parents re-signed-in via Supabase OAuth, GCal publish round-trip confirmed
+- APP_CHILDREN and APP_START_DATE added to REQUIRED_ENV_VARS — no safe generic default; names and firstParent use fallbacks so they are optional
 
 ### Pending Todos (Operational — pre-deploy)
 
@@ -100,14 +101,15 @@ Items carried forward to v1.3:
 | quick_task | 20260515-env-local-dedup | complete — removed 9 unused APP_* vars from .env.local |
 
 Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
+
 - 260406-oca, 260406-ogw, 260407-r3q, 260407-rbx, 260407-rim
 - 260412-fhd, 260412-fjd, 260412-u66, 260412-ud9, 260412-ut3, 260412-v2m
 - 260420-p95, 260421-translate-ui-to-finnish, 260425-g08
 
 ## Session Continuity
 
-Last session: 2026-05-15T15:42:24.317Z
-Stopped at: Completed 10-04-PLAN.md — operator approved human verification; Phase 10 Auth.js Removal complete
+Last session: 2026-05-15T18:55:27.419Z
+Stopped at: Completed 260515-u3b — moved hardcoded config to env vars, app.ts now tracked in git
 Resume file: None
 
 **Planned Phase:** 10 (Auth.js Removal) — 4 plans — 2026-05-14T20:37:10.042Z
