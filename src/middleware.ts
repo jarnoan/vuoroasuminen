@@ -26,7 +26,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Pitfall 4: exclude api/auth (NOT just api) so the Auth.js [...nextauth] route
-  // handler at /api/auth/* keeps working while Auth.js coexists in Phase 8.
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

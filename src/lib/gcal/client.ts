@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm"
  * - Lookup is by email (PK on user_google_tokens), regardless of which parent
  *   triggered publish — the calendar owner's token is always used.
  * - Reads via the admin Drizzle connection (DATABASE_URL) — bypasses RLS,
- *   which is correct because Phase 9 RLS policies will restrict user_google_tokens
+ *   which is correct because Phase 9 RLS policies restrict user_google_tokens
  *   reads to the row owner; the GCal sync runs server-side with full DB access.
  *
  * Token exchange strategy (preserved from v1.0):
@@ -20,6 +20,11 @@ import { eq } from "drizzle-orm"
  * - Pass access_token + expiry_date to setCredentials so googleapis does not
  *   attempt a second auto-refresh that could fail silently if expiry_date is absent
  *   (Issue #2350).
+ *
+ * Env vars (Phase 10 rename): GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET. These are
+ * the Google OAuth client credentials configured in Google Cloud Console. They are
+ * separate from Supabase Auth — Supabase Dashboard holds its own copy of these for
+ * the sign-in flow; this file uses them directly for the GCal refresh-token exchange.
  */
 export async function buildGCalClient(
   ownerEmail: string
@@ -37,13 +42,13 @@ export async function buildGCalClient(
     )
   }
 
-  // Exchange refresh_token for a fresh access_token (same pattern as auth.ts jwt callback)
+  // Exchange refresh_token for a fresh access_token
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.AUTH_GOOGLE_ID!,
-      client_secret: process.env.AUTH_GOOGLE_SECRET!,
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
       grant_type: "refresh_token",
       refresh_token: row.refreshToken,
     }),
@@ -65,8 +70,8 @@ export async function buildGCalClient(
   }
 
   const oauth2Client = new google.auth.OAuth2(
-    process.env.AUTH_GOOGLE_ID,
-    process.env.AUTH_GOOGLE_SECRET,
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
   )
   // Set both access_token and expiry_date.
   // If only access_token is set without expiry_date, googleapis assumes it is valid

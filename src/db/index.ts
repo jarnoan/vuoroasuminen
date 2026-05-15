@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
-import * as authSchema from "./schema/auth"
 import * as domainSchema from "./schema/domain"
 import * as tokensSchema from "./schema/tokens"
 
@@ -10,7 +9,7 @@ function createDb() {
     ssl: { rejectUnauthorized: false },
   })
   return drizzle(pool, {
-    schema: { ...authSchema, ...domainSchema, ...tokensSchema },
+    schema: { ...domainSchema, ...tokensSchema },
   })
 }
 
