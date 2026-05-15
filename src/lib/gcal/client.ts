@@ -29,6 +29,12 @@ import { eq } from "drizzle-orm"
 export async function buildGCalClient(
   ownerEmail: string
 ): Promise<calendar_v3.Calendar> {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  if (!clientId || !clientSecret) {
+    throw new Error("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not set")
+  }
+
   const [row] = await db
     .select({ refreshToken: userGoogleTokens.refreshToken })
     .from(userGoogleTokens)
@@ -47,8 +53,8 @@ export async function buildGCalClient(
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: "refresh_token",
       refresh_token: row.refreshToken,
     }),
@@ -70,8 +76,8 @@ export async function buildGCalClient(
   }
 
   const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
+    clientId,
+    clientSecret,
   )
   // Set both access_token and expiry_date.
   // If only access_token is set without expiry_date, googleapis assumes it is valid
