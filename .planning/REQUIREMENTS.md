@@ -75,6 +75,6 @@
 | RLS-02 | Phase 9 | Pending |
 | RLS-03 | Phase 9 | Pending |
 | RLS-04 | Phase 9 | Pending |
-| CLEAN-01 | Phase 10 | Pending |
-| CLEAN-02 | Phase 10 | Pending |
-| CLEAN-03 | Phase 10 | Pending |
+| CLEAN-01 | Phase 10 | Complete |
+| CLEAN-02 | Phase 10 | Complete |
+| CLEAN-03 | Phase 10 | Complete |

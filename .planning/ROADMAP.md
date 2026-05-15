@@ -37,7 +37,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 - [x] **Phase 8: Supabase Auth Stack** - Wire Supabase Auth in parallel with Auth.js (non-destructive); validate end-to-end before proceeding
 - [ ] **Phase 9: Row Level Security** - Enable RLS on all domain tables; enforce authenticated access only
-- [ ] **Phase 10: Auth.js Removal** - Drop Auth.js tables, uninstall packages, remove dead config and imports
+- [x] **Phase 10: Auth.js Removal** - Drop Auth.js tables, uninstall packages, remove dead config and imports (completed 2026-05-15)
 
 ## Phase Details
 
@@ -91,7 +91,7 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   - [x] 10-01-PLAN.md — [BLOCKING] Drop Auth.js tables (verificationTokens → sessions → accounts → users) via raw SQL while FK chain is still in source
   - [x] 10-02-PLAN.md — Delete Auth.js source files (auth.ts, auth.config.ts, [...nextauth] route, next-auth.d.ts, schema/auth.ts, clear-tokens.ts) + fix db/index.ts, middleware.ts, schedule.test.ts
   - [x] 10-03-PLAN.md — Uninstall next-auth + @auth/drizzle-adapter, rename AUTH_GOOGLE_* env vars to GOOGLE_CLIENT_*, remove AUTH_SECRET/AUTH_URL from env.ts + .env.example, drop db:clear-tokens script
-  - [ ] 10-04-PLAN.md — [BLOCKING] Verify build + tests + db:push green; repo-wide grep gate; human checkpoint for both-parent re-sign-in + GCal publish round-trip
+  - [x] 10-04-PLAN.md — [BLOCKING] Verify build + tests + db:push green; repo-wide grep gate; human checkpoint for both-parent re-sign-in + GCal publish round-trip
 
 ## Progress
 
@@ -106,4 +106,4 @@ Full archive: [.planning/milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 7. Clear Entries | v1.1 | 3/3 | Complete | 2026-05-06 |
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete    | 2026-05-10 |
 | 9. Row Level Security | v1.2 | 3/4 | Executing | - |
-| 10. Auth.js Removal | v1.2 | 0/4 | Planned | - |
+| 10. Auth.js Removal | v1.2 | 4/4 | Complete    | 2026-05-15 |
