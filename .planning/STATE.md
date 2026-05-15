@@ -87,29 +87,21 @@ None currently.
 
 ## Deferred Items
 
-Items carried forward from v1.1 milestone close (2026-05-06):
+Items carried forward to v1.3:
 
 | Category | Item | Status |
 |----------|------|--------|
-| uat_gap | Phase 07: 07-HUMAN-UAT.md (8 pending scenarios) | partial |
-| verification_gap | Phase 05: 05-VERIFICATION.md | human_needed |
-| verification_gap | Phase 06: 06-VERIFICATION.md | human_needed |
-| verification_gap | Phase 07: 07-VERIFICATION.md | human_needed |
-| quick_task | 260406-oca-fix-publishbutton-disabled-state-after-p | missing |
-| quick_task | 260406-ogw-fix-publishbutton-re-enable-after-new-dr | missing |
-| quick_task | 260407-r3q-fix-inline-use-server-in-header-tsx-brok | missing |
-| quick_task | 260407-rbx-publish-button-does-not-become-disabled | missing |
-| quick_task | 260407-rim-publish-button-still-does-not-become-dis | missing |
-| quick_task | 260412-fhd-fix-missing-key-prop-on-fragment-in-sche | missing |
-| quick_task | 260412-fjd-fix-child-columns-not-showing-after-addi | missing |
-| quick_task | 260412-u66-fix-sign-in-button-compatibility-with-ne | missing |
-| quick_task | 260412-ud9-fix-gcal-sync-invalid-grant-by-persistin | missing |
-| quick_task | 260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp | missing |
-| quick_task | 260412-v2m-add-sync-progress-indicator-to-publish-b | missing |
-| quick_task | 260420-p95-fix-re-sign-in-not-persisting-fresh-oaut | missing |
-| quick_task | 260420-qex-deploy-this-app | missing |
-| quick_task | 260421-finnish-date-formats | missing |
-| quick_task | 260425-g08-address-the-findings-in-security-review | missing |
+| uat_gap | Phase 07: 07-HUMAN-UAT.md (8 pending scenarios) | partial — v1.1 era, low priority |
+| verification_gap | Phase 05: 05-VERIFICATION.md | human_needed — v1.1 era |
+| verification_gap | Phase 06: 06-VERIFICATION.md | human_needed — v1.1 era |
+| verification_gap | Phase 07: 07-VERIFICATION.md | human_needed — v1.1 era |
+| quick_task | 260420-qex-deploy-this-app | pending — plan stale (refs old Auth.js env vars); needs replan for v1.2 stack |
+| quick_task | 260421-finnish-date-formats | pending — no plan yet |
+
+Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
+- 260406-oca, 260406-ogw, 260407-r3q, 260407-rbx, 260407-rim
+- 260412-fhd, 260412-fjd, 260412-u66, 260412-ud9, 260412-ut3, 260412-v2m
+- 260420-p95, 260421-translate-ui-to-finnish, 260425-g08
 
 ## Session Continuity
 
