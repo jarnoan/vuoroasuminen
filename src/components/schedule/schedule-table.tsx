@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react"
+import React, { useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
-import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
+import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
 import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
 
@@ -17,20 +17,14 @@ type RealtimeEntry = {
 }
 
 interface ScheduleTableProps {
-  initialData: DateWindow
+  days: ScheduleDay[]
+  setDays: React.Dispatch<React.SetStateAction<ScheduleDay[]>>
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   publishRef?: React.RefObject<(() => void) | null>
   renderAbove?: (days: ScheduleDay[]) => React.ReactNode
-  onDaysChange?: (days: ScheduleDay[]) => void
 }
 
-export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbove, onDaysChange }: ScheduleTableProps) {
-  const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
-
-  // Re-sync when server refreshes (e.g. after clearRange + router.refresh())
-  useEffect(() => {
-    setDays(initialData.days)
-  }, [initialData])
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAbove }: ScheduleTableProps) {
 
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
@@ -90,15 +84,6 @@ export function ScheduleTable({ initialData, realtimeRef, publishRef, renderAbov
       todayRow.scrollIntoView({ behavior: "instant", block: "center" })
     }
   }, [])
-
-  // Keep ref in sync so the effect below never has onDaysChange in its deps
-  const onDaysChangeRef = useRef(onDaysChange)
-  useLayoutEffect(() => { onDaysChangeRef.current = onDaysChange })
-
-  // Notify parent of days changes (optimistic updates, realtime, initial mount)
-  useEffect(() => {
-    onDaysChangeRef.current?.(days)
-  }, [days])
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
     // Optimistic update

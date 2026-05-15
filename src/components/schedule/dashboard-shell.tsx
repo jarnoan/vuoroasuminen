@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
 import { ViewToolbar } from "./view-toolbar"
@@ -27,16 +27,18 @@ export function DashboardShell({
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const publishRef = useRef<(() => void) | null>(null)
 
+  // Re-sync when server refreshes (e.g. after clearRange + router.refresh())
+  useEffect(() => {
+    setDays(initialData.days)
+  }, [initialData])
+
   const handlePublished = useCallback(() => {
-    // Update DashboardShell's own days state optimistically
     setDays(prev => prev.map(day => ({
       ...day,
       cells: day.cells.map(cell =>
         cell.status === "draft" ? { ...cell, status: "published" as const } : cell
       ),
     })))
-    // Also update ScheduleTable's internal days so CDC events for published cells are no-ops
-    publishRef.current?.()
   }, [])
 
   return (
@@ -48,7 +50,7 @@ export function DashboardShell({
         <PublishButton days={days} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime initialData={initialData} onDaysChange={setDays} publishRef={publishRef} />
+        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
         <ClearPanel />
       </main>
