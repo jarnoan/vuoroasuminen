@@ -1,482 +1,324 @@
-# Supabase Auth in Next.js 15 App Router — Migration Research
+# Features — Vercel Deployment
 
-**Domain:** Auth migration — Auth.js v5 → Supabase Auth  
-**Researched:** 2026-05-09  
-**Scope:** Google OAuth, session management, provider token access, middleware, Server Action guards  
-**Overall confidence:** HIGH — patterns verified against official Supabase docs and Context7 source
-
----
-
-## 1. Sign-In / Sign-Out Flow with Google OAuth
-
-### Flow: PKCE (required for SSR)
-
-`@supabase/ssr` configures all server clients with `flowType: 'pkce'` by default. Implicit flow is only for browser-only SPAs. For Next.js App Router, always use PKCE.
-
-**Sign-in — Server Action (recommended)**
-
-The sign-in action calls `signInWithOAuth` on a server client. Because `signInWithOAuth` returns a redirect URL (it never touches `window.location` on the server), the action reads the URL from the response and redirects via Next.js `redirect()`.
-
-```typescript
-// src/actions/auth.ts
-"use server"
-
-import { createClient } from "@/lib/supabase/server"
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
-
-export async function signInWithGoogle() {
-  const supabase = await createClient()
-  const origin = (await headers()).get("origin")
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-      queryParams: {
-        access_type: "offline",   // requests refresh_token
-        prompt: "consent",        // forces re-consent so Google re-issues refresh_token
-      },
-      scopes: [
-        "openid",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/calendar",
-      ].join(" "),
-    },
-  })
-
-  if (error) throw error
-  redirect(data.url!)
-}
-```
-
-**Sign-out — Server Action**
-
-```typescript
-// src/actions/auth.ts (continued)
-export async function signOutAction() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect("/")
-}
-```
-
-**OAuth callback — Route Handler**
-
-After Google redirects back, Supabase sends the browser to your callback URL with a `?code=` query parameter. The callback route exchanges the code for a session. This is also where `provider_token` and `provider_refresh_token` are available (see section 3).
-
-```typescript
-// src/app/auth/callback/route.ts
-import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get("code")
-  const next = searchParams.get("next") ?? "/dashboard"
-
-  if (code) {
-    const supabase = await createClient()
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error && data.session) {
-      // data.session.provider_token        — Google access_token (short-lived)
-      // data.session.provider_refresh_token — Google refresh_token (long-lived)
-      // Persist to user_google_tokens here (see section 3)
-
-      const forwardedHost = request.headers.get("x-forwarded-host")
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      }
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-  }
-
-  return NextResponse.redirect(`${origin}/auth/error`)
-}
-```
-
-**Callback URL to register in Google Cloud Console:**  
-`https://<your-supabase-project-ref>.supabase.co/auth/v1/callback`  
-(NOT your Next.js app URL — Supabase handles the first leg of the OAuth redirect)
-
-**Redirect URL to allowlist in Supabase Dashboard → Authentication → URL Configuration:**  
-`https://yourdomain.com/auth/callback`  
-Add a wildcard for preview deployments: `https://*.vercel.app/auth/callback`
+**Project:** Vuoroasuminen v1.3
+**Researched:** 2026-05-15
+**Confidence:** HIGH (all claims verified against official Vercel and Supabase docs, current 2026)
 
 ---
 
-## 2. Creating Supabase Clients in App Router
+## Table Stakes (must have for production)
 
-Four distinct contexts, each needs its own client construction.
+These must be done before the app can be considered deployed. Missing any of these = broken auth or wrong database.
 
-### 2a. Reusable server utility (`src/lib/supabase/server.ts`)
+### 1. Two separate Supabase projects exist
 
-Used in Server Components, Server Actions, and Route Handlers. Reads and writes cookies via the Next.js `cookies()` store.
+Create one project for staging/preview and one for production. They have different `project-ref` values, different database contents, different auth configurations, different API keys.
 
-```typescript
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+- Staging project: used by all Vercel Preview deployments (non-`main` branches)
+- Production project: used only by Vercel Production deployments (`main` branch)
 
-export async function createClient() {
-  const cookieStore = await cookies()
+This is the only safe approach. The Supabase Vercel native integration (marketplace) does NOT scope variables per-environment for preview branches on the Hobby plan — it passes production credentials to preview by default. Manual env var configuration is required to get proper isolation.
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // setAll called from a Server Component — cookies cannot be set.
-            // This is safe to ignore: middleware handles the cookie write on
-            // the next request.
-          }
-        },
-      },
-    }
-  )
-}
+### 2. Vercel environment variables wired per environment
+
+Each of the following must be configured twice in Vercel — once scoped to **Production**, once scoped to **Preview** — pointing to the respective Supabase project.
+
+Variables that differ between environments:
+
+| Variable | Production value | Preview value |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<prod-ref>.supabase.co` | `https://<staging-ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | prod anon key | staging anon key |
+| `DATABASE_URL` | prod connection string (port 5432) | staging connection string |
+| `GOOGLE_CLIENT_ID` | prod OAuth client ID | staging OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | prod OAuth client secret | staging OAuth client secret |
+
+Variables that exist only in Production (app config, real user data):
+
+| Variable | Notes |
+|---|---|
+| `PARENT_FATHER_EMAIL` | Real parent email |
+| `PARENT_MOTHER_EMAIL` | Real parent email |
+| `PARENT_FATHER_CALENDAR_ID` | Real Google Calendar ID |
+| `PARENT_MOTHER_CALENDAR_ID` | Real Google Calendar ID |
+| `PARENT_FATHER_NAME` | Display name in UI |
+| `PARENT_MOTHER_NAME` | Display name in UI |
+| `APP_CHILDREN` | Comma-separated real children names |
+| `APP_START_DATE` | Real alternating schedule start date |
+| `APP_FIRST_PARENT` | `father` or `mother` |
+
+`NEXT_PUBLIC_` variables are embedded into the JavaScript bundle at build time — not runtime. Changing them in Vercel settings has no effect on existing deployments. A redeploy is required.
+
+Server-only variables (no `NEXT_PUBLIC_` prefix) are read at runtime and take effect without rebuilding.
+
+### 3. Supabase Auth — Site URL set to the correct app domain
+
+In each Supabase project: Authentication → URL Configuration → Site URL.
+
+This is the default redirect destination after auth when the app does not specify a `redirectTo`. It must be an exact match for the deployment domain.
+
+- Production Supabase project: `https://vuoroasuminen.vercel.app` (or custom domain if configured)
+- Staging Supabase project: `https://vuoroasuminen-git-staging-<team-slug>.vercel.app` (or whatever URL the staging branch resolves to)
+
+Getting this wrong does not prevent login — it causes silent redirect failures to the wrong URL after auth.
+
+### 4. Supabase Auth — Additional redirect URLs allowlist per project
+
+Supabase Auth validates the `redirectTo` parameter against a per-project allowlist before redirecting after authentication. The app currently passes `window.location.origin + "/auth/callback"` as `redirectTo` — this is the correct pattern. It resolves dynamically to the actual domain the browser is on, so no code change is needed per environment.
+
+For the **production** Supabase project, add:
+- `https://vuoroasuminen.vercel.app/auth/callback`
+- `https://vuoroasuminen.vercel.app/**` (broad fallback, covers future routes)
+
+For the **staging** Supabase project, add:
+- `https://vuoroasuminen-git-staging-<team-slug>.vercel.app/auth/callback`
+- `https://*-vuoroasuminen-<team-slug>.vercel.app/**` (wildcard covers all preview deployment URLs)
+- `http://localhost:3000/**` (local development)
+
+Supabase wildcard syntax: `*` matches non-separator characters (not `.` or `/`), `**` matches any sequence. Use `**` after the path separator to cover all sub-paths. Do not use `*` to match subdomains — use the explicit subdomain format or `**` at the domain level.
+
+### 5. Google OAuth — Supabase Auth Google provider configured per project
+
+Each Supabase project needs Google OAuth credentials: Authentication → Providers → Google → enter Client ID + Client Secret.
+
+After enabling, the Supabase dashboard shows a **Callback URL** for that project in the form:
 ```
-
-### 2b. Browser client utility (`src/lib/supabase/client.ts`)
-
-Used in Client Components for Realtime subscriptions. Migrate from the current bare `createClient` (from `@supabase/supabase-js`) to `createBrowserClient` (from `@supabase/ssr`).
-
-```typescript
-import { createBrowserClient } from "@supabase/ssr"
-
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
+https://<project-ref>.supabase.co/auth/v1/callback
 ```
+This is different from the app's `/auth/callback` route. The Supabase callback URL is the internal endpoint that receives the authorization code from Google. The app's `/auth/callback` route is where users land after Supabase processes the code.
 
-`createBrowserClient` uses an internal singleton — no need for the manual singleton the current `src/lib/supabase/client.ts` implements.
+Both are needed; they do different things.
 
-The existing Realtime subscription code in `realtime-provider.tsx` continues to work after this swap; the `channel()` / `postgres_changes` API is unchanged.
+### 6. Google Cloud Console — Authorized redirect URIs registered
 
-### 2c. Middleware client (inline in `src/middleware.ts`)
+Google performs an exact byte-for-byte match on the redirect URI. The Supabase callback URL for each project must be registered as an Authorized redirect URI in the Google Cloud Console for the corresponding OAuth client.
 
-The middleware client is created inline — not from the shared utility — because it must write cookies to both `request.cookies` and `supabaseResponse.cookies`. See section 4.
+For the staging OAuth client:
+- Authorized redirect URIs: `https://<staging-ref>.supabase.co/auth/v1/callback`
+- Authorized JavaScript origins: staging app domain + `http://localhost:3000`
 
-### 2d. Service-role client (for RLS bypass in admin scripts only)
+For the production OAuth client:
+- Authorized redirect URIs: `https://<prod-ref>.supabase.co/auth/v1/callback`
+- Authorized JavaScript origins: production app domain
 
-Use `createClient` from `@supabase/supabase-js` directly with `SUPABASE_SERVICE_ROLE_KEY`. Never expose the service role key to the browser or pass it to `createServerClient`.
+### 7. Production domain working before sharing with second user
+
+The app must be reachable at a stable HTTPS URL. The default Vercel domain `vuoroasuminen.vercel.app` is sufficient for launch. If a custom domain is used, all Supabase Auth URLs (Site URL, additional redirect URLs), Google OAuth origins, and Vercel env vars must reflect the custom domain.
+
+### 8. Supabase production project on paid plan before real-user handoff
+
+Supabase free tier pauses projects after 1 week of inactivity. The production Supabase project must be upgraded to Pro ($25/month) before sharing with the second parent. The staging project can remain on the free tier.
 
 ---
 
-## 3. Accessing Google Provider Tokens Server-Side
+## Environment Variable Strategy
 
-### The critical constraint
+### How Vercel maps deployments to environments
 
-**Supabase does not store provider tokens.** The `auth.users` table in Supabase stores the Supabase session (Supabase access + refresh tokens), but Google's `access_token` and `refresh_token` are not persisted anywhere by Supabase. This is by design — Supabase treats provider tokens as the app's concern.
+| Trigger | Environment | Which env vars are injected |
+|---|---|---|
+| Push to `main` | Production | Variables scoped to Production |
+| Push to any other branch | Preview | Variables scoped to Preview |
+| PR created | Preview | Variables scoped to Preview |
+| `vercel --prod` CLI | Production | Variables scoped to Production |
+| `vercel` CLI (no flag) | Preview | Variables scoped to Preview |
 
-### Where provider tokens appear
+### Setting the same variable for multiple environments
 
-Provider tokens are available **only at the moment of the OAuth callback**, in the session returned by `exchangeCodeForSession`:
+A variable can be set multiple times in Vercel with different scopes. To have `NEXT_PUBLIC_SUPABASE_URL` point to different projects:
 
-```typescript
-const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-// data.session.provider_token          — Google access_token (short-lived, ~1 hour)
-// data.session.provider_refresh_token  — Google refresh_token (long-lived)
-// data.session.user.email              — user's email
-// data.session.user.id                 — Supabase user UUID
-```
+1. Add `NEXT_PUBLIC_SUPABASE_URL` scoped to **Production** → prod project URL
+2. Add `NEXT_PUBLIC_SUPABASE_URL` scoped to **Preview** → staging project URL
 
-They are **not** available later via `getUser()`, `getClaims()`, or `getSession()` on the server — those return only Supabase session data.
+This is the core mechanism for wiring two separate Supabase projects.
 
-### Required: persist tokens in `user_google_tokens` table
+### Branch-specific overrides (Hobby plan staging pattern)
 
-The v1.2 milestone plan already specifies a custom `user_google_tokens` table. Persist immediately in the callback route:
+On the Hobby plan there are no Custom Environments (those require Pro). A `staging` branch can still get dedicated variables by scoping a Preview variable to a specific branch name. Branch-specific variables override same-named Preview variables.
 
-```typescript
-// Inside the callback route handler, after successful exchangeCodeForSession:
-const { provider_token, provider_refresh_token, user } = data.session
+For this project with a two-user app and minimal branching, the simpler model works: all Preview deployments use staging credentials, all Production deployments use production credentials. No branch-specific overrides needed.
 
-if (provider_refresh_token) {
-  // Upsert: re-sign-in updates the stored tokens
-  await supabase.from("user_google_tokens").upsert(
-    {
-      user_id: user.id,
-      email: user.email,
-      google_access_token: provider_token,
-      google_refresh_token: provider_refresh_token,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  )
-}
-```
+### Key system variables Vercel provides automatically
 
-**Why upsert on every sign-in, not just first sign-in:** With `prompt=consent` on every sign-in (required to avoid `invalid_grant`), Google re-issues the refresh token each time. Upsert ensures the stored token is always current.
+| Variable | Scope | Value | Notes |
+|---|---|---|---|
+| `VERCEL_ENV` | Build + runtime | `production`, `preview`, or `development` | Useful for conditional logic |
+| `VERCEL_URL` | Build + runtime | deployment URL without `https://` (e.g., `vuoroasuminen-abc123.vercel.app`) | Unique per deployment commit |
+| `VERCEL_BRANCH_URL` | Build + runtime | branch URL without `https://` | Stable per branch |
+| `VERCEL_PROJECT_PRODUCTION_URL` | Build + runtime | production domain, always set even in preview deployments | Useful for generating canonical OG URLs |
 
-### GCal client migration
+`NEXT_PUBLIC_VERCEL_URL` is the framework-prefixed version, available in client-side code. The current codebase does not need this because `window.location.origin` already resolves correctly at runtime.
 
-The current `buildGCalClient` in `src/lib/gcal/client.ts` reads from the Drizzle `accounts` table (Auth.js schema). After migration, it reads from `user_google_tokens` via the Supabase server client:
+### `NEXT_PUBLIC_` build-time baking
 
-```typescript
-// src/lib/gcal/client.ts (post-migration sketch)
-export async function buildGCalClient(ownerEmail: string) {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("user_google_tokens")
-    .select("google_refresh_token")
-    .eq("email", ownerEmail)
-    .single()
+Variables prefixed `NEXT_PUBLIC_` are inlined into the compiled JavaScript bundle. If you change a `NEXT_PUBLIC_` variable value in the Vercel dashboard, the change does not apply to existing or in-progress deployments — only new deployments pick it up. Server-only variables (without `NEXT_PUBLIC_`) are evaluated at request time, so changes take effect without rebuilding.
 
-  if (error || !data?.google_refresh_token) {
-    throw new Error("Calendar authentication required. Please sign in again.")
-  }
-  // Token exchange logic stays identical to current implementation
-  // (manual POST to https://oauth2.googleapis.com/token)
-}
-```
-
-### Access token freshness
-
-The stored `google_access_token` expires in ~1 hour. The current pattern in `buildGCalClient` — exchange the refresh token on every GCal API call — is correct and should be preserved. Do NOT rely on the stored `google_access_token` for API calls; always exchange the `google_refresh_token` for a fresh one at call time.
-
----
-
-## 4. Middleware Pattern for Session Refresh
-
-The middleware must:
-
-1. Create a Supabase client that writes cookies to both `request.cookies` (so Server Components see the refreshed session) AND `supabaseResponse.cookies` (so the browser receives updated cookies).
-2. Call `supabase.auth.getUser()` to trigger Supabase token refresh if the session is close to expiry.
-3. Protect routes by redirecting unauthenticated users.
-4. Return `supabaseResponse` — never create a new `NextResponse` after the client is set up or cookies will be lost.
-
-```typescript
-// src/middleware.ts
-import { createServerClient } from "@supabase/ssr"
-import { NextResponse, type NextRequest } from "next/server"
-
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          // Write to request so downstream Server Components see fresh cookies
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          // Recreate response with updated request cookies
-          supabaseResponse = NextResponse.next({ request })
-          // Write to response so browser receives updated cookies
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // IMPORTANT: Do not add any code between createServerClient and getUser().
-  // Even an innocent await can cause sessions to desync and users to be
-  // randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const isOnHome = request.nextUrl.pathname === "/"
-  const isOnAuthRoutes = request.nextUrl.pathname.startsWith("/auth")
-
-  if (!user && !isOnHome && !isOnAuthRoutes) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/"
-    return NextResponse.redirect(url)
-  }
-
-  // IMPORTANT: always return supabaseResponse, not a freshly created response.
-  // If you must create a new response, copy cookies:
-  //   myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  return supabaseResponse
-}
-
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-}
-```
-
-### `getUser()` vs `getClaims()` in middleware
-
-| Method | What it does | When to use |
-|--------|-------------|-------------|
-| `getUser()` | Network request to Supabase Auth server; revalidates session is still valid | Route protection — definitive, can't be spoofed |
-| `getClaims()` | Local JWT validation against cached JWKS public keys | Only valid when asymmetric signing (ECC/RSA) is configured; faster but doesn't check server-side revocation |
-| `getSession()` | Reads cookie without any validation | Never for authorization — spoof-able |
-
-Use `getUser()` in middleware for this app. The one extra network call per request is acceptable for a two-user app. `getClaims()` is an optimization for high-traffic scenarios.
-
----
-
-## 5. Protecting Routes and Server Actions
-
-### In Server Components (equivalent to `auth()` from Auth.js)
-
-```typescript
-// src/app/dashboard/page.tsx
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect("/")
-
-  // user.id  — Supabase UUID
-  // user.email — verified email (matches parentEmail in app.ts config)
-  return <Dashboard user={user} />
-}
-```
-
-The middleware already redirects unauthenticated users before they reach the Server Component. The `getUser()` check in the component is defence-in-depth — Supabase docs explicitly recommend it for any page that uses user identity for data access decisions.
-
-### In Server Actions (equivalent to `auth()` guard in current `actions/schedule.ts`)
-
-```typescript
-"use server"
-
-import { createClient } from "@/lib/supabase/server"
-
-export async function someScheduleAction(input: unknown) {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-
-  if (error || !user) {
-    throw new Error("Unauthorized")
-  }
-
-  const parentEmail = user.email!
-  // ... proceed
-}
-```
-
-**Reusable auth guard helper (reduces boilerplate across all actions):**
-
-```typescript
-// src/lib/auth-guard.ts
-import { createClient } from "@/lib/supabase/server"
-import type { User } from "@supabase/supabase-js"
-
-export async function requireUser(): Promise<User> {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) throw new Error("Unauthorized")
-  return user
-}
-```
-
-Usage:
-
-```typescript
-import { requireUser } from "@/lib/auth-guard"
-
-export async function publishDraft() {
-  const user = await requireUser()
-  // user.email available for parentEmail lookup
-}
-```
-
-### Never use `getSession()` for authorization
-
-`getSession()` reads from the cookie without server validation — it can be spoofed. Use `getUser()` for every authorization check. `getSession()` is appropriate only if you need to read the raw Supabase `access_token` to pass somewhere.
-
----
-
-## 6. Migration Delta: Auth.js → Supabase Auth
-
-| Concern | Auth.js v5 pattern | Supabase Auth pattern |
-|---------|-------------------|----------------------|
-| Session read in Server Component | `auth()` from `@/auth` | `createClient()` then `supabase.auth.getUser()` |
-| Session read in Server Action | `auth()` from `@/auth` | `createClient()` then `supabase.auth.getUser()` |
-| Session read in middleware | `auth(req => ...)` wrapping | `createServerClient` + `getUser()` inline |
-| OAuth redirect initiation | Auth.js handles automatically | Manual: Server Action calls `signInWithOAuth`, redirects to `data.url` |
-| OAuth callback | Auto-handled at `/api/auth/callback/google` | Manual Route Handler at `/auth/callback` |
-| Provider token storage | DrizzleAdapter writes to `accounts` table automatically | Manual upsert to `user_google_tokens` in callback Route Handler |
-| Provider token retrieval for GCal | Query Drizzle `accounts` table | Query Supabase `user_google_tokens` table |
-| Sign-out | `signOut()` from `@/auth` | `supabase.auth.signOut()` in Server Action |
-| Middleware auth guard | `!!req.auth` | `!!user` from `supabase.auth.getUser()` |
-| User identity key | `session.user.email` | `user.email` |
-| Supabase session refresh token rotation | Manual in `jwt` callback | Handled automatically by Supabase Auth |
-| Token refresh trigger in middleware | Not needed (JWT is stateless) | Required: `getUser()` triggers refresh |
-| Browser Supabase client | `createClient` from `@supabase/supabase-js` | `createBrowserClient` from `@supabase/ssr` |
-
----
-
-## 7. Environment Variables
+### Pulling env vars locally
 
 ```bash
-# Already present — keep as-is
-NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-
-# Remove after migration (Auth.js specific)
-# AUTH_SECRET=...
-# DATABASE_URL=...  (if Drizzle + Postgres connection removed)
-
-# Keep — still needed for manual GCal token exchange in gcal/client.ts
-# (can rename from AUTH_GOOGLE_ID/SECRET to GOOGLE_CLIENT_ID/SECRET)
-AUTH_GOOGLE_ID=<google-client-id>
-AUTH_GOOGLE_SECRET=<google-client-secret>
+vercel env pull --environment=preview   # downloads staging credentials to .env.local
+vercel env pull --environment=production # downloads production credentials (careful)
 ```
 
-**Google OAuth credentials go into Supabase Dashboard, not Next.js env vars.**  
-Supabase Dashboard → Authentication → Providers → Google → enter Client ID and Secret.  
-The `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` in Next.js are only needed for the manual token exchange (`oauth2.googleapis.com/token` POST) in `gcal/client.ts`.
+This replaces manual `.env.local` maintenance. `vercel env pull` without a flag downloads the Development environment (separate from Preview).
 
 ---
 
-## 8. Supabase Dashboard Configuration Checklist
+## Google OAuth per Environment
 
-- [ ] Authentication → Providers → Google: enter Client ID and Secret from Google Cloud Console
-- [ ] Authentication → URL Configuration → Site URL: `https://yourdomain.com`
-- [ ] Authentication → URL Configuration → Redirect URLs: add `https://yourdomain.com/auth/callback`
-- [ ] (Local dev) Redirect URLs: add `http://localhost:3000/auth/callback`
-- [ ] Google Cloud Console → Authorized redirect URIs: `https://<ref>.supabase.co/auth/v1/callback`
-- [ ] Google Cloud Console → Authorized JavaScript origins: `https://yourdomain.com`
+### Two separate OAuth clients are required
+
+Google's production OAuth policy states that OAuth clients used in production must not contain test redirect URIs or JavaScript origins that are only available to developers. Sharing a single OAuth client between staging and production violates this requirement.
+
+The correct setup:
+
+**Staging Google Cloud OAuth client:**
+- OAuth consent screen: Testing mode — only explicitly added Google accounts can sign in
+- No verification required in testing mode
+- Authorized redirect URIs: `https://<staging-ref>.supabase.co/auth/v1/callback`
+- Authorized JavaScript origins: staging deployment domain + `http://localhost:3000`
+
+**Production Google Cloud OAuth client (separate client, can be same or separate GCP project):**
+- OAuth consent screen: Published — requires Google verification before external users can sign in
+- Verification takes 3–5 business days — begin before scheduling second-parent access
+- Authorized redirect URIs: `https://<prod-ref>.supabase.co/auth/v1/callback`
+- Authorized JavaScript origins: production deployment domain only
+
+### Why `window.location.origin` in the sign-in button is correct
+
+The app passes `redirectTo: window.location.origin + "/auth/callback"`. This evaluates at click time in the browser to whatever domain is in the address bar. In production this becomes `https://vuoroasuminen.vercel.app/auth/callback`; in a preview deployment it becomes `https://vuoroasuminen-xyz123.vercel.app/auth/callback`.
+
+This means no code changes are needed between environments. The only requirement is that whatever URL resolves is present in the Supabase additional redirect URLs allowlist for that project.
+
+### Two-layer redirect validation — which service validates what
+
+Google and Supabase each validate one redirect URL, and they are different URLs:
+
+| Layer | What is validated | Where it is configured |
+|---|---|---|
+| Google | Supabase's internal callback URL (`/auth/v1/callback`) | Google Cloud Console → Authorized redirect URIs |
+| Supabase | The app's `redirectTo` parameter (`/auth/callback`) | Supabase Auth → Additional redirect URLs |
+
+A common mistake: registering the app's `/auth/callback` URL in Google's console. Google does not redirect to the app's callback — it redirects to Supabase. Supabase then redirects to the app.
+
+### Full OAuth flow
+
+```
+1. User clicks sign in
+2. Browser calls supabase.auth.signInWithOAuth({ redirectTo: window.location.origin + "/auth/callback" })
+3. Supabase Auth constructs a Google authorization URL with:
+      redirect_uri = https://<supabase-ref>.supabase.co/auth/v1/callback
+4. Google validates: is that redirect_uri in the OAuth client's Authorized redirect URIs? YES
+5. User authenticates with Google, Google redirects to Supabase /auth/v1/callback
+6. Supabase exchanges code for tokens, stores Supabase session
+7. Supabase validates: is the app's redirectTo in the Additional redirect URLs allowlist? YES
+8. Supabase redirects browser to https://<app-domain>/auth/callback
+9. App's /auth/callback route handler:
+   a. Calls supabase.auth.exchangeCodeForSession(code)
+   b. Reads provider_refresh_token from the session (only available at this moment)
+   c. Upserts refresh token to user_google_tokens table
+   d. Redirects to /dashboard
+```
+
+### Configuration matrix
+
+| What to configure | Where | Staging | Production |
+|---|---|---|---|
+| Google Client ID + Secret | Supabase Auth → Providers → Google | Staging client credentials | Prod client credentials |
+| Google Client ID + Secret | Vercel env vars (for manual GCal token exchange) | Staging client credentials | Prod client credentials |
+| Supabase callback URL (`/auth/v1/callback`) | Google Cloud Console → Authorized redirect URIs | `https://<staging-ref>.supabase.co/auth/v1/callback` | `https://<prod-ref>.supabase.co/auth/v1/callback` |
+| App domain | Google Cloud Console → Authorized JavaScript origins | Staging deployment domain | Production deployment domain |
+| Site URL | Supabase Auth → URL Configuration | Staging app URL | Production app URL |
+| App redirect URLs | Supabase Auth → Additional redirect URLs | Wildcard for preview URLs + localhost | Exact production URL |
 
 ---
 
-## 9. RLS Implication
+## Nice to Have
 
-Once Supabase Auth is in place, every `createServerClient` (anon key) call inherits the user's JWT, which Supabase uses to enforce Row Level Security policies. Policies on domain tables (e.g., `schedule_cells`) can reference `auth.uid()` directly. The `user_google_tokens` table should have an RLS policy so users can only read their own row.
+These are not blockers for the initial deployment. Address after both parents are live.
+
+### Custom domain instead of `.vercel.app`
+
+Vercel allows attaching a custom domain (e.g., `vuoroasuminen.fi`) to the production deployment via DNS configuration. Provides a more professional URL. If added after initial launch, requires updating: Supabase Site URL, Supabase redirect URLs, Google Authorized JavaScript origins, and Vercel Production env vars that contain the domain.
+
+### `vercel env pull` workflow for local development
+
+Running `vercel env pull --environment=preview` downloads staging Supabase credentials into `.env.local`. Eliminates manual `.env.local` maintenance and ensures local development always matches the staging environment.
+
+### Deployment protection bypass for automated testing
+
+Vercel Preview deployments are protected by default (Vercel authentication required to view). For Playwright or other E2E tests that need to reach preview URLs without a browser login, configure `VERCEL_AUTOMATION_BYPASS_SECRET` in project settings and pass it as an `x-vercel-protection-bypass` header. Not needed unless CI runs E2E tests against preview deployments.
+
+### Health check route
+
+A simple `GET /api/health` route returning `200 { ok: true }` allows smoke-testing after each deployment. Confirms that env vars resolved and the app started. Can be tested with `curl` after deploying.
+
+### Supabase database branching (future consideration, not for this milestone)
+
+Supabase has an experimental branching feature that creates ephemeral database branches per PR, automatically provisioned and torn down. As of 2026 this is in limited availability on paid plans. The manual two-project approach used here is more reliable and simpler to reason about for a two-user app.
+
+---
+
+## Dependencies Between Steps
+
+Hard ordering constraints:
+
+```
+Step 1: Create staging Supabase project
+Step 2: Create production Supabase project
+        (Steps 1 and 2 can be done in parallel)
+
+Step 3: Create staging Google OAuth client
+        Needs: staging Supabase project reference (to know what callback URL to register)
+
+Step 4: Create production Google OAuth client
+        Needs: production Supabase project reference
+
+Step 5: Configure Google OAuth in staging Supabase project
+        Needs: staging Google OAuth client credentials
+
+Step 6: Configure Google OAuth in production Supabase project
+        Needs: production Google OAuth client credentials
+
+Step 7: Configure Vercel environment variables (all env vars, both scopes)
+        Needs: both sets of Supabase credentials
+        Needs: both sets of Google OAuth credentials
+
+Step 8: Initial deployment to Vercel (push to main)
+        Needs: all env vars configured
+        Produces: stable Vercel deployment URL
+
+Step 9: Set Site URL and Additional redirect URLs in staging Supabase project
+        Needs: staging deployment URL (from step 8)
+
+Step 10: Set Site URL and Additional redirect URLs in production Supabase project
+        Needs: production deployment URL (from step 8)
+
+Step 11: Verify Google OAuth Authorized JavaScript origins are correct
+        Needs: final deployment URLs (from step 8)
+
+Step 12: Smoke test sign-in and GCal publish in staging
+         Needs: all of the above
+
+Step 13: Upgrade production Supabase project to Pro plan
+
+Step 14: Begin Google OAuth verification (production client)
+         Needs: production deployment working (step 12 equivalent for prod)
+         Note: 3-5 business day wait
+```
+
+Steps 1-2 can be done in parallel. Steps 3-6 can be done in parallel once their respective Supabase projects exist. Step 7 can be done once any Supabase credentials exist (partial), but must be complete before step 8.
 
 ---
 
 ## Sources
 
-- Supabase SSR — Context7 (HIGH confidence): `createServerClient`, middleware `setAll`/`getAll` pattern, `createBrowserClient` singleton  
-  https://github.com/supabase/ssr
-- Supabase JS — Context7 (HIGH confidence): `signInWithOAuth`, `getUser`, `getSession`, `getClaims`, `signOut`, `exchangeCodeForSession`  
-  https://context7.com/supabase/supabase-js/llms.txt
-- Supabase Docs — Google OAuth provider (HIGH confidence): PKCE flow, callback setup, `provider_token`, `access_type`/`prompt` params  
-  https://supabase.com/docs/guides/auth/social-login/auth-google
-- Supabase Docs — Setting up Server-Side Auth for Next.js (HIGH confidence)  
-  https://supabase.com/docs/guides/auth/server-side/nextjs
-- Supabase Docs — `getClaims` reference (HIGH confidence): `getClaims` vs `getUser` distinction  
-  https://supabase.com/docs/reference/javascript/auth-getclaims
-- Supabase Discussion #22578 — provider_token storage (MEDIUM confidence): confirmed tokens not stored by Supabase  
-  https://github.com/orgs/supabase/discussions/22578
-- Supabase Discussion #22653 — `provider_refresh_token` in callback (MEDIUM confidence): `exchangeCodeForSession` returns provider tokens  
-  https://github.com/orgs/supabase/discussions/22653
+- Vercel: Environment Variables — https://vercel.com/docs/environment-variables
+- Vercel: Environments (Preview vs Production) — https://vercel.com/docs/deployments/environments
+- Vercel: System Environment Variables (VERCEL_ENV, VERCEL_URL) — https://vercel.com/docs/environment-variables/system-environment-variables
+- Vercel: Set Up a Staging Environment — https://vercel.com/kb/guide/set-up-a-staging-environment-on-vercel
+- Supabase: Managing Environments — https://supabase.com/docs/guides/deployment/managing-environments
+- Supabase: Redirect URLs (wildcards, Site URL, additional URLs) — https://supabase.com/docs/guides/auth/redirect-urls
+- Supabase: Login with Google (callback URL format) — https://supabase.com/docs/guides/auth/social-login/auth-google
+- Google: OAuth 2.0 Policies (separate projects per environment) — https://developers.google.com/identity/protocols/oauth2/policies
+- Google: Using OAuth 2.0 for Web Server Applications — https://developers.google.com/identity/protocols/oauth2/web-server

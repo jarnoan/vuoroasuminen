@@ -1,8 +1,399 @@
 # Pitfalls Research
 
 **Domain:** Co-parenting custody scheduling web app with Google Calendar integration and real-time collaboration
-**Researched:** 2026-04-04 (original); 2026-05-09 (v1.2 migration supplement)
-**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources; migration pitfalls verified against Supabase official docs and open GitHub issues)
+**Researched:** 2026-04-04 (original); 2026-05-09 (v1.2 migration supplement); 2026-05-15 (v1.3 Vercel deployment)
+**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources; migration pitfalls verified against Supabase official docs and open GitHub issues; v1.3 pitfalls verified against Next.js 16 upgrade guide, Supabase production docs, and codebase inspection)
+
+---
+
+## v1.3 Vercel Deployment Pitfalls
+
+**Stack:** Next.js 16, Supabase Auth (Google OAuth PKCE), Drizzle ORM, Supabase Realtime + RLS, googleapis GCal sync
+**Environments:** staging Supabase project (Vercel preview) + production Supabase project (Vercel production)
+**First Vercel deploy — no previous cloud environment exists**
+
+---
+
+### V-1: Google OAuth redirect URIs not updated for production domain (CRITICAL)
+
+**What goes wrong:**
+`redirect_uri_mismatch` error immediately after clicking "Sign in with Google" on the production URL. Auth works on localhost but fails on Vercel.
+
+**Why it happens:**
+Google Cloud Console "Authorized redirect URIs" still lists only `http://localhost:3000/auth/callback`. Google does not support wildcards in redirect URIs — every origin must be listed explicitly. Supabase handles the PKCE handoff, but Google's redirect check is independent and happens first.
+
+**Prevention:**
+- In Google Cloud Console → Credentials → your OAuth 2.0 Client ID, add all three:
+  - `http://localhost:3000/auth/callback` (keep existing)
+  - `https://<production-domain>.vercel.app/auth/callback`
+  - `https://<your-custom-domain>/auth/callback` (if using a custom domain)
+- In "Authorized JavaScript origins", add the base URLs (no path, no wildcard) for the same origins.
+- Repeat for a staging OAuth client if you create a separate one (recommended for isolation — see V-3).
+- Do this before first deploy attempt. Google propagation takes up to a few minutes.
+
+**Phase:** v1.3 Phase 1 (environment setup), before any deploy smoke test.
+
+---
+
+### V-2: Supabase Auth "Redirect URLs" allowlist missing production and preview patterns (CRITICAL)
+
+**What goes wrong:**
+After Google OAuth consent, Supabase redirects back to `/auth/callback` with a valid `code`, but then errors or silently drops the session. Seen even when Google's side is correctly configured. The two allowlists (Google and Supabase) are independent — passing Google's check does not guarantee Supabase's.
+
+**Why it happens:**
+Supabase has its own allowlist under Authentication → URL Configuration → "Redirect URLs". The staging and production Supabase projects each have independent allowlists that start empty (or only containing the project default).
+
+**Prevention — production Supabase project:**
+- Set "Site URL" to `https://<production-domain>`
+- Add to Redirect URLs:
+  - `https://<production-domain>/auth/callback`
+  - `http://localhost:3000/auth/callback`
+
+**Prevention — staging Supabase project:**
+- Add to Redirect URLs:
+  - `https://<vercel-project>-*.vercel.app/auth/callback` — the `*` glob matches the hash portion of preview URLs (e.g., `vuoroasuminen-abc123-yourteam.vercel.app`)
+  - For deeper path matching use `**` (globstar matches across path separators)
+  - `http://localhost:3000/auth/callback`
+
+**Phase:** v1.3 Phase 1. Verify in Phase 2 smoke test by completing a full OAuth flow on a preview deployment.
+
+---
+
+### V-3: Both environments share one Google OAuth client — staging tokens can interfere with production (CRITICAL)
+
+**What goes wrong:**
+If `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are identical across environments but Supabase projects are separate, a sign-in on a preview deployment may attempt to write a `user_google_tokens` row to the wrong DB — or a revoked staging token could invalidate production GCal sync if a shared calendar owner email is involved.
+
+**Why it happens:**
+Vercel env vars default to "all environments" scope. If not explicitly scoped, all deployments (including previews) receive the same credentials and may hit the production Supabase project.
+
+**Prevention:**
+- The planned architecture (separate Supabase staging and production projects with per-environment Vercel env vars) handles DB isolation correctly. Confirm by verifying the Vercel env var scopes explicitly:
+  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL` → set for "Production" scope pointing to production Supabase
+  - Corresponding staging variants → set for "Preview" scope pointing to staging Supabase
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` can be the same across environments (same Google Cloud project), but their authorized redirect URIs in Google Cloud Console must cover both the production and preview URL patterns.
+- If you want full audit trail isolation, create two separate Google OAuth credentials — one per environment.
+
+**Phase:** v1.3 Phase 1. Confirm Vercel env var scoping in Phase 2 before any data is written.
+
+---
+
+### V-4: `DATABASE_URL` uses Supabase direct connection (port 5432) on Vercel serverless — pool exhaustion (CRITICAL)
+
+**What goes wrong:**
+App works fine on first requests after deploy, then starts throwing `too many clients` or connection timeout errors under any real load. Drizzle mutations that worked in dev silently time out.
+
+**Why it happens:**
+Vercel serverless functions do not maintain persistent DB connections. Every function invocation creates a new `pg.Pool`. The direct Postgres URL (port 5432) has a hard connection limit — typically 15–25 on Supabase free tier, 60 on Pro. With warm Vercel instances each holding a pool open, the limit exhausts quickly even for a two-parent app on heavy publish days.
+
+**Prevention:**
+- Use the **Supavisor pooler URL** (port 6543, transaction mode) for `DATABASE_URL` in Vercel env vars — this is the connection string intended for serverless.
+- Keep the direct URL (port 5432) only for `drizzle-kit push`/`migrate` — Drizzle Kit needs a direct DDL-capable connection; do not use it for runtime queries.
+- Supavisor transaction mode does not support named prepared statements. Drizzle uses parameterized queries, not named prepared statements, so this is compatible. No special flag needed (unlike Prisma which requires `?pgbouncer=true`).
+- The current `ssl: { rejectUnauthorized: false }` in `src/db/index.ts` works with Supavisor.
+- **Exception:** The Drizzle admin client used by GCal sync (`buildGCalClient` reads `user_google_tokens`) needs to bypass RLS. Use the direct connection URL (port 5432) for `DATABASE_URL` when running admin operations, OR ensure the Supavisor connection authenticates as a role with `BYPASSRLS`. The simplest v1.3 approach: use the direct URL for `DATABASE_URL` on Vercel (accepting the pool limit) given there are only two users, and revisit if connection errors appear.
+
+**Phase:** v1.3 Phase 1. Critical to configure correctly before production traffic.
+
+---
+
+### V-5: Next.js 16 renames `middleware.ts` → `proxy.ts` (CRITICAL for route protection)
+
+**What goes wrong:**
+`src/middleware.ts` uses the deprecated filename in Next.js 16. The file still runs but generates deprecation warnings and will stop being recognized in a future minor release. If it silently stops running, unauthenticated users bypass route protection and reach the dashboard.
+
+**Why it happens:**
+Next.js 16 renamed the middleware convention to `proxy` to clarify its role as a network boundary proxy, and moved it to Node.js runtime (Edge Runtime is no longer supported for proxy). The old `middleware.ts` name is deprecated but not yet hard-removed.
+
+**Prevention:**
+- Rename `src/middleware.ts` → `src/proxy.ts`
+- Rename the exported function from `middleware` to `proxy`
+- The `config.matcher` export keeps the same structure
+- Config flag renames: `skipMiddlewareUrlNormalize` → `skipProxyUrlNormalize`
+- The current code already runs implicitly on Node.js (no `export const runtime = "edge"`), so no runtime change needed
+- Run the codemod to handle this automatically: `npx @next/codemod@canary upgrade latest`
+
+**Phase:** v1.3 Phase 1 (pre-deploy preparation). Do this before the first Vercel build.
+
+---
+
+### V-6: `supabase_realtime` publication not enabled for `schedule_entries` on new Supabase projects (CRITICAL for Realtime)
+
+**What goes wrong:**
+`RealtimeProvider` subscribes successfully (channel status = `SUBSCRIBED`, no errors) but no `postgres_changes` events fire when a parent edits a cell. The other parent's browser never updates.
+
+**Why it happens:**
+Supabase Realtime requires tables to be explicitly added to the `supabase_realtime` logical replication publication. New Supabase projects start with no tables in the publication. This is a database-level configuration, not a Drizzle migration, so `drizzle-kit migrate` does not apply it.
+
+**Prevention:**
+After running Drizzle migrations on each new project, execute:
+```sql
+alter publication supabase_realtime add table schedule_entries;
+```
+Verify: Supabase Dashboard → Database → Replication → supabase_realtime → confirm `schedule_entries` is listed.
+
+Add this to the deployment runbook as a manual post-migration step, once per Supabase project.
+
+**Phase:** v1.3 Phase 2 (DB setup). Verify in Phase 3 realtime smoke test: open two browser windows, edit a cell, confirm the other window updates within 1 second.
+
+---
+
+### V-7: `SUPABASE_SERVICE_ROLE_KEY` accidentally exposed via `NEXT_PUBLIC_` prefix (CRITICAL security)
+
+**What goes wrong:**
+No build error. The service role key appears in the browser JavaScript bundle, bypassing all RLS policies. Any user with DevTools can read or delete all rows in every table.
+
+**Why it happens:**
+`NEXT_PUBLIC_*` env vars are inlined into the client bundle at build time. This was confirmed as root cause of CVE-2025-48757 (Lovable AI platform incident: 170 apps, 13K users exposed) where AI-generated code suggested the wrong prefix.
+
+**Prevention:**
+- `SUPABASE_SERVICE_ROLE_KEY` must never carry the `NEXT_PUBLIC_` prefix
+- The current codebase correctly does not expose this key (it is used only by Drizzle migration scripts, not by the application itself)
+- When setting Vercel env vars, assign `SUPABASE_SERVICE_ROLE_KEY` as a "Server" env var only
+- Audit every env var before adding to Vercel: anything touching the DB directly (`DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_CLIENT_SECRET`) must not be `NEXT_PUBLIC_`
+
+**Phase:** v1.3 Phase 1 env var setup. Treat as a pre-deploy checklist item.
+
+---
+
+### V-8: Supabase free tier pauses after 7 days of inactivity — production app goes offline
+
+**What goes wrong:**
+App returns blank screen after a week of low usage. Both parents see errors. Reactivation requires a Supabase dashboard visit and a 30+ second cold start.
+
+**Prevention:**
+- Upgrade the **production** Supabase project to Pro ($25/mo) before handing the app to real users. Pro removes the inactivity pause.
+- The **staging** project can stay on Free as long as it is actively used during preview testing.
+- PROJECT.md already flags this — it must be actioned, not deferred.
+
+**Phase:** v1.3 Phase 1 (platform setup). Non-negotiable before user handoff.
+
+---
+
+### V-9: RLS policies and GRANT statements missing on new Supabase projects
+
+**What goes wrong:**
+After running Drizzle migrations on the new staging/production project, all PostgREST queries return empty arrays or 403 errors. RLS is enabled but the `authenticated` role has no permission to read the tables.
+
+**Why it happens:**
+Since a May 2024 Supabase breaking change, new projects no longer auto-grant `SELECT/INSERT/UPDATE/DELETE` on new tables to the `anon` and `authenticated` roles. Your existing dev project predates this change or was manually fixed; new projects start with no grants. Postgres rejects the query before RLS even runs when grants are absent.
+
+**Prevention:**
+After running Drizzle migrations on each new project, verify grants and add them if missing:
+```sql
+-- Verify
+SELECT grantee, table_name, privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public';
+
+-- Fix if missing
+GRANT SELECT, INSERT, UPDATE, DELETE
+  ON public.children, public.schedules, public.schedule_entries,
+     public.gcal_events, public.user_google_tokens
+  TO authenticated;
+```
+
+Consider adding these GRANTs as a dedicated Drizzle migration so they travel with the schema automatically.
+
+**Phase:** v1.3 Phase 2 (DB setup). Test immediately after migration: sign in as a parent and verify the schedule table loads data.
+
+---
+
+### V-10: Realtime JWT expires — second parent's browser silently stops receiving updates
+
+**What goes wrong:**
+One parent makes edits; the other parent's browser stops updating silently after ~1 hour (default Supabase JWT expiry). No error shown. Requires a page refresh to reconnect.
+
+**Why it happens:**
+Supabase Realtime disconnects a client when the JWT used to establish the WebSocket expires. The current `RealtimeProvider` calls `supabase.realtime.setAuth(session.access_token)` exactly once at component mount and never refreshes it. Middleware refreshes the session cookie for Server Components, but the browser's Realtime WebSocket connection is separate.
+
+**Current code path:**
+`realtime-provider.tsx` → `supabase.auth.getSession()` (one-time, in `useEffect`) → `supabase.realtime.setAuth(token)` (set once). No listener for session refresh events.
+
+**Prevention:**
+Add an `onAuthStateChange` listener in `RealtimeProvider` that calls `supabase.realtime.setAuth(newToken)` whenever the session renews:
+```typescript
+const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+  if (session?.access_token) {
+    supabase.realtime.setAuth(session.access_token)
+  }
+})
+// Clean up in the useEffect return:
+return () => { subscription.unsubscribe(); /* ... channel cleanup */ }
+```
+
+**Phase:** v1.3 Phase 3 (realtime verification). Test by leaving the app open for 90 minutes and confirming changes still propagate from one browser to the other.
+
+---
+
+### V-11: `config/app.ts` calendar IDs not validated at startup — GCal sync targets wrong or missing calendar
+
+**What goes wrong:**
+GCal sync runs without error but events appear in the wrong calendar or the googleapis call silently fails. `PARENT_FATHER_CALENDAR_ID` or `PARENT_MOTHER_CALENDAR_ID` env vars not set in Vercel, so `calendarId` is `undefined` at runtime, and the TypeScript `!` assertion does not throw — it passes `undefined` to the GCal API.
+
+**Why it happens:**
+`src/env.ts` validates `PARENT_FATHER_EMAIL`, `PARENT_MOTHER_EMAIL`, `APP_CHILDREN`, and `APP_START_DATE` at startup, but `PARENT_FATHER_CALENDAR_ID`, `PARENT_MOTHER_CALENDAR_ID`, `PARENT_FATHER_NAME`, and `PARENT_MOTHER_NAME` are not in the required list. They are accessed with `!` assertions in `config/app.ts` which silently allow `undefined`.
+
+**Prevention:**
+- Add `PARENT_FATHER_CALENDAR_ID` and `PARENT_MOTHER_CALENDAR_ID` to the required env var list in `src/env.ts`
+- Set all `PARENT_*` and `APP_*` env vars in Vercel before deploying
+- Include a "first publish smoke test" step in the deployment runbook to confirm GCal events appear in the correct calendars after publish
+
+**Phase:** v1.3 Phase 1 env var setup. Validate at Phase 3 smoke test.
+
+---
+
+### V-12: Google OAuth app in "Testing" mode — second parent blocked (COMMON, time-sensitive)
+
+**What goes wrong:**
+Developer (parent 1) can sign in. Parent 2 sees "Google hasn't verified this app" warning. If the app is still in Testing mode with an explicit test user list, parent 2 may be completely blocked unless added to the list.
+
+**Why it happens:**
+New Google Cloud projects start in OAuth consent screen "Testing" mode. Non-developer users see the unverified warning; if the test user list is used, unlisted users are blocked.
+
+**Prevention:**
+- Publish the app (move from Testing to Production on the OAuth consent screen) before sharing with parent 2. Publishing without verification shows the "unverified" warning but allows any Google user to sign in.
+- Begin Google OAuth verification as early as possible — `calendar.events` is a sensitive scope requiring justification and a demo video. Timeline: 3–5 business days minimum.
+- As an interim measure, add parent 2's Google email to the test user list so they can sign in while verification is pending.
+- Start the verification submission in parallel with deployment work in Phase 1 — not after the deploy is done.
+
+**Phase:** v1.3 Phase 1 (start verification) through handoff. Do not wait until Phase 3 to start this.
+
+---
+
+### V-13: Vercel preview deployments env vars scoped incorrectly — previews hit production DB
+
+**What goes wrong:**
+Preview deployments write data into the production Supabase project, or fail to authenticate because they receive production Supabase credentials while production Google OAuth redirect URIs don't cover the preview URL.
+
+**Why it happens:**
+Vercel env vars default to "all environments" scope. Setting `NEXT_PUBLIC_SUPABASE_URL` once causes all deployments (production and preview) to use the same Supabase project.
+
+**Prevention:**
+In Vercel project settings → Environment Variables, explicitly set the scope for each Supabase var:
+- Production Supabase vars → "Production" scope only
+- Staging Supabase vars → "Preview" scope only
+- Shared vars (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PARENT_*`, `APP_*`) → "All environments" is acceptable if the same values apply
+
+After configuring, trigger a preview deployment and inspect the network tab to confirm it hits the staging Supabase URL (not production).
+
+**Phase:** v1.3 Phase 1. Verify in Phase 2 before any data is written.
+
+---
+
+### V-14: New projects have divergent schemas — Drizzle migrations not applied (COMMON, blocks everything)
+
+**What goes wrong:**
+App deploys, parents sign in, but the schedule table is empty or queries throw "column does not exist" errors. The production DB was freshly created and migrations were never run against it.
+
+**Why it happens:**
+New Supabase projects start with empty public schemas. `drizzle-kit push` (used in local dev) applies schema directly from TypeScript definitions; it does not create or apply migration files. For new environments, `drizzle-kit migrate` must be run explicitly.
+
+**Prevention:**
+Run `drizzle-kit migrate` against each new Supabase project before first deploy:
+```bash
+DATABASE_URL=<new-project-direct-url> npx drizzle-kit migrate
+```
+Then apply post-migration SQL (can be collected in `scripts/setup-project.sql`):
+1. Enable RLS on all tables
+2. Apply RLS policies
+3. Add GRANT statements (see V-9)
+4. Add `schedule_entries` to `supabase_realtime` publication (see V-6)
+
+**Phase:** v1.3 Phase 2. Foundational — everything else depends on this being correct.
+
+---
+
+### V-15: GCal sync fails silently until both parents have signed in on the new environment
+
+**What goes wrong:**
+Publish works (draft entries flip to published), but the toast shows "Calendar sync failed". `buildGCalClient` throws "No refresh token found for [email]".
+
+**Why it happens:**
+`user_google_tokens` is populated only when a user completes the OAuth callback flow. The new production DB starts empty. Until both parents have signed in at least once, their `refresh_token` rows do not exist.
+
+**Prevention:**
+In the deployment runbook, make "both parents sign in" the explicit first step before any publish smoke test. Verify by checking `user_google_tokens` in the Supabase Dashboard after sign-in — there should be one row per parent email with a non-null `refresh_token`.
+
+**Phase:** v1.3 Phase 3 (smoke test sequence). Make this step 1 of the test plan.
+
+---
+
+### V-16: RLS on `user_google_tokens` silently returns empty for GCal sync if wrong DB connection used
+
+**What goes wrong:**
+GCal sync fails with "No refresh token found" even though rows exist in `user_google_tokens` and both parents have signed in.
+
+**Why it happens:**
+v1.2 enabled RLS on all tables including `user_google_tokens`. The RLS policy restricts reads to the row owner (`auth.uid()` matches). The GCal sync server action uses Drizzle's admin `db` client, which should bypass RLS by authenticating as the `postgres` superuser (direct connection, port 5432). If `DATABASE_URL` in Vercel accidentally points to the Supavisor pooler URL authenticated as `anon`, RLS applies and the select returns nothing.
+
+**Prevention:**
+- Verify `DATABASE_URL` in Vercel uses the direct connection string (port 5432 with DB password), not the Supavisor pooler URL
+- The direct connection authenticates as the `postgres` role which has `BYPASSRLS = TRUE`
+- Cross-check: after deploy, trigger a publish and watch server logs for `[GCal] No refresh token found` — if this appears despite rows existing, the connection role is wrong
+
+**Phase:** v1.3 Phase 1 env var setup. Verify in Phase 3 GCal sync smoke test.
+
+---
+
+### V-17: `src/config/app.ts` git history contains real parent emails or calendar IDs (PRIVACY)
+
+**What goes wrong:**
+Not a deploy blocker, but: `git log -p src/config/app.ts` reveals real email addresses or calendar IDs committed before env var migration.
+
+**Why it happens:**
+PROJECT.md notes "Git history scrub still pending for `src/config/app.ts` (CR-01)". The file previously had hardcoded values before the env var migration in v1.2.
+
+**Prevention:**
+Complete the git history scrub (BFG Repo Cleaner or `git filter-repo`) before making the repository accessible to the second parent or any third party. Until the scrub is done, keep the repository private.
+
+**Phase:** v1.3 prerequisite. Block on this before adding parent 2 as a repo collaborator.
+
+---
+
+### V-18: Server Actions blocked by CORS after custom domain configuration
+
+**What goes wrong:**
+Server Action calls (cell edits, publish) return 403 in browser console on the production deployment after pointing a custom domain to Vercel. Works fine on `*.vercel.app`.
+
+**Why it happens:**
+Next.js 16 Server Actions validate the `Origin` header against `x-forwarded-host`. If a reverse proxy (Cloudflare in proxy mode, AWS ALB) rewrites the host header, the check fails and the action is rejected as a CSRF attempt.
+
+**Current risk:** Low — Vercel handles proxy headers correctly for `*.vercel.app`. Risk only materializes if a Cloudflare or external proxy is added in front.
+
+**Prevention:**
+If using Cloudflare or any reverse proxy, ensure `x-forwarded-host` is passed through. As a safety measure for custom domains, add to `next.config.ts`:
+```ts
+serverActions: {
+  allowedOrigins: ['your-custom-domain.com']
+}
+```
+Test Server Actions (edit a cell, click publish) immediately after configuring any custom domain.
+
+**Phase:** v1.3 Phase 2 only if using a custom domain behind a proxy.
+
+---
+
+## Phase-Specific Warnings — v1.3 Vercel Deployment
+
+| Phase | Topic | Likely Pitfall | Mitigation |
+|-------|-------|---------------|------------|
+| Phase 1 | Vercel env var scoping | Previews hit production DB (V-13) | Explicitly scope every Supabase-related var by environment |
+| Phase 1 | Google Cloud Console | Redirect URIs not updated (V-1) | Add production and preview URIs before first deploy |
+| Phase 1 | `middleware.ts` rename | Next.js 16 deprecation (V-5) | Run codemod or rename manually before build |
+| Phase 1 | Env var exposure | Service role key with NEXT_PUBLIC_ prefix (V-7) | Audit all Vercel vars for prefix correctness |
+| Phase 1 | Google OAuth verification | 3–5 day wait for calendar scope (V-12) | Start submission in Phase 1, not Phase 3 |
+| Phase 1 | Supabase Pro | Free tier pauses production (V-8) | Upgrade before user handoff |
+| Phase 2 | DB provisioning | Migrations not run on new project (V-14) | `drizzle-kit migrate` + post-migration SQL checklist |
+| Phase 2 | Realtime publication | Table not in supabase_realtime (V-6) | SQL alter publication command, once per project |
+| Phase 2 | RLS grants | Auto-grants absent on new projects (V-9) | GRANT authenticated role after migration |
+| Phase 2 | Connection pooling | Direct DB URL exhausts connections (V-4) | Use Supavisor pooler URL for runtime; direct for migrations |
+| Phase 3 | First sign-in sequence | GCal sync fails until both parents sign in (V-15) | Both parents sign in before any publish test |
+| Phase 3 | RLS + Drizzle admin | service-role bypass requires direct DB URL (V-16) | Confirm DATABASE_URL = direct connection |
+| Phase 3 | Realtime longevity | JWT expiry silences realtime after ~1h (V-10) | Add onAuthStateChange token refresh in RealtimeProvider |
+| Phase 3 | Supabase Auth allowlist | Preview callback URL blocked (V-2) | Verify wildcard pattern covers all preview URL formats |
+
+---
 
 ---
 
@@ -588,40 +979,41 @@ Common mistakes when connecting to external services.
 | Supabase Auth | Initializing `createServerClient` at module scope | Always initialize inside the request handler body to prevent cross-request session leakage |
 | Supabase RLS | Enabling RLS but using service_role client for all queries | Service_role bypasses RLS entirely; use anon key client for user-authenticated queries |
 | Supabase Realtime | Assuming no changes were missed after reconnect | Re-fetch full schedule window on every reconnect event |
-
----
-
-## Phase-Specific Warnings — v1.2 Migration
-
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| OAuth callback route | provider_refresh_token unavailable outside callback (M-1) | Capture and persist to `user_google_tokens` immediately in callback handler |
-| Middleware replacement | Missing double cookie write, module-scope client, getSession() usage (M-2) | Follow exact Supabase SSR middleware pattern; test session refresh across requests |
-| RLS enablement | service_role client silently bypasses all policies (M-3) | Test with anon key / unauthenticated request to verify policies block access |
-| Schema cleanup | FK constraint order on Auth.js table drop (M-4) | Drop in order: verificationTokens → sessions → accounts → users; or use CASCADE |
-| Deployment | Both parents forced re-login; GCal sync unavailable until both sign in (M-5) | Communicate to both parents; deploy when both available to sign in together |
-| Dashboard caching | ISR cache leaks refreshed JWT cookies across users (M-6) | Add `export const dynamic = 'force-dynamic'` to all authenticated route segments |
-| GCal token handoff | v1.2 sync reads `user_google_tokens`, not old `accounts` table (M-1, M-7) | Build and test new `buildGCalClient()` before dropping Auth.js schema |
+| Vercel deploy | Using Supabase direct DB URL (port 5432) for runtime queries | Use Supavisor pooler URL (port 6543) for Vercel serverless; direct URL only for drizzle-kit |
+| Vercel deploy | Setting env vars without explicit environment scope | Scope each Supabase var to "Production" or "Preview" explicitly to prevent cross-environment data writes |
 
 ---
 
 ## Sources
 
+**v1.3 Vercel Deployment:**
+- Supabase Redirect URLs docs (wildcard syntax): https://supabase.com/docs/guides/auth/redirect-urls
+- Supabase Production Checklist: https://supabase.com/docs/guides/deployment/going-into-prod
+- Supabase Breaking Change — auto-grants removed: https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically
+- Supabase Realtime Authorization: https://supabase.com/docs/guides/realtime/authorization
+- Supabase Postgres Changes: https://supabase.com/docs/guides/realtime/postgres-changes
+- Supabase Managing Environments: https://supabase.com/docs/guides/deployment/managing-environments
+- Vercel + Supabase connection pooling: https://www.iloveblogs.blog/guides/supabase-connection-pooling-vercel
+- Vercel Supabase issues 2026: https://kuberns.com/blogs/vercel-supabase/
+- Next.js 16 Upgrade Guide (middleware → proxy, async APIs): https://nextjs.org/docs/app/guides/upgrading/version-16
+- Google Sensitive Scope Verification: https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification
+- Supabase service_role key exposure (CVE-2025-48757): https://gptsters.com/fix/lovable/service-role-key-exposed
+- Vercel Community — Google OAuth redirect URL with preview URLs: https://community.vercel.com/t/google-oauth-redirect-url-with-vercel-preview-urls-supabase/6345
+- NEXT_PUBLIC_ security guide: https://www.hashbuilds.com/articles/next-js-environment-variables-complete-security-guide-2025
+
+**v1.2 Migration and Original Research:**
 - Supabase Docs — Login with Google (official): https://supabase.com/docs/guides/auth/social-login/auth-google
 - Supabase Docs — Server-Side Auth for Next.js (official): https://supabase.com/docs/guides/auth/server-side/nextjs
 - Supabase Docs — Advanced SSR Auth Guide (official): https://supabase.com/docs/guides/auth/server-side/advanced-guide
 - Supabase Docs — Row Level Security (official): https://supabase.com/docs/guides/database/postgres/row-level-security
 - Drizzle ORM Docs — RLS support (official): https://orm.drizzle.team/docs/rls
-- GitHub: supabase/supabase-js#934 — provider_refresh_token missing after session refresh (by-design): https://github.com/supabase/supabase-js/issues/934
+- GitHub: supabase/supabase-js#934 — provider_refresh_token missing after session refresh: https://github.com/supabase/supabase-js/issues/934
 - GitHub: supabase/auth#1387 — Cross-origin refreshing of provider_token not allowed: https://github.com/supabase/auth/issues/1387
 - GitHub: supabase/supabase#21490 — PKCE flow messes with provider_token refresh: https://github.com/supabase/supabase/issues/21490
-- GitHub: orgs/supabase/discussions#22653 — How to store provider_refresh_token: https://github.com/orgs/supabase/discussions/22653
-- rphlmr/drizzle-supabase-rls — Community RLS+Drizzle pattern: https://github.com/rphlmr/drizzle-supabase-rls
-- MakerKit — Using Drizzle as Supabase client (RLS pattern, January 2025): https://makerkit.dev/docs/next-supabase-turbo/recipes/drizzle-supabase
 - Google OAuth 2.0 for Web Server Applications (official): https://developers.google.com/identity/protocols/oauth2/web-server
 - Google Calendar API Scopes (official): https://developers.google.com/workspace/calendar/api/auth
 
 ---
 
 *Pitfalls research for: Co-parenting custody scheduling app with Google Calendar integration (vuoroasuminen)*
-*Original research: 2026-04-04 | v1.2 migration supplement: 2026-05-09*
+*Original research: 2026-04-04 | v1.2 migration supplement: 2026-05-09 | v1.3 Vercel deployment: 2026-05-15*

@@ -3,7 +3,334 @@
 **Domain:** Real-time collaborative scheduling app with Google Calendar integration
 **Researched (original):** 2026-04-04
 **Updated:** 2026-05-09 — v1.2 milestone: Supabase Auth migration, user_google_tokens, RLS
+**Updated:** 2026-05-15 — v1.3 milestone: Vercel deployment with two Supabase projects
 **Confidence:** HIGH (Supabase Auth token patterns and Drizzle RLS mechanics verified from official docs and reference implementations)
+
+---
+
+## v1.3 Architecture: Vercel Deployment with Two Supabase Projects
+
+The sections below answer the v1.3 research question. The v1.2 architecture research is preserved below.
+
+---
+
+## Environment Routing
+
+### How Vercel decides which Supabase project to talk to
+
+Vercel has three named deployment environments: **Production**, **Preview**, and **Development**. Every env var is scoped to one or more of these at configuration time.
+
+The routing strategy for this project:
+
+| Vercel environment | Git trigger | Supabase project |
+|--------------------|-------------|------------------|
+| Production | push to `main` | `vuoroasuminen-prod` |
+| Preview (all branches / PRs) | push to any non-`main` branch | `vuoroasuminen-staging` |
+| Development | `vercel dev` / local `.env.local` | developer's own `.env.local` |
+
+**Mechanism:** In Vercel Dashboard → Settings → Environment Variables, add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `DATABASE_URL` twice — once scoped to **Production** pointing at `vuoroasuminen-prod`, once scoped to **Preview** pointing at `vuoroasuminen-staging`. Vercel injects the correct set at build time based on which environment the deployment belongs to.
+
+No branch-specific overrides are needed beyond this two-way split. Branch-specific overrides (scoping a var to a single named branch rather than all preview deployments) are available on Hobby plan but are not needed here: every preview deployment should hit staging.
+
+**`NEXT_PUBLIC_` vars baked in at build time:** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are inlined into the client JavaScript bundle by Next.js at build time. They are fixed per deployment. This is correct: each deployment bundle is permanently bound to one Supabase project.
+
+**`DATABASE_URL`:** Used by Drizzle (`src/db/index.ts`) for all server-side queries. On Vercel this runs inside Node.js serverless functions — the connection pool is created per cold start and cannot leak between environments.
+
+### Google OAuth `redirectTo` — already environment-safe
+
+Both `sign-in-button.tsx` and `auth/error/page.tsx` construct the redirect URL as:
+
+```ts
+redirectTo: `${window.location.origin}/auth/callback`
+```
+
+`window.location.origin` always equals the current deployment's actual URL (production domain on production, the unique Vercel preview URL on preview deployments). No code change is needed for this.
+
+### Supabase Auth callback URL — wildcard allow-list in staging project
+
+Supabase Auth validates `redirectTo` against its allow-list before issuing an OAuth code. For the staging project, preview deployments receive dynamic Vercel URLs of the form:
+
+```
+https://vuoroasuminen-<git-hash>-jarnoantikaineni-8355s-projects.vercel.app
+```
+
+The staging project's **Additional Redirect URLs** must include a wildcard pattern covering all such URLs. The Vercel account slug appears in `.vercel/project.json` under `orgId` (`team_Ln6fepDJrFprIll2jXX6dONu`). The slug in preview hostnames is the human-readable form of that id — confirm it from any actual preview deployment URL after first push.
+
+Supabase redirect URL wildcard support (HIGH confidence, from official docs):
+- `*` matches any sequence of characters except `.` and `/`
+- `**` matches any sequence including separators
+
+Pattern to add to the staging project:
+
+```
+https://*-jarnoantikaineni-8355s-projects.vercel.app/**
+```
+
+For the production project, set the exact URL only — do not add the wildcard:
+
+```
+https://vuoroasuminen.vercel.app/**
+```
+
+(Replace with the actual custom domain if one is configured.)
+
+---
+
+## Supabase Project Setup Checklist
+
+Perform these steps for **each** of the two projects. Steps marked `[staging]` or `[prod]` differ between them.
+
+### Step 1 — Create the project
+
+- Supabase Dashboard → New project
+- Names: `vuoroasuminen-staging` and `vuoroasuminen-prod`
+- Region: same region as your Vercel deployment (eu-west-1 / Frankfurt is closest for Finnish users)
+- Note the **project ref**, **project URL**, **anon key**, and **service role key** from Settings → API
+- Note the **Database URI** from Settings → Database → Connection string → URI (port 5432 direct, NOT port 6543 pooler)
+
+### Step 2 — Apply the Drizzle schema
+
+The project uses `db:push` for schema management (not Supabase CLI migrations — see `supabase/policies.sql` header, decision D-01).
+
+```bash
+# Set DATABASE_URL in .env.local to the target project's connection string, then:
+npm run db:push
+```
+
+Tables created:
+- `public.children`
+- `public.schedules`
+- `public.schedule_entries` (with `UNIQUE(child_id, day)`)
+- `public.gcal_events` (with `UNIQUE(schedule_entry_id, calendar_id)`)
+- `public.user_google_tokens`
+- `public.schedule_status` enum
+
+The legacy Auth.js tables (`accounts`, `sessions`, `users`, `verificationTokens`) from `drizzle/0000_slow_tag.sql` were dropped in v1.2. Running `db:push` on a fresh project applies only the current schema.
+
+### Step 3 — Apply RLS policies
+
+In Supabase Dashboard → SQL Editor, run `supabase/policies.sql` in full.
+
+This script:
+1. Enables RLS on all 5 domain tables
+2. Creates 16 policies (4 operations × 4 domain tables; 3 operations × `user_google_tokens`)
+3. Enables Supabase Realtime CDC on `schedule_entries` via `ALTER PUBLICATION supabase_realtime ADD TABLE`
+
+All statements in `policies.sql` are idempotent for `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and `ALTER PUBLICATION ... ADD TABLE` (no-ops if already applied). `CREATE POLICY` is NOT idempotent — it errors if the policy name already exists. On a fresh project this is not an issue.
+
+### Step 4 — Configure Supabase Auth: Google provider
+
+Dashboard → Authentication → Providers → Google:
+
+| Field | Value |
+|-------|-------|
+| Enable Sign in with Google | ON |
+| Client ID (for OAuth) | Value of `GOOGLE_CLIENT_ID` env var |
+| Client Secret | Value of `GOOGLE_CLIENT_SECRET` env var |
+
+Both projects can share the same Google Cloud OAuth client — one client, two Supabase projects.
+
+In Google Cloud Console → APIs & Services → Credentials → the OAuth client, add both Supabase callback URLs to **Authorized redirect URIs**:
+
+```
+https://<staging-project-ref>.supabase.co/auth/v1/callback
+https://<prod-project-ref>.supabase.co/auth/v1/callback
+```
+
+Also add both app origins to **Authorized JavaScript origins**:
+
+```
+https://vuoroasuminen.vercel.app
+```
+
+Note: Google Cloud Console does not support wildcards in Authorized JavaScript origins. For preview deployments, JavaScript origin validation is typically not triggered because the OAuth flow is initiated from the Supabase Auth URL, not from a preview deployment origin. The redirect URI validation is what matters, and that is handled by the Supabase project callback URL (which is fixed, not dynamic).
+
+### Step 5 — Configure Supabase Auth: Site URL and redirect allow-list
+
+Dashboard → Authentication → URL Configuration:
+
+**Staging project:**
+
+| Setting | Value |
+|---------|-------|
+| Site URL | `https://vuoroasuminen.vercel.app` (any valid URL works; the app uses `window.location.origin` dynamically, so this is only Supabase's fallback) |
+| Additional redirect URLs | `https://*-jarnoantikaineni-8355s-projects.vercel.app/**` |
+
+**Production project:**
+
+| Setting | Value |
+|---------|-------|
+| Site URL | `https://vuoroasuminen.vercel.app` (or custom domain) |
+| Additional redirect URLs | `https://vuoroasuminen.vercel.app/**` |
+
+Do NOT add the preview wildcard to the production project. Production auth should only accept the production domain.
+
+### Step 6 — Seed children
+
+```bash
+# Set DATABASE_URL and APP_CHILDREN in .env.local for the target project, then:
+npm run db:seed
+```
+
+Required before first login. The schedule-entry auto-generation queries depend on children rows existing.
+
+### Step 7 — Collect secrets for Vercel
+
+Per project, record:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `DATABASE_URL` (port 5432 direct connection)
+
+---
+
+## Modified Components
+
+Files that require changes for the v1.3 deployment milestone.
+
+### `scripts/generate-app-config.js` — harden missing-var behavior
+
+**Current behavior:** When required env vars are absent, the script logs a message and exits with code 0 (success). On Vercel, if the `APP_*` vars are not set, the build succeeds but `src/config/app.ts` is the unmodified dev version with placeholder calendar IDs.
+
+**Required change:** Change the early exit to `process.exit(1)` so a Vercel build with missing app config vars fails immediately and visibly rather than silently deploying broken config.
+
+```js
+// In scripts/generate-app-config.js, change:
+console.log(`generate-app-config: skipping (missing env vars: ${missing.join(", ")})`)
+process.exit(0)
+// To:
+console.error(`generate-app-config: REQUIRED env vars missing: ${missing.join(", ")}`)
+process.exit(1)
+```
+
+This is the only code change required for Vercel deployment.
+
+### `.env.example` — documentation update
+
+Document the two-environment structure. No runtime impact. Add a section comment explaining that `NEXT_PUBLIC_SUPABASE_*` and `DATABASE_URL` should point to staging for local dev, and that Vercel has separate values per environment.
+
+### All other files — no changes needed
+
+| File | Status | Reason |
+|------|--------|--------|
+| `src/env.ts` | No change | `dotenv.config()` is a no-op on Vercel (no `.env.local`); `process.env` checks still work because Vercel injects vars directly |
+| `src/lib/supabase/server.ts` | No change | Reads `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` from env; correct per environment |
+| `src/lib/supabase/middleware.ts` | No change | Same |
+| `src/middleware.ts` | No change | Same |
+| `src/app/auth/callback/route.ts` | No change | Uses env vars; `window.location.origin` pattern already handles dynamic URLs |
+| `src/components/sign-in-button.tsx` | No change | `window.location.origin` already correct for all environments |
+| `src/app/auth/error/page.tsx` | No change | Same |
+| `src/components/schedule/realtime-provider.tsx` | No change | Reads `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` baked into the bundle |
+| `src/lib/gcal/client.ts` | No change | Uses `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (shared across environments) |
+| `src/db/index.ts` | No change | `DATABASE_URL` per environment |
+| `drizzle.config.ts` | No change | Reads `DATABASE_URL`; only used locally |
+
+---
+
+## Suggested Build Order
+
+Dependencies are noted for each step. A step cannot start until its dependency is complete.
+
+### Phase 1 — Provision both Supabase projects
+
+No code changes. Can be done in parallel for staging and prod.
+
+For each project (staging first, then prod):
+1. Create project in Supabase Dashboard
+2. Apply Drizzle schema: `npm run db:push` with target project's `DATABASE_URL`
+3. Apply RLS policies: run `supabase/policies.sql` in SQL Editor
+4. Enable Google Auth provider in Dashboard
+5. Configure Site URL and redirect URL allow-list
+6. Seed children: `npm run db:seed`
+7. Record secrets (URL, anon key, DATABASE_URL)
+
+Add both Supabase callback URLs to Google Cloud Console authorized redirect URIs (after completing step 1 for both projects, since you need both project refs).
+
+### Phase 2 — Configure Vercel environment variables
+
+Depends on: Phase 1 (need the secrets)
+
+1. Open Vercel Dashboard → project `vuoroasuminen` → Settings → Environment Variables
+2. Add **Production**-scoped vars pointing at `vuoroasuminen-prod`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `DATABASE_URL`
+3. Add **Preview**-scoped vars pointing at `vuoroasuminen-staging`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `DATABASE_URL`
+4. Add vars shared across both environments (same value for Production and Preview):
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `APP_FATHER_NAME`, `APP_FATHER_EMAIL`, `APP_FATHER_CALENDAR_ID`
+   - `APP_MOTHER_NAME`, `APP_MOTHER_EMAIL`, `APP_MOTHER_CALENDAR_ID`
+   - `APP_CHILDREN`, `APP_START_DATE`, `APP_FIRST_PARENT`
+   - `APP_CALENDAR_OWNER_EMAIL`
+   - `PARENT_FATHER_EMAIL`, `PARENT_MOTHER_EMAIL`
+
+### Phase 3 — Harden build script
+
+Depends on: none (can be done before or after Phase 1–2)
+
+1. Change `scripts/generate-app-config.js` to exit with code 1 on missing vars
+2. Push to a non-`main` branch to trigger a preview deployment
+3. Confirm build succeeds (vars present) or fails clearly (vars missing)
+
+### Phase 4 — Verify staging deployment
+
+Depends on: Phases 1, 2, 3
+
+1. Push any commit to a non-`main` branch → Vercel triggers preview deployment
+2. Open the preview URL → confirm sign-in page loads
+3. Sign in with father's Google account → confirm `/dashboard` redirect
+4. In Supabase staging Dashboard → Table Editor, confirm `user_google_tokens` row created
+5. Edit a schedule cell → confirm change persists in the staging database
+6. Sign in with mother's Google account in a second browser/incognito window
+7. Confirm mother sees father's edit in real time (Realtime subscription working)
+8. Publish → confirm Google Calendar events created (GCal uses the same credentials as prod)
+
+### Phase 5 — Verify production deployment
+
+Depends on: Phase 4 (staging verified first to avoid debugging on prod)
+
+1. Merge to `main` → Vercel triggers production deployment
+2. Same smoke test as Phase 4 but against the production Supabase project
+3. Confirm production URL is accessible externally (share with both parents)
+4. Both parents sign in → confirm `user_google_tokens` rows created in prod Supabase
+
+### Phase 6 — Hardening before real-user handoff
+
+Depends on: Phase 5
+
+1. Configure custom domain in Vercel (if desired) → update Supabase prod Site URL and Google Cloud Console authorized origins
+2. Upgrade Supabase prod project from Free to Pro ($25/mo) — the Free tier pauses after 1 week of inactivity, which would break the app unexpectedly
+3. Git history scrub for `src/config/app.ts` (CR-01 from PROJECT.md) — before sharing the production URL publicly or with third parties
+4. Google OAuth app verification in Google Cloud Console — required to remove the "unverified app" warning shown to users during sign-in; takes 3–5 business days
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Vercel env var scoping (Production vs Preview) | HIGH | Verified from Vercel official docs (last updated 2026-02-23) |
+| Branch-specific vars available on Hobby plan | HIGH | Confirmed from Vercel docs |
+| Supabase Auth redirect URL wildcard patterns | HIGH | Verified from Supabase official docs |
+| `window.location.origin` already handles dynamic URLs | HIGH | Direct codebase inspection |
+| `db:push` as schema migration path | HIGH | Confirmed from `drizzle.config.ts`, `policies.sql` header comment, npm scripts |
+| `SUPABASE_SERVICE_ROLE_KEY` not currently used in src/ | HIGH | Grepped entire src/ tree; no references found; Drizzle uses DATABASE_URL directly |
+| Google Cloud Console JavaScript origins wildcard | MEDIUM | Google does not officially document wildcard support for JS origins; the OAuth flow for this app goes through the Supabase URL so the origin check is less critical than the redirect URI check |
+
+---
+
+## Sources (v1.3 additions)
+
+- Vercel Environment Variables official docs: https://vercel.com/docs/environment-variables
+- Vercel Environments overview: https://vercel.com/docs/deployments/environments
+- Vercel staging setup KB: https://vercel.com/kb/guide/set-up-a-staging-environment-on-vercel
+- Supabase Managing Environments: https://supabase.com/docs/guides/deployment/managing-environments
+- Supabase Redirect URLs (wildcards): https://supabase.com/docs/guides/auth/redirect-urls
+- Supabase Google Auth provider: https://supabase.com/docs/guides/auth/social-login/auth-google
+- Supabase Vibe Coder's Environments Guide: https://supabase.com/blog/the-vibe-coders-guide-to-supabase-environments
 
 ---
 
@@ -625,3 +952,8 @@ Use one event per child per day.
 - Google Calendar API sync guide: https://developers.google.com/workspace/calendar/api/guides/sync
 - Auth.js Refresh Token Rotation (v1.0 reference): https://authjs.dev/guides/refresh-token-rotation
 - Supabase Realtime with Next.js: https://supabase.com/docs/guides/realtime/realtime-with-nextjs
+- Vercel Environment Variables official docs: https://vercel.com/docs/environment-variables
+- Vercel Environments overview: https://vercel.com/docs/deployments/environments
+- Vercel staging setup KB: https://vercel.com/kb/guide/set-up-a-staging-environment-on-vercel
+- Supabase Managing Environments: https://supabase.com/docs/guides/deployment/managing-environments
+- Supabase Redirect URLs (wildcards): https://supabase.com/docs/guides/auth/redirect-urls
