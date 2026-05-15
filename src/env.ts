@@ -3,9 +3,8 @@ import { config } from "dotenv"
 config({ path: ".env.local" })
 
 const REQUIRED_ENV_VARS = [
-  "AUTH_GOOGLE_ID",
-  "AUTH_GOOGLE_SECRET",
-  "AUTH_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
   "DATABASE_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
