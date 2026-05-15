@@ -3,15 +3,23 @@
  *
  * Mocks:
  * - @/db — vi.mock to capture inserted rows without a live database
- * - @/auth — vi.mock to control session state
+ * - @/lib/supabase/server — vi.mock to control session state (Auth.js mock removed in Phase 10)
  *
  * All 8 test cases from the plan's <behavior> section are covered.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
-// --- Mock @/auth ---
-vi.mock("@/auth", () => ({
-  auth: vi.fn(),
+// --- Mock @/lib/supabase/server ---
+// Production code (src/actions/schedule.ts) calls:
+//   const supabase = await createSupabaseServerClient()
+//   const { data: { user } } = await supabase.auth.getUser()
+// The mock returns a fake client whose auth.getUser() resolves to the
+// session shape configured by the helpers below.
+const mockGetUser = vi.fn()
+vi.mock("@/lib/supabase/server", () => ({
+  createSupabaseServerClient: vi.fn(async () => ({
+    auth: { getUser: mockGetUser },
+  })),
 }))
 
 // --- Mock @/db ---
@@ -33,28 +41,32 @@ vi.mock("next/headers", () => ({
 
 // Import after mocks are declared
 import { extendSchedule } from "./schedule"
-import { auth } from "@/auth"
 import { db } from "@/db"
 
-const mockAuth = vi.mocked(auth)
 const mockDb = vi.mocked(db)
 
 // ─── Session helpers ────────────────────────────────────────────────────────
 
 function setAuthorizedSession() {
   // "father@example.com" matches the example config used by vitest alias
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockAuth.mockResolvedValue({ user: { email: "father@example.com" } } as any)
+  mockGetUser.mockResolvedValue({
+    data: { user: { email: "father@example.com" } },
+    error: null,
+  })
 }
 
 function setNoSession() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockAuth.mockResolvedValue(null as any)
+  mockGetUser.mockResolvedValue({
+    data: { user: null },
+    error: null,
+  })
 }
 
 function setUnauthorizedSession() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mockAuth.mockResolvedValue({ user: { email: "stranger@example.com" } } as any)
+  mockGetUser.mockResolvedValue({
+    data: { user: { email: "stranger@example.com" } },
+    error: null,
+  })
 }
 
 // ─── DB mock helpers ─────────────────────────────────────────────────────────
