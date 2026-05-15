@@ -32,9 +32,12 @@
 
 ### Auth.js Cleanup (CLEAN)
 
-- [ ] **CLEAN-01**: `next-auth` and `@auth/drizzle-adapter` packages uninstalled
-- [ ] **CLEAN-02**: Auth.js database tables dropped via safe migration (FK order: `verificationTokens` → `sessions` → `accounts` → `users`)
-- [ ] **CLEAN-03**: Auth.js environment variables removed (`AUTH_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` replaced by Supabase Dashboard config)
+- [x] **CLEAN-01
+**: `next-auth` and `@auth/drizzle-adapter` packages uninstalled
+- [x] **CLEAN-02
+**: Auth.js database tables dropped via safe migration (FK order: `verificationTokens` → `sessions` → `accounts` → `users`)
+- [x] **CLEAN-03
+**: Auth.js environment variables removed (`AUTH_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` replaced by Supabase Dashboard config)
 
 ---
 

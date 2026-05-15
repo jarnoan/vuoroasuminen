@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Supabase Auth Migration
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-05-15T02:40:39.521Z"
+stopped_at: "Completed 10-04-PLAN.md automated tasks; checkpoint:human-verify pending for Task 3"
+last_updated: "2026-05-15T03:10:08.569Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
@@ -29,7 +29,7 @@ Plan: 1 of --name
 Next: Phase 09 — Row Level Security
 Status: Executing Phase --phase
 
-Progress: [███░░░░░░░] 33%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [███░░░░░░░] 33%
 | 8 | 8 | - | - |
 
 *Updated after each plan completion*
+| Phase 10 P04 | 6 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Key decisions and constraints for v1.2 work:
 - GCal sync and `user_google_tokens` reads always use the admin Drizzle connection (service_role), not `withRLS`
 - Auth.js table drop order: `verificationTokens` → `sessions` → `accounts` → `users` (FK chain)
 - GATE between Phase 8 and Phase 9: sign in end-to-end + confirm token row exists + confirm GCal sync works BEFORE enabling RLS
+- vitest.config.ts must exclude **/.{git,claude}/** to prevent abandoned parallel-agent worktrees from causing false-positive suite failures
+- db:push verbose mode must be used to confirm no-op; the non-verbose Changes applied message is drizzle-kit completion UX, not DDL execution
+- CLAUDE.md grep hits for @auth/drizzle-adapter and next-auth are documentation artifacts in tech stack evaluation tables — accepted, not active code references
 
 ### Pending Todos (Operational — pre-deploy)
 
@@ -108,8 +112,8 @@ Items carried forward from v1.1 milestone close (2026-05-06):
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 9 context gathered
-Resume file: --resume-file
+Last session: 2026-05-15T03:10:08.567Z
+Stopped at: Completed 10-04-PLAN.md automated tasks; checkpoint:human-verify pending for Task 3
+Resume file: None
 
 **Planned Phase:** 10 (Auth.js Removal) — 4 plans — 2026-05-14T20:37:10.042Z
