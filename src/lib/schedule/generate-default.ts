@@ -1,12 +1,15 @@
 import { addDays, differenceInCalendarWeeks, startOfToday, startOfWeek, format, parseISO } from "date-fns"
-import config from "@/config/app"
 import type { ParentId } from "./types"
 
 /**
  * Generate default schedule entries for the 12-week rolling window.
- * Uses the alternating-week pattern from AppConfig:
- * - config.startDate is the first Monday of the pattern
- * - config.firstParent gets week 1, the other parent gets week 2, alternating
+ * Uses the alternating-week pattern from caller-supplied parameters
+ * (Phase 12 D-16 — accepts config as parameters rather than reading
+ * a module-scope singleton, so the function is unit-testable and
+ * compatible with the async DB-backed config).
+ *
+ * - startDate is the first Monday of the alternating pattern
+ * - firstParent gets week 1; the other parent gets week 2, alternating
  * - Each child gets the same parent for the full week (Mon-Sun)
  *
  * Returns an array of { childName, day, parentId } objects ready for DB insert.
@@ -14,16 +17,18 @@ import type { ParentId } from "./types"
 export function generateDefaultEntries(
   windowStart: Date,
   windowEnd: Date,
-  childNames: string[]
+  childNames: string[],
+  startDate: string,
+  firstParent: ParentId,
 ): Array<{ childName: string; day: string; parentId: ParentId }> {
-  const patternStart = new Date(config.startDate)
-  const otherParent: ParentId = config.firstParent === "father" ? "mother" : "father"
+  const patternStart = new Date(startDate)
+  const otherParent: ParentId = firstParent === "father" ? "mother" : "father"
   const entries: Array<{ childName: string; day: string; parentId: ParentId }> = []
 
   let current = windowStart
   while (current <= windowEnd) {
     const weekOffset = differenceInCalendarWeeks(current, patternStart, { weekStartsOn: 1 })
-    const parentForWeek: ParentId = weekOffset % 2 === 0 ? config.firstParent : otherParent
+    const parentForWeek: ParentId = weekOffset % 2 === 0 ? firstParent : otherParent
 
     const dayStr = format(current, "yyyy-MM-dd")
     for (const childName of childNames) {
