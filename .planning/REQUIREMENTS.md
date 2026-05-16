@@ -7,11 +7,11 @@
 
 ### Deploy
 
-- [ ] **DPLY-01**: User can access the app at a stable production URL (Vercel linked to repo, main branch auto-deploys)
-- [ ] **DPLY-02**: Google OAuth sign-in works on the production domain (Supabase callback URL registered in Google Cloud Console)
-- [ ] **DPLY-03**: Supabase Auth accepts sign-ins from the production domain (Site URL + redirect allowlist configured)
-- [ ] **DPLY-04**: Build fails loudly when required env vars are missing (generate-app-config.js exits 1, not 0)
-- [ ] **DPLY-05**: Next.js 16 middleware compliance (middleware.ts renamed to proxy.ts)
+- [x] **DPLY-01**: User can access the app at a stable production URL (Vercel linked to repo, main branch auto-deploys)
+- [x] **DPLY-02**: Google OAuth sign-in works on the production domain (Supabase callback URL registered in Google Cloud Console)
+- [x] **DPLY-03**: Supabase Auth accepts sign-ins from the production domain (Site URL + redirect allowlist configured)
+- [x] **DPLY-04**: Build fails loudly when required env vars are missing (generate-app-config.js exits 1, not 0)
+- [x] **DPLY-05**: Next.js 16 middleware compliance (middleware.ts renamed to proxy.ts)
 
 ### Onboarding
 
@@ -49,11 +49,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DPLY-01 | Phase 11 | Pending |
-| DPLY-02 | Phase 11 | Pending |
-| DPLY-03 | Phase 11 | Pending |
-| DPLY-04 | Phase 11 | Pending |
-| DPLY-05 | Phase 11 | Pending |
+| DPLY-01 | Phase 11 | Complete |
+| DPLY-02 | Phase 11 | Complete |
+| DPLY-03 | Phase 11 | Complete |
+| DPLY-04 | Phase 11 | Complete |
+| DPLY-05 | Phase 11 | Complete |
 | ONBR-03 | Phase 12 | Pending |
 | ONBR-04 | Phase 12 | Pending |
 | ONBR-05 | Phase 13 | Pending |

@@ -45,7 +45,7 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 ### v1.3 Deploy + Onboarding (Phases 11–13)
 
-- [ ] **Phase 11: Production Deploy** - Build fixes + Vercel deployment + Google OAuth + Supabase auth configuration
+- [x] **Phase 11: Production Deploy** - Build fixes + Vercel deployment + Google OAuth + Supabase auth configuration (completed 2026-05-16)
 - [ ] **Phase 12: Onboarding Wizard** - DB-driven family config replaces env vars; wizard UI for first parent
 - [ ] **Phase 13: Invite + Access Gate** - Invite link system for second parent; middleware gate enforcing setup completion
 
@@ -64,7 +64,7 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 **Plans**: 3 plans
 - [x] 11-01-PLAN.md — Build script fix (exit 1 + dotenv) and .env.example documentation update (DPLY-04)
 - [x] 11-02-PLAN.md — Rename src/middleware.ts to src/proxy.ts for Next.js 16 compliance (DPLY-05)
-- [ ] 11-03-PLAN.md — Vercel deploy, OAuth/Supabase configuration, end-to-end sign-in verification (DPLY-01, DPLY-02, DPLY-03)
+- [x] 11-03-PLAN.md — Vercel deploy, OAuth/Supabase configuration, end-to-end sign-in verification (DPLY-01, DPLY-02, DPLY-03)
 **UI hint**: no
 
 ### Phase 12: Onboarding Wizard
@@ -124,6 +124,6 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete | 2026-05-10 |
 | 9. Row Level Security | v1.2 | 4/4 | Complete | 2026-05-14 |
 | 10. Auth.js Removal | v1.2 | 4/4 | Complete | 2026-05-15 |
-| 11. Production Deploy | v1.3 | 0/3 | Not started | - |
+| 11. Production Deploy | v1.3 | 3/3 | Complete    | 2026-05-16 |
 | 12. Onboarding Wizard | v1.3 | 0/? | Not started | - |
 | 13. Invite + Access Gate | v1.3 | 0/? | Not started | - |
