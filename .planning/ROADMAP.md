@@ -93,7 +93,11 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   3. An invite token that has expired or has already been used is rejected with a clear error message
   4. Visiting the schedule URL without being signed in redirects to the sign-in page
   5. Visiting the schedule URL signed in but with onboarding incomplete redirects to the setup wizard
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 13-P01-PLAN.md — generateInviteToken + getActiveInviteToken Server Actions + /invite/[token] acceptance page (ONBR-05, ONBR-06)
+- [ ] 13-P02-PLAN.md — StepComplete invite URL display + Dashboard invite section with Parent B join detection (ONBR-05)
+- [ ] 13-P03-PLAN.md — auth/callback invite cookie consumption + auth/error unauthorized_email variant (ONBR-06)
+- [ ] 13-P04-PLAN.md — proxy.ts three-tier middleware gate: auth + family_config + email match (ONBR-07)
 **UI hint**: yes
 
 ## Coverage
@@ -131,4 +135,4 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 | 10. Auth.js Removal | v1.2 | 4/4 | Complete | 2026-05-15 |
 | 11. Production Deploy | v1.3 | 3/3 | Complete    | 2026-05-16 |
 | 12. Onboarding Wizard | v1.3 | 5/5 | Complete    | 2026-05-16 |
-| 13. Invite + Access Gate | v1.3 | 0/? | Not started | - |
+| 13. Invite + Access Gate | v1.3 | 0/4 | Not started | - |
