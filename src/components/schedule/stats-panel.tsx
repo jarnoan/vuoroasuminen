@@ -2,18 +2,18 @@
 
 import { useMemo } from "react"
 import { computeStats } from "@/lib/schedule/stats"
-import config from "@/config/app"
-import type { ScheduleDay } from "@/lib/schedule/types"
+import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
 
 interface StatsPanelProps {
   days: ScheduleDay[]
+  parents: Array<{ id: ParentId; name: string }>
 }
 
-export function StatsPanel({ days }: StatsPanelProps) {
-  const stats = useMemo(() => computeStats(days, config.parents), [days])
+export function StatsPanel({ days, parents }: StatsPanelProps) {
+  const stats = useMemo(() => computeStats(days, parents), [days, parents])
 
   const parentName = (id: string) =>
-    config.parents.find((p) => p.id === id)?.name ?? id
+    parents.find((p) => p.id === id)?.name ?? id
 
   return (
     <div className="border rounded-lg p-3 mb-4 bg-muted/30 text-sm space-y-1">

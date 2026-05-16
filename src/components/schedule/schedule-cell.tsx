@@ -1,6 +1,5 @@
 "use client"
 
-import config from "@/config/app"
 import type { ParentId } from "@/lib/schedule/types"
 
 interface ScheduleCellProps {
@@ -10,6 +9,7 @@ interface ScheduleCellProps {
   childName: string
   onToggle: (entryId: string, newParentId: ParentId) => void
   onClear: (entryId: string) => void
+  parents: Array<{ id: ParentId; name: string }>
 }
 
 const colorMap: Record<ParentId, Record<"draft" | "published", string>> = {
@@ -29,8 +29,9 @@ export function ScheduleCell({
   status,
   onToggle,
   onClear,
+  parents,
 }: ScheduleCellProps) {
-  const displayName = config.parents.find((p) => p.id === parentId)?.name ?? parentId
+  const displayName = parents.find((p) => p.id === parentId)?.name ?? parentId
   const newParentId: ParentId = parentId === "father" ? "mother" : "father"
   const colorClass = colorMap[parentId][status]
 
