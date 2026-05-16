@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Alert } from "@/components/ui/alert"
 import { Info } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function StepComplete() {
   return (
@@ -19,9 +20,9 @@ export function StepComplete() {
           käyttää yksin.
         </span>
       </Alert>
-      <Button size="lg" render={<Link href="/dashboard" />}>
+      <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }))}>
         Siirry aikatauluun
-      </Button>
+      </Link>
     </div>
   )
 }

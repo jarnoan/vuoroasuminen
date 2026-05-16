@@ -15,13 +15,16 @@ export default async function SetupPage() {
   if (!user) redirect("/")
 
   // Per Interaction states: if family_config already exists, redirect to /dashboard.
-  // This prevents an onboarded user from accidentally re-running the wizard via direct URL.
+  // redirect() works by throwing internally — must be called OUTSIDE try/catch or
+  // the catch block will swallow the redirect signal.
+  let configExists = false
   try {
     await getAppConfig()
-    redirect("/dashboard")
+    configExists = true
   } catch {
-    // No config → proceed with wizard
+    // No config row → proceed with wizard
   }
+  if (configExists) redirect("/dashboard")
 
   const parentAEmail = user.email ?? ""
   const parentAName =
