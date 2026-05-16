@@ -5,7 +5,7 @@ import { scheduleEntries, schedules, children } from "@/db/schema/domain"
 import { and, eq, gte, lte } from "drizzle-orm"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { ParentId } from "@/config/app"
-import config from "@/config/app"
+import { getAppConfig } from "@/config/app"
 import { getWindowBounds, generateDefaultEntries } from "@/lib/schedule/generate-default"
 import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCalendarDays } from "date-fns"
 import { syncCalendarsAfterPublish } from "@/lib/gcal/sync"
@@ -20,6 +20,7 @@ async function requireAuthorizedParent() {
   } = await supabase.auth.getUser()
   const email = user?.email
   if (!email) throw new Error("Not authenticated")
+  const config = await getAppConfig()
   const isAuthorized = config.parents.some((p) => p.email === email)
   if (!isAuthorized) throw new Error("Forbidden")
   return { user, email }
@@ -146,6 +147,7 @@ export async function extendSchedule(input: {
   const newStartDate = format(rangeStart, "yyyy-MM-dd")
 
   // --- Build child name → id map (mirrors queries.ts pattern) ---
+  const config = await getAppConfig()
   const allChildren = await db.select().from(children)
   const orderedChildren = config.children
     .map(name => allChildren.find(c => c.name === name))
@@ -165,7 +167,7 @@ export async function extendSchedule(input: {
   }
 
   // --- Generate alternating-default entries for the new range ---
-  const defaults = generateDefaultEntries(rangeStart, rangeEnd, config.children)
+  const defaults = generateDefaultEntries(rangeStart, rangeEnd, config.children, config.startDate, config.firstParent)
   const insertValues = defaults.map(d => ({
     scheduleId: schedule.id,
     childId: childNameToId.get(d.childName)!,

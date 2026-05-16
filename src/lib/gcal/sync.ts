@@ -3,7 +3,7 @@ import { gcalEvents, scheduleEntries, children as childrenTable } from "@/db/sch
 import { eq, and, gte, lte, inArray } from "drizzle-orm"
 import { addDays, parseISO, format } from "date-fns"
 import { getWindowBounds } from "@/lib/schedule/generate-default"
-import config from "@/config/app"
+import { getAppConfig } from "@/config/app"
 import { buildGCalClient } from "@/lib/gcal/client"
 
 /**
@@ -62,6 +62,7 @@ export interface SyncResult {
  * The database publish is NOT rolled back on sync failure. (per D-05)
  */
 export async function syncCalendarsAfterPublish(): Promise<SyncResult> {
+  const config = await getAppConfig()
   const { start, end } = getWindowBounds()
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
@@ -152,7 +153,7 @@ type GcalRow = {
 }
 
 async function syncParentCalendar(
-  parent: (typeof config.parents)[number],
+  parent: { id: string; name: string; email: string; calendarId: string; ownerEmail: string },
   publishedEntries: PublishedEntry[],
   existingGcalRows: GcalRow[],
   childNameMap: Map<string, string>

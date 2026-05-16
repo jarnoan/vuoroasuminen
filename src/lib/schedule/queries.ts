@@ -3,11 +3,12 @@ import { scheduleEntries, children, schedules } from "@/db/schema/domain"
 import { and, gte, lte, max } from "drizzle-orm"
 import { format, addDays, isToday as isTodayFn } from "date-fns"
 import { fi } from "date-fns/locale"
-import config from "@/config/app"
+import { getAppConfig } from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
 import type { ScheduleDay, DateWindow, ScheduleCell, ParentId } from "./types"
 
 export async function getScheduleWindow(startDate?: string): Promise<DateWindow> {
+  const config = await getAppConfig()
   const { start, end } = getWindowBounds(startDate)
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
@@ -27,7 +28,7 @@ export async function getScheduleWindow(startDate?: string): Promise<DateWindow>
   if (entries.length === 0) {
     // Create a schedule record
     const [schedule] = await db.insert(schedules).values({}).returning()
-    const defaults = generateDefaultEntries(start, end, config.children)
+    const defaults = generateDefaultEntries(start, end, config.children, config.startDate, config.firstParent)
 
     // Map child names to IDs
     const childNameToId = new Map(orderedChildren.map(c => [c.name, c.id]))
