@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Deploy + Onboarding
-status: in_progress
-stopped_at: Roadmap created — Phase 11 next
-last_updated: "2026-05-16T00:00:00.000Z"
+status: planning
+stopped_at: Phase 11 context gathered
+last_updated: "2026-05-16T05:16:14.125Z"
+last_activity: 2026-05-16 — v1.3 roadmap created (Phases 11–13)
 progress:
   total_phases: 3
   completed_phases: 0
@@ -112,6 +113,7 @@ Items carried forward to v1.3:
 | quick_task | 20260515-env-local-dedup | complete — removed 9 unused APP_* vars from .env.local |
 
 Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
+
 - 260406-oca, 260406-ogw, 260407-r3q, 260407-rbx, 260407-rim
 - 260412-fhd, 260412-fjd, 260412-u66, 260412-ud9, 260412-ut3, 260412-v2m
 - 260420-p95, 260421-translate-ui-to-finnish, 260425-g08
@@ -119,8 +121,8 @@ Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
 ## Session Continuity
 
 Last activity: 2026-05-16 - v1.3 roadmap created (Phases 11–13)
-Last session: 2026-05-16T00:00:00.000Z
-Stopped at: Roadmap written — ready to plan Phase 11 (Production Deploy)
-Resume file: None
+Last session: --stopped-at
+Stopped at: Phase 11 context gathered
+Resume file: --resume-file
 
 **Planned Phase:** 11 (Production Deploy) — 0 plans — 2026-05-16
