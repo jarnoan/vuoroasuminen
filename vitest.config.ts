@@ -19,11 +19,11 @@ export default defineConfig({
   resolve: {
     alias: [
       // Specific alias must come before the broad "@" alias.
-      // In CI / worktree environments, src/config/app.ts is gitignored;
-      // map to the example file so tests can import and mock it.
+      // Phase 12: src/config/app.ts is now the DB-backed async module (no longer gitignored).
+      // The alias resolves to the actual file; tests that depend on config mock @/db instead.
       {
         find: "@/config/app",
-        replacement: path.resolve(__dirname, "./src/config/app.example.ts"),
+        replacement: path.resolve(__dirname, "./src/config/app.ts"),
       },
       {
         find: "@",
