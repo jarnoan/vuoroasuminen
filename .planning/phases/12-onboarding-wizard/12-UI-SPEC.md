@@ -1,7 +1,8 @@
 ---
 phase: 12
 slug: onboarding-wizard
-status: draft
+status: approved
+reviewed_at: 2026-05-16
 shadcn_initialized: true
 preset: base-nova
 created: 2026-05-16
