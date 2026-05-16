@@ -9,6 +9,11 @@
 const fs = require("fs")
 const path = require("path")
 
+// Load .env.local for local builds (on Vercel, vars are injected directly into process.env).
+// Pattern mirrors src/env.ts: config({ path: ".env.local" }).
+// __dirname required because this script runs from scripts/, not the project root.
+require("dotenv").config({ path: path.join(__dirname, "../.env.local") })
+
 const required = [
   "APP_FATHER_NAME",
   "APP_FATHER_EMAIL",
@@ -24,11 +29,10 @@ const required = [
 
 const missing = required.filter((k) => !process.env[k])
 if (missing.length > 0) {
-  // If env vars aren't set, skip generation (local dev uses app.ts directly)
-  console.log(
-    `generate-app-config: skipping (missing env vars: ${missing.join(", ")})`
+  console.error(
+    `generate-app-config: FATAL: missing required env vars: ${missing.join(", ")}`
   )
-  process.exit(0)
+  process.exit(1)
 }
 
 const children = process.env.APP_CHILDREN.split(",").map((s) => s.trim())
