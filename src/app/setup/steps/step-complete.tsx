@@ -19,8 +19,8 @@ export function StepComplete() {
           käyttää yksin.
         </span>
       </Alert>
-      <Button asChild size="lg">
-        <Link href="/dashboard">Siirry aikatauluun</Link>
+      <Button size="lg" render={<Link href="/dashboard" />}>
+        Siirry aikatauluun
       </Button>
     </div>
   )

@@ -48,7 +48,8 @@ let capturedInsertValues: Record<string, unknown> | null = null
 function setupInsertMock() {
   capturedConflictSet = null
   capturedInsertValues = null
-  mockDb.insert.mockImplementation((): unknown => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockDb.insert.mockImplementation((): any => ({
     values: vi.fn((v: Record<string, unknown>) => {
       capturedInsertValues = v
       return {

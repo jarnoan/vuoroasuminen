@@ -17,9 +17,7 @@ const WizardInputSchema = z.object({
     .array(z.string().min(1, "Lapsen nimi ei voi olla tyhjä").max(80))
     .min(1, "Lisää vähintään yksi lapsen nimi"),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Virheellinen päivämäärä"),
-  firstParent: z.enum(["father", "mother"], {
-    errorMap: () => ({ message: "Valitse kumpi vanhempi aloittaa" }),
-  }),
+  firstParent: z.enum(["father", "mother"]),
 })
 
 export type WizardInput = z.infer<typeof WizardInputSchema>

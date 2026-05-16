@@ -1,7 +1,7 @@
 import "../env" // must be first — loads .env.local before db pool initializes
 import { db } from "./index"
 import { gcalEvents, scheduleEntries, schedules, children } from "./schema/domain"
-import config from "../config/app"
+import { getAppConfig } from "../config/app"
 
 /**
  * Clears all schedule data and re-seeds children from config.
@@ -30,6 +30,7 @@ async function reset() {
   console.log("  ✓ children cleared")
 
   // Re-seed children from config
+  const config = await getAppConfig()
   for (const name of config.children) {
     await db.insert(children).values({ name })
   }
