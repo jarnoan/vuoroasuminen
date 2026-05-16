@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createSupabaseMiddlewareClient } from "@/lib/supabase/middleware"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // CRITICAL (D-10): create the response and Supabase client INSIDE the handler.
   // Module-scope clients leak sessions between users on Vercel warm instances.
   const response = NextResponse.next()
