@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { clearRange } from "@/actions/schedule"
-import config from "@/config/app"
 
-export function ClearPanel() {
+interface ClearPanelProps {
+  childCount: number
+}
+
+export function ClearPanel({ childCount }: ClearPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pickedStart, setPickedStart] = useState<Date | undefined>(undefined)
   const [pickedEnd, setPickedEnd] = useState<Date | undefined>(undefined)
@@ -27,9 +30,8 @@ export function ClearPanel() {
     if (!pickedStart || !pickedEnd) return null
     const days = differenceInCalendarDays(pickedEnd, pickedStart) + 1
     if (days <= 0) return null
-    const childCount = config.children.length
     return `Tyhjennetään: ${days} päivää (${childCount} lasta)`
-  }, [pickedStart, pickedEnd])
+  }, [pickedStart, pickedEnd, childCount])
 
   function resetPanel() {
     setIsOpen(false)
