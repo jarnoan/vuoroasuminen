@@ -13,20 +13,17 @@ vi.mock("@/lib/supabase/server", () => ({
 }))
 
 // --- Mock @/db ---
-let capturedConflictSet: Record<string, unknown> | null = null
-let capturedInsertValues: Record<string, unknown> | null = null
-
-const mockDb = {
-  insert: vi.fn(),
-}
-
-vi.mock("@/db", () => ({ db: mockDb }))
+// Use vi.mock factory with no top-level variable references (hoisting safe)
+vi.mock("@/db", () => ({
+  db: {
+    insert: vi.fn(),
+  },
+}))
 
 // --- Mock @/lib/gcal/client ---
 const mockCalendarListList = vi.fn()
-const mockBuildGCalClient = vi.fn()
 vi.mock("@/lib/gcal/client", () => ({
-  buildGCalClient: mockBuildGCalClient,
+  buildGCalClient: vi.fn(),
 }))
 
 // --- Mock next/headers (needed by "use server" module boundary) ---
@@ -35,25 +32,18 @@ vi.mock("next/headers", () => ({
   cookies: () => ({ get: () => undefined }),
 }))
 
+// Import after mocks are declared
 import { saveWizardConfig, listCalendars } from "./setup"
+import { db } from "@/db"
+import { buildGCalClient } from "@/lib/gcal/client"
 
-// ─── Session helpers ──────────────────────────────────────────────────────────
+const mockDb = vi.mocked(db)
+const mockBuildGCalClient = vi.mocked(buildGCalClient)
 
-function setAuthenticatedSession(email = "parent@example.com") {
-  mockGetUser.mockResolvedValue({
-    data: { user: { email } },
-    error: null,
-  })
-}
+// ─── Capture helpers ──────────────────────────────────────────────────────────
 
-function setNoSession() {
-  mockGetUser.mockResolvedValue({
-    data: { user: null },
-    error: null,
-  })
-}
-
-// ─── DB mock helpers ──────────────────────────────────────────────────────────
+let capturedConflictSet: Record<string, unknown> | null = null
+let capturedInsertValues: Record<string, unknown> | null = null
 
 function setupInsertMock() {
   capturedConflictSet = null
@@ -69,6 +59,22 @@ function setupInsertMock() {
       }
     }),
   }))
+}
+
+// ─── Session helpers ──────────────────────────────────────────────────────────
+
+function setAuthenticatedSession(email = "parent@example.com") {
+  mockGetUser.mockResolvedValue({
+    data: { user: { email } },
+    error: null,
+  })
+}
+
+function setNoSession() {
+  mockGetUser.mockResolvedValue({
+    data: { user: null },
+    error: null,
+  })
 }
 
 // ─── Valid wizard input ───────────────────────────────────────────────────────
@@ -174,7 +180,7 @@ describe("listCalendars", () => {
     setAuthenticatedSession("parent@example.com")
     mockBuildGCalClient.mockResolvedValue({
       calendarList: { list: mockCalendarListList },
-    })
+    } as never)
     mockCalendarListList.mockResolvedValue({
       data: {
         items: [
@@ -196,7 +202,7 @@ describe("listCalendars", () => {
     setAuthenticatedSession("parent@example.com")
     mockBuildGCalClient.mockResolvedValue({
       calendarList: { list: mockCalendarListList },
-    })
+    } as never)
     mockCalendarListList.mockRejectedValue(new Error("API quota exceeded"))
     const result = await listCalendars()
     expect(result.success).toBe(false)
