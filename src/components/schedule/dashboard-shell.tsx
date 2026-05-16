@@ -7,7 +7,7 @@ import { ViewToolbar } from "./view-toolbar"
 import { ExtendPanel } from "./extend-panel"
 import { ClearPanel } from "./clear-panel"
 import { OwnerWarningBanner } from "@/components/owner-warning-banner"
-import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
+import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
 
 interface DashboardShellProps {
   initialData: DateWindow
@@ -15,6 +15,8 @@ interface DashboardShellProps {
   scheduleEndDate: string
   header: React.ReactNode
   showOwnerWarning?: boolean
+  parents: Array<{ id: ParentId; name: string }>
+  childCount: number
 }
 
 export function DashboardShell({
@@ -23,6 +25,8 @@ export function DashboardShell({
   scheduleEndDate,
   header,
   showOwnerWarning = false,
+  parents,
+  childCount,
 }: DashboardShellProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const publishRef = useRef<(() => void) | null>(null)
@@ -50,9 +54,9 @@ export function DashboardShell({
         <PublishButton days={days} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} />
+        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
-        <ClearPanel />
+        <ClearPanel childCount={childCount} />
       </main>
     </div>
   )

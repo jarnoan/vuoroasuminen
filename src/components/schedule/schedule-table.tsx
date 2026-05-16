@@ -22,9 +22,10 @@ interface ScheduleTableProps {
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   publishRef?: React.RefObject<(() => void) | null>
   renderAbove?: (days: ScheduleDay[]) => React.ReactNode
+  parents: Array<{ id: ParentId; name: string }>
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAbove }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAbove, parents }: ScheduleTableProps) {
 
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
@@ -267,6 +268,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
                           childName={cell.childName}
                           onToggle={handleToggle}
                           onClear={handleClear}
+                          parents={parents}
                         />
                       ) : (
                         <button

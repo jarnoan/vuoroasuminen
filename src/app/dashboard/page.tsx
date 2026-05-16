@@ -54,6 +54,8 @@ export default async function Dashboard({
 
   const showOwnerWarning = !tokenRow
 
+  const parentsForUI = config.parents.map((p) => ({ id: p.id, name: p.name }))
+
   return (
     <DashboardShell
       key={validatedStart ?? "default"}
@@ -62,6 +64,8 @@ export default async function Dashboard({
       scheduleEndDate={scheduleEndDate ?? schedule.endDate}
       header={<Header />}
       showOwnerWarning={showOwnerWarning}
+      parents={parentsForUI}
+      childCount={config.children.length}
     />
   )
 }
