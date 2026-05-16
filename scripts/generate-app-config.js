@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Generates src/config/app.ts from environment variables at build time.
-// Required env vars: APP_FATHER_NAME, APP_FATHER_EMAIL, APP_FATHER_CALENDAR_ID,
-//   APP_MOTHER_NAME, APP_MOTHER_EMAIL, APP_MOTHER_CALENDAR_ID,
+// Required env vars: PARENT_FATHER_EMAIL, PARENT_FATHER_CALENDAR_ID,
+//   PARENT_MOTHER_EMAIL, PARENT_MOTHER_CALENDAR_ID,
 //   APP_CHILDREN (comma-separated), APP_START_DATE, APP_FIRST_PARENT,
 //   APP_CALENDAR_OWNER_EMAIL (Phase 8 D-01: email whose user_google_tokens row
 //   provides the GCal token for both calendars; same email goes on both parent entries).
+//   Optional: PARENT_FATHER_NAME, PARENT_MOTHER_NAME (default "Father"/"Mother").
 
 const fs = require("fs")
 const path = require("path")
