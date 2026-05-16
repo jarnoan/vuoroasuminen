@@ -151,3 +151,38 @@ CREATE POLICY "user can update own token"
 -- =====================================================================
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.schedule_entries;
+
+-- =====================================================================
+-- Phase 12 additions: family_config + invite_tokens
+-- =====================================================================
+-- family_config is a single-row table. The CHECK (id = 1) constraint
+-- enforces single-row at the DB level (drizzle-kit does not generate
+-- CHECK constraints from schema — must be added manually after push).
+-- =====================================================================
+
+ALTER TABLE public.family_config
+  ADD CONSTRAINT family_config_single_row CHECK (id = 1);
+
+-- ---------- family_config RLS ----------
+-- Authenticated users can read; only service role writes (D-14, ONBOARDING-STACK.md §RLS).
+-- The onboarding wizard's saveWizardConfig Server Action uses the admin Drizzle
+-- connection which runs as service_role and bypasses RLS.
+
+ALTER TABLE public.family_config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "authenticated can select family_config"
+  ON public.family_config FOR SELECT TO authenticated
+  USING (auth.role() = 'authenticated');
+
+-- No INSERT/UPDATE/DELETE policy for authenticated role on family_config.
+-- Writes happen only via service_role from saveWizardConfig (D-14).
+
+-- ---------- invite_tokens RLS ----------
+-- Users can read only invite tokens they themselves created. All writes happen
+-- via service_role (Phase 13 will add the invite generation/acceptance logic).
+
+ALTER TABLE public.invite_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "user can select own invite tokens"
+  ON public.invite_tokens FOR SELECT TO authenticated
+  USING ((auth.jwt() ->> 'email') = created_by);
