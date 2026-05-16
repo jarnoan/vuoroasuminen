@@ -25,9 +25,9 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 12
+Phase: 13
 Plan: Not started
-Status: Ready to plan
+Status: Ready to plan (Phase 12 complete)
 Last activity: 2026-05-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -84,7 +84,9 @@ Key decisions and constraints for v1.3 work:
 
 - Start Google OAuth app verification process (3–5 business day wait)
 - Upgrade Supabase to Pro before sharing with real users (free tier pauses after 1 week inactivity)
-- CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending
+- CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending; Phase 12 did NOT add new secrets to git
+- Remove legacy env vars from Vercel project settings (Settings → Environment Variables): `PARENT_FATHER_EMAIL`, `PARENT_FATHER_NAME`, `PARENT_FATHER_CALENDAR_ID`, `PARENT_MOTHER_EMAIL`, `PARENT_MOTHER_NAME`, `PARENT_MOTHER_CALENDAR_ID`, `APP_CHILDREN`, `APP_START_DATE`, `APP_FIRST_PARENT`, `APP_CALENDAR_OWNER_EMAIL` — Phase 12 made these unused
+- After Vercel env cleanup, redeploy and confirm production app boots (complete wizard on prod if family_config row not yet seeded there)
 - ~~Configure Google OAuth redirect URI~~ — done in Phase 11 (wsdrguowmcjyfrsjsywn.supabase.co/auth/v1/callback added)
 - ~~Add SUPABASE_SERVICE_ROLE_KEY~~ — not used in codebase; removed from requirements
 
@@ -120,9 +122,5 @@ Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
 
 ## Session Continuity
 
-Last activity: 2026-05-16 - v1.3 roadmap created (Phases 11–13)
-Last session: --stopped-at
-Stopped at: Phase 12 context gathered
-Resume file: --resume-file
-
-**Planned Phase:** 11 (production-deploy) — 3 plans — 2026-05-16T05:53:08.012Z
+Last activity: 2026-05-16 - Phase 12 (Onboarding Wizard) complete; DB-driven family config replaces env vars
+Stopped at: Phase 12 verified end-to-end on local
