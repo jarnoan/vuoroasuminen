@@ -33,6 +33,23 @@ vi.mock("@/db", () => {
   }
 })
 
+// --- Mock @/config/app ---
+// requireAuthorizedParent now calls getAppConfig() to fetch the parent list.
+// This mock provides a stable fixture: father@example.com is authorized,
+// stranger@example.com is not (matching test expectations on setAuthorizedSession /
+// setUnauthorizedSession helpers below).
+vi.mock("@/config/app", () => ({
+  getAppConfig: vi.fn(async () => ({
+    parents: [
+      { id: "father", name: "Father", email: "father@example.com", calendarId: "cal-f", ownerEmail: "father@example.com" },
+      { id: "mother", name: "Mother", email: "mother@example.com", calendarId: "cal-m", ownerEmail: "father@example.com" },
+    ],
+    children: ["Child1", "Child2"],
+    startDate: "2026-01-05",
+    firstParent: "father" as const,
+  })),
+}))
+
 // --- Mock next/headers (needed by "use server" module boundary) ---
 vi.mock("next/headers", () => ({
   headers: () => new Headers(),
