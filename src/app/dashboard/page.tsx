@@ -5,7 +5,8 @@ import { DashboardShell } from "@/components/schedule/dashboard-shell"
 import Header from "@/components/layout/header"
 import { db } from "@/db"
 import { userGoogleTokens } from "@/db/schema/tokens"
-import config from "@/config/app"
+import { getAppConfig } from "@/config/app"
+import { redirect } from "next/navigation"
 
 function validateViewStart(raw: string | undefined): string | undefined {
   if (!raw) return undefined
@@ -24,9 +25,20 @@ export default async function Dashboard({
   const { viewStart } = await searchParams
   const validatedStart = validateViewStart(viewStart)
 
-  // SAUTH-07: Check whether the configured calendar owner has a user_google_tokens row.
-  // When absent, GCal sync would silently fail on publish — surface a banner upfront.
-  // Per D-01, both parent entries share the same ownerEmail; index 0 is canonical.
+  // Phase 12 D-10: When no family_config row exists, redirect to /setup.
+  // The wizard at /setup collects parent/children/calendar config and writes
+  // it; on success the user is sent back to /dashboard.
+  let config
+  try {
+    config = await getAppConfig()
+  } catch {
+    redirect("/setup")
+  }
+
+  // SAUTH-07 (preserved): Check whether the configured calendar owner has a
+  // user_google_tokens row. When absent, GCal sync would silently fail on
+  // publish — surface a banner upfront. Per Phase 8 D-01 and Phase 12 D-07,
+  // both parent entries share the same ownerEmail; index 0 is canonical.
   const ownerEmail = config.parents[0].ownerEmail
 
   const [schedule, scheduleEndDate, tokenRow] = await Promise.all([
