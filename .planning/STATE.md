@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Deploy + Onboarding
-status: planning
-stopped_at: Phase 13 context gathered
-last_updated: "2026-05-16T21:14:22.422Z"
-last_activity: 2026-05-16
+status: ready_to_execute
+stopped_at: Phase 13 planned — 4 plans ready
+last_updated: "2026-05-17T00:00:00.000Z"
+last_activity: 2026-05-17
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 8
+  total_plans: 12
   completed_plans: 8
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md
 
 Phase: 13
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-16
+Status: Ready to execute (4 plans)
+Last activity: 2026-05-17
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -124,4 +124,4 @@ Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
 ## Session Continuity
 
 Last activity: 2026-05-16 - Phase 12 (Onboarding Wizard) complete; DB-driven family config replaces env vars
-Stopped at: Phase 13 context gathered
+Stopped at: Phase 13 UI-SPEC approved
