@@ -80,14 +80,13 @@ Key decisions and constraints for v1.3 work:
 - ONBR-07 (access gate middleware) must be implemented after the wizard (Phase 12) is complete — gating before wizard is ready locks everyone out
 - Family config table replaces APP_PARENT* env vars; generate-app-config.js must be updated or removed accordingly
 
-### Pending Todos (Operational — pre-deploy)
+### Pending Todos (Operational)
 
 - Start Google OAuth app verification process (3–5 business day wait)
 - Upgrade Supabase to Pro before sharing with real users (free tier pauses after 1 week inactivity)
 - CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending
-- Configure Google OAuth redirect URI in Google Cloud Console to point to `https://<ref>.supabase.co/auth/v1/callback` (Supabase's auth server), NOT the Next.js `/auth/callback`
-- Add `https://*.vercel.app/auth/callback` to Supabase allowlist if preview deployments are used
-- Add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (required for admin Drizzle connection)
+- ~~Configure Google OAuth redirect URI~~ — done in Phase 11 (wsdrguowmcjyfrsjsywn.supabase.co/auth/v1/callback added)
+- ~~Add SUPABASE_SERVICE_ROLE_KEY~~ — not used in codebase; removed from requirements
 
 ### Quick Tasks Completed
 
