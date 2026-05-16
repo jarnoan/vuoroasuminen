@@ -49,22 +49,22 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DPLY-01 | TBD | Pending |
-| DPLY-02 | TBD | Pending |
-| DPLY-03 | TBD | Pending |
-| DPLY-04 | TBD | Pending |
-| DPLY-05 | TBD | Pending |
-| ONBR-03 | TBD | Pending |
-| ONBR-04 | TBD | Pending |
-| ONBR-05 | TBD | Pending |
-| ONBR-06 | TBD | Pending |
-| ONBR-07 | TBD | Pending |
+| DPLY-01 | Phase 11 | Pending |
+| DPLY-02 | Phase 11 | Pending |
+| DPLY-03 | Phase 11 | Pending |
+| DPLY-04 | Phase 11 | Pending |
+| DPLY-05 | Phase 11 | Pending |
+| ONBR-03 | Phase 12 | Pending |
+| ONBR-04 | Phase 12 | Pending |
+| ONBR-05 | Phase 13 | Pending |
+| ONBR-06 | Phase 13 | Pending |
+| ONBR-07 | Phase 13 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 10 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 10 ⚠
+- Mapped to phases: 10 (Phases 11–13)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-16*
-*Last updated: 2026-05-16 after v1.3 milestone definition*
+*Last updated: 2026-05-16 after v1.3 roadmap creation*

@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.3
-milestone_name: Vercel Deployment
+milestone_name: Deploy + Onboarding
 status: in_progress
-stopped_at: Milestone v1.3 started — defining requirements
-last_updated: "2026-05-15T18:00:00.000Z"
+stopped_at: Roadmap created — Phase 11 next
+last_updated: "2026-05-16T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 09 — Row Level Security (complete)
+**Current focus:** Phase 11 — Production Deploy (not started)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 11 (Production Deploy) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-15 — Milestone v1.3 started
+Status: Roadmap created, ready to plan Phase 11
+Last activity: 2026-05-16 — v1.3 roadmap created (Phases 11–13)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -70,16 +70,22 @@ Key decisions and constraints for v1.2 work:
 - CLAUDE.md grep hits for @auth/drizzle-adapter and next-auth are documentation artifacts in tech stack evaluation tables — accepted, not active code references
 - Phase 10 complete: Auth.js fully removed — packages uninstalled, DB tables dropped, env vars renamed, both parents re-signed-in via Supabase OAuth, GCal publish round-trip confirmed
 
+Key decisions and constraints for v1.3 work:
+
+- Next.js 16 requires middleware.ts → proxy.ts rename — build-breaking if not done before deploy (DPLY-05)
+- Invite token must be stored in DB with expiry — do not use signed JWTs alone; DB storage enables revocation
+- Authenticated role grants must be manually applied to new DB tables (onboarding/family config table) — not inherited automatically from existing RLS policies
+- ONBR-07 (access gate middleware) must be implemented after the wizard (Phase 12) is complete — gating before wizard is ready locks everyone out
+- Family config table replaces APP_PARENT* env vars; generate-app-config.js must be updated or removed accordingly
+
 ### Pending Todos (Operational — pre-deploy)
 
-- ~~Update `src/config/app.ts` with mother's real email~~ — resolved: all values now in env vars; app.ts tracked in git
 - Start Google OAuth app verification process (3–5 business day wait)
 - Upgrade Supabase to Pro before sharing with real users (free tier pauses after 1 week inactivity)
 - CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending
 - Configure Google OAuth redirect URI in Google Cloud Console to point to `https://<ref>.supabase.co/auth/v1/callback` (Supabase's auth server), NOT the Next.js `/auth/callback`
 - Add `https://*.vercel.app/auth/callback` to Supabase allowlist if preview deployments are used
 - Add `SUPABASE_SERVICE_ROLE_KEY` to `.env` (required for admin Drizzle connection)
-- Coordinate simultaneous re-sign-in by both parents immediately after Phase 10 deployment — auth cookies are incompatible with Auth.js; GCal sync fails until both parents have new Supabase sessions
 
 ### Quick Tasks Completed
 
@@ -112,9 +118,9 @@ Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
 
 ## Session Continuity
 
-Last activity: 2026-05-15 - Completed quick task 260515-u3b: Move remaining hardcoded config values to env vars
-Last session: 2026-05-15T15:42:24.317Z
-Stopped at: Completed 10-04-PLAN.md — operator approved human verification; Phase 10 Auth.js Removal complete
+Last activity: 2026-05-16 - v1.3 roadmap created (Phases 11–13)
+Last session: 2026-05-16T00:00:00.000Z
+Stopped at: Roadmap written — ready to plan Phase 11 (Production Deploy)
 Resume file: None
 
-**Planned Phase:** 10 (Auth.js Removal) — 4 plans — 2026-05-14T20:37:10.042Z
+**Planned Phase:** 11 (Production Deploy) — 0 plans — 2026-05-16
