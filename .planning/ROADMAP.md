@@ -46,7 +46,7 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 ### v1.3 Deploy + Onboarding (Phases 11–13)
 
 - [x] **Phase 11: Production Deploy** - Build fixes + Vercel deployment + Google OAuth + Supabase auth configuration (completed 2026-05-16)
-- [ ] **Phase 12: Onboarding Wizard** - DB-driven family config replaces env vars; wizard UI for first parent
+- [x] **Phase 12: Onboarding Wizard** - DB-driven family config replaces env vars; wizard UI for first parent (completed 2026-05-16)
 - [ ] **Phase 13: Invite + Access Gate** - Invite link system for second parent; middleware gate enforcing setup completion
 
 ## Phase Details
@@ -76,11 +76,11 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   2. After wizard completion, the app reads parent and children config from the DB (APP_PARENT* env vars are no longer required for the app to function)
   3. Config entered through the wizard is immediately visible to both parents on next page load (it is stored in the shared DB, not locally)
 **Plans**: 5 plans
-- [ ] 12-01-PLAN.md — Schema (familyConfig + inviteTokens) + drizzle-kit push + RLS policies + getAppConfig + setup Server Actions (ONBR-04)
-- [ ] 12-02-PLAN.md — Server-side call site refactor: gcal/sync, queries, generate-default, actions/schedule, dashboard redirect, delete generate-app-config (ONBR-04)
-- [ ] 12-03-PLAN.md — Client-side refactor: thread parents/childCount props from dashboard → DashboardShell → ScheduleCell/StatsPanel/ClearPanel (ONBR-04)
-- [ ] 12-04-PLAN.md — /setup wizard UI: 4-step Finnish wizard + shadcn primitives + listCalendars + saveWizardConfig wiring (ONBR-03)
-- [ ] 12-05-PLAN.md — Remove legacy env vars from src/env.ts + .env.example + end-to-end human verification checkpoint (ONBR-03, ONBR-04)
+- [x] 12-01-PLAN.md — Schema (familyConfig + inviteTokens) + drizzle-kit push + RLS policies + getAppConfig + setup Server Actions (ONBR-04)
+- [x] 12-02-PLAN.md — Server-side call site refactor: gcal/sync, queries, generate-default, actions/schedule, dashboard redirect, delete generate-app-config (ONBR-04)
+- [x] 12-03-PLAN.md — Client-side refactor: thread parents/childCount props from dashboard → DashboardShell → ScheduleCell/StatsPanel/ClearPanel (ONBR-04)
+- [x] 12-04-PLAN.md — /setup wizard UI: 4-step Finnish wizard + shadcn primitives + listCalendars + saveWizardConfig wiring (ONBR-03)
+- [x] 12-05-PLAN.md — Remove legacy env vars from src/env.ts + .env.example + end-to-end human verification checkpoint (ONBR-03, ONBR-04)
 **UI hint**: yes
 
 ### Phase 13: Invite + Access Gate
@@ -130,5 +130,5 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 | 9. Row Level Security | v1.2 | 4/4 | Complete | 2026-05-14 |
 | 10. Auth.js Removal | v1.2 | 4/4 | Complete | 2026-05-15 |
 | 11. Production Deploy | v1.3 | 3/3 | Complete    | 2026-05-16 |
-| 12. Onboarding Wizard | v1.3 | 0/5 | Not started | - |
+| 12. Onboarding Wizard | v1.3 | 5/5 | Complete    | 2026-05-16 |
 | 13. Invite + Access Gate | v1.3 | 0/? | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Deploy + Onboarding
-status: planning
+status: ready_to_plan
 stopped_at: Phase 12 context gathered
 last_updated: "2026-05-16T11:08:57.607Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
   completed_plans: 3
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md
 
 Phase: 13
 Plan: Not started
-Status: Ready to plan (Phase 12 complete)
+Status: Ready to plan
 Last activity: 2026-05-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -36,7 +36,7 @@ Progress: [░░░░░░░░░░] 0%
 
 **Velocity (v1.1 reference):**
 
-- Total plans completed: 45 (v1.0: 9, v1.1: 9 across 3 phases)
+- Total plans completed: 50 (v1.0: 9, v1.1: 9 across 3 phases)
 
 **By Phase (v1.2):**
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | 10 | 4 | - | - |
 | 8 | 8 | - | - |
 | 11 | 3 | - | - |
+| 12 | 5 | - | - |
 
 *Updated after each plan completion*
 | Phase 10 P04 | 6 | 3 tasks | 1 files |

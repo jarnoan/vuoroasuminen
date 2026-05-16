@@ -15,8 +15,8 @@
 
 ### Onboarding
 
-- [ ] **ONBR-03**: First parent can configure family setup through a UI wizard (parent names, emails, children names, calendar IDs — no env file editing required)
-- [ ] **ONBR-04**: Family config is stored in DB and read at runtime (APP_PARENT* env vars no longer required for app function)
+- [x] **ONBR-03**: First parent can configure family setup through a UI wizard (parent names, emails, children names, calendar IDs — no env file editing required)
+- [x] **ONBR-04**: Family config is stored in DB and read at runtime (APP_PARENT* env vars no longer required for app function)
 - [ ] **ONBR-05**: First parent can generate a shareable invite link for the second parent
 - [ ] **ONBR-06**: Second parent can accept the invite link, sign in with Google, and access the app automatically
 - [ ] **ONBR-07**: App redirects unauthenticated or un-onboarded users to the setup flow (schedule view requires both parents configured)
@@ -54,8 +54,8 @@
 | DPLY-03 | Phase 11 | Complete |
 | DPLY-04 | Phase 11 | Complete |
 | DPLY-05 | Phase 11 | Complete |
-| ONBR-03 | Phase 12 | Pending |
-| ONBR-04 | Phase 12 | Pending |
+| ONBR-03 | Phase 12 | Complete |
+| ONBR-04 | Phase 12 | Complete |
 | ONBR-05 | Phase 13 | Pending |
 | ONBR-06 | Phase 13 | Pending |
 | ONBR-07 | Phase 13 | Pending |
