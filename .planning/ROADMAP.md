@@ -62,8 +62,8 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   4. Running the build with a missing required env var exits with a non-zero status and a clear error message (not a silent undefined)
   5. Next.js build completes without middleware-related errors (middleware.ts renamed to proxy.ts per Next.js 16 requirement)
 **Plans**: 3 plans
-- [ ] 11-01-PLAN.md — Build script fix (exit 1 + dotenv) and .env.example documentation update (DPLY-04)
-- [ ] 11-02-PLAN.md — Rename src/middleware.ts to src/proxy.ts for Next.js 16 compliance (DPLY-05)
+- [x] 11-01-PLAN.md — Build script fix (exit 1 + dotenv) and .env.example documentation update (DPLY-04)
+- [x] 11-02-PLAN.md — Rename src/middleware.ts to src/proxy.ts for Next.js 16 compliance (DPLY-05)
 - [ ] 11-03-PLAN.md — Vercel deploy, OAuth/Supabase configuration, end-to-end sign-in verification (DPLY-01, DPLY-02, DPLY-03)
 **UI hint**: no
 
