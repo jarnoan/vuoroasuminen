@@ -15,12 +15,10 @@ const path = require("path")
 require("dotenv").config({ path: path.join(__dirname, "../.env.local") })
 
 const required = [
-  "APP_FATHER_NAME",
-  "APP_FATHER_EMAIL",
-  "APP_FATHER_CALENDAR_ID",
-  "APP_MOTHER_NAME",
-  "APP_MOTHER_EMAIL",
-  "APP_MOTHER_CALENDAR_ID",
+  "PARENT_FATHER_EMAIL",
+  "PARENT_FATHER_CALENDAR_ID",
+  "PARENT_MOTHER_EMAIL",
+  "PARENT_MOTHER_CALENDAR_ID",
   "APP_CHILDREN",
   "APP_START_DATE",
   "APP_FIRST_PARENT",
@@ -57,17 +55,17 @@ const config: AppConfig = {
   parents: [
     {
       id: "father",
-      name: ${JSON.stringify(process.env.APP_FATHER_NAME)},
-      email: ${JSON.stringify(process.env.APP_FATHER_EMAIL)},
-      calendarId: ${JSON.stringify(process.env.APP_FATHER_CALENDAR_ID)},
-      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL)},
+      name: ${JSON.stringify(process.env.PARENT_FATHER_NAME ?? "Father")},
+      email: ${JSON.stringify(process.env.PARENT_FATHER_EMAIL)},
+      calendarId: ${JSON.stringify(process.env.PARENT_FATHER_CALENDAR_ID)},
+      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL ?? process.env.PARENT_FATHER_EMAIL)},
     },
     {
       id: "mother",
-      name: ${JSON.stringify(process.env.APP_MOTHER_NAME)},
-      email: ${JSON.stringify(process.env.APP_MOTHER_EMAIL)},
-      calendarId: ${JSON.stringify(process.env.APP_MOTHER_CALENDAR_ID)},
-      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL)},
+      name: ${JSON.stringify(process.env.PARENT_MOTHER_NAME ?? "Mother")},
+      email: ${JSON.stringify(process.env.PARENT_MOTHER_EMAIL)},
+      calendarId: ${JSON.stringify(process.env.PARENT_MOTHER_CALENDAR_ID)},
+      ownerEmail: ${JSON.stringify(process.env.APP_CALENDAR_OWNER_EMAIL ?? process.env.PARENT_MOTHER_EMAIL)},
     },
   ],
   children: ${JSON.stringify(children)},
