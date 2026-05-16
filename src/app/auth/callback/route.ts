@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
+import { db } from "@/db"
+import { inviteTokens, familyConfig } from "@/db/schema/domain"
+import { eq, and, gt, isNull } from "drizzle-orm"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -69,6 +72,60 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/error", request.url))
   }
   console.log("[auth/callback] token row upserted for", userEmail)
+
+  // D-07 / D-09: Consume invite token if present in cookie
+  const inviteTokenValue = request.cookies.get("invite_token")?.value
+
+  if (inviteTokenValue) {
+    console.log("[auth/callback] invite_token cookie present — attempting redemption")
+
+    try {
+      // Validate: token must exist, be unused, and not expired
+      const [tokenRow] = await db
+        .select()
+        .from(inviteTokens)
+        .where(
+          and(
+            eq(inviteTokens.token, inviteTokenValue),
+            isNull(inviteTokens.usedAt),
+            gt(inviteTokens.expiresAt, new Date()),
+          ),
+        )
+        .limit(1)
+
+      if (tokenRow) {
+        // D-09: Update family_config.parent2_email to the actual sign-in email.
+        // Parent B may use any Google account — the invite is the authorization.
+        await db
+          .update(familyConfig)
+          .set({ parent2Email: userEmail, updatedAt: new Date() })
+          .where(eq(familyConfig.id, 1))
+
+        // D-08: Stamp used_at (do NOT delete — preserves audit trail)
+        await db
+          .update(inviteTokens)
+          .set({ usedAt: new Date(), usedBy: userEmail })
+          .where(eq(inviteTokens.id, tokenRow.id))
+
+        console.log("[auth/callback] invite token redeemed by", userEmail)
+
+        // Clear the invite_token cookie — it is now consumed
+        response.cookies.set("invite_token", "", {
+          maxAge: 0,
+          path: "/",
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+        })
+      } else {
+        // Token invalid/expired/used — log and continue as normal sign-in
+        console.log("[auth/callback] invite_token invalid or already used — proceeding without redemption")
+      }
+    } catch (err) {
+      // Redemption failure must not block sign-in — Parent B would be locked out
+      console.error("[auth/callback] invite token redemption error:", err)
+    }
+  }
 
   return response
 }
