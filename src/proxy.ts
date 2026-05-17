@@ -73,21 +73,17 @@ export async function proxy(request: NextRequest) {
     userEmail === configRow.parent2Email
 
   if (!isRecognized) {
-    // Sign out the session before redirecting — prevents a redirect loop where
-    // the user refreshes /auth/error and is passed through to a protected route
-    // on a warmed Supabase session.
-    // signOut() via the server client writes cookie-clearing headers into `response`.
-    // We must build a fresh redirect response AFTER signOut so the cookie-clearing
-    // headers and the Location header are both on the same response object.
+    // Sign out FIRST so signOut() can write cookie-clearing headers into `response`,
+    // then build the redirect and copy the post-signOut cookie state onto it.
+    // Building errorRedirect before signOut would mean the first cookie copy carries
+    // live session values, and a duplicate set with the cleared values could leave
+    // the outcome dependent on which write wins.
+    await supabase.auth.signOut()
+
     const errorRedirect = NextResponse.redirect(
       new URL("/auth/error?error=unauthorized_email", request.url),
     )
-    // Copy Supabase session-clearing cookies from the middleware response to the redirect
-    response.cookies.getAll().forEach(({ name, value, ...options }) => {
-      errorRedirect.cookies.set(name, value, options)
-    })
-    await supabase.auth.signOut()
-    // Re-copy cookies after signOut (signOut writes to the response object passed in)
+    // Copy post-signOut cookie state (includes session-clearing Set-Cookie headers)
     response.cookies.getAll().forEach(({ name, value, ...options }) => {
       errorRedirect.cookies.set(name, value, options)
     })
