@@ -6,6 +6,7 @@
 - ✅ **v1.1 Schedule Window Control** — Phases 5–7 (shipped 2026-05-06)
 - ✅ **v1.2 Supabase Auth Migration** — Phases 8–10 (shipped 2026-05-15)
 - ✅ **v1.3 Deploy + Onboarding** — Phases 11–13 (shipped 2026-05-17)
+- 🔄 **v1.4 Mobile-First Polish** — Phases 14–16 (in progress)
 
 ## Phases
 
@@ -54,10 +55,55 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 </details>
 
+### v1.4 Mobile-First Polish
+
+- [ ] **Phase 14: Realtime Reliability + Mobile Baseline** — Fix silent data loss on background tab; establish mobile viewport foundation
+- [ ] **Phase 15: Header, Clear Guard, and Toolbar** — Adapt header, clear interactions, and view toolbar for mobile
+- [ ] **Phase 16: Schedule Table Reflow and Stats** — Full table reflow for 360–430px; stats panel repositioning
+
+## Phase Details
+
+### Phase 14: Realtime Reliability + Mobile Baseline
+**Goal**: The app stays live and data-correct when a parent returns from a background tab, and the mobile viewport is correctly configured as the foundation for all subsequent UI work
+**Depends on**: Nothing (first v1.4 phase)
+**Requirements**: RTLT-01
+**Success Criteria** (what must be TRUE):
+  1. A parent who leaves the app open in a background tab for 15+ minutes returns to see the current schedule without a manual page reload
+  2. Any edits made by the other parent during the background period appear automatically within seconds of the tab becoming active
+  3. The browser does not display a stale or blank schedule after returning from background
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 15: Header, Clear Guard, and Toolbar
+**Goal**: Both parents can navigate the app, clear cells safely on touch, and control their view window without overflow or accidental activation on mobile
+**Depends on**: Phase 14
+**Requirements**: MOB-02, MOB-03, MOB-03a, MOB-04
+**Success Criteria** (what must be TRUE):
+  1. The header fits on a 360px viewport — parent name is truncated or hidden and the sign-out control remains tappable
+  2. On a touch device, tapping a custody cell does not immediately clear it; a long-press reveals a clear option that requires a second deliberate action to confirm
+  3. On desktop, the existing hover × button for clearing behaves exactly as before
+  4. The view toolbar controls (date navigation, window controls) fit within a 360–430px viewport without horizontal overflow or clipping
+  5. On mobile, tapping the date field opens the native system date picker; on desktop the existing calendar popover appears
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 16: Schedule Table Reflow and Stats
+**Goal**: Both parents can read and edit the full custody schedule on any modern smartphone without horizontal scrolling, and custody statistics are visible below the table on all viewports
+**Depends on**: Phase 15
+**Requirements**: MOB-01, MOB-01b, MOB-05
+**Success Criteria** (what must be TRUE):
+  1. The schedule table fits completely within a 360px viewport without requiring horizontal scrolling
+  2. On mobile, each day row shows child custody cells on top and the shared notes text on a second row directly below — no notes are hidden or truncated
+  3. On desktop, the existing single-row layout (child cells and notes side by side) is unchanged
+  4. The custody statistics panel appears below the schedule table on all screen sizes
+  5. On mobile viewports the statistics display in a 2-column grid so all values are visible without scrolling past them
+**Plans**: TBD
+**UI hint**: yes
+
 ## Coverage
 
-- Requirements: 10 total
-- Mapped: 10
+- Requirements: 8 total
+- Mapped: 8
 - Unmapped: 0 ✓
 
 | Requirement | Phase |
@@ -72,6 +118,14 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 | ONBR-05 | Phase 13 |
 | ONBR-06 | Phase 13 |
 | ONBR-07 | Phase 13 |
+| RTLT-01 | Phase 14 |
+| MOB-02 | Phase 15 |
+| MOB-03 | Phase 15 |
+| MOB-03a | Phase 15 |
+| MOB-04 | Phase 15 |
+| MOB-01 | Phase 16 |
+| MOB-01b | Phase 16 |
+| MOB-05 | Phase 16 |
 
 ## Progress
 
@@ -87,6 +141,9 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 | 8. Supabase Auth Stack | v1.2 | 8/8 | Complete | 2026-05-10 |
 | 9. Row Level Security | v1.2 | 4/4 | Complete | 2026-05-14 |
 | 10. Auth.js Removal | v1.2 | 4/4 | Complete | 2026-05-15 |
-| 11. Production Deploy | v1.3 | 3/3 | Complete    | 2026-05-16 |
-| 12. Onboarding Wizard | v1.3 | 5/5 | Complete    | 2026-05-16 |
+| 11. Production Deploy | v1.3 | 3/3 | Complete | 2026-05-16 |
+| 12. Onboarding Wizard | v1.3 | 5/5 | Complete | 2026-05-16 |
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
+| 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/? | Not started | - |
+| 15. Header, Clear Guard, and Toolbar | v1.4 | 0/? | Not started | - |
+| 16. Schedule Table Reflow and Stats | v1.4 | 0/? | Not started | - |

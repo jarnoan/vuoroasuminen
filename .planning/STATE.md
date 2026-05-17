@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Mobile-First Polish
-status: defining_requirements
-stopped_at: ~
+status: roadmap_ready
+stopped_at: Phase 14
 last_updated: "2026-05-17T00:00:00.000Z"
-last_activity: 2026-05-17 -- Milestone v1.4 started
+last_activity: 2026-05-17 -- Roadmap created for v1.4 (Phases 14–16)
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Defining requirements for v1.4 Mobile-First Polish
+**Current focus:** v1.4 Mobile-First Polish — Phase 14: Realtime Reliability + Mobile Baseline
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 14 — Realtime Reliability + Mobile Baseline
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-17 — Milestone v1.4 started
+Status: Not started
+Last activity: 2026-05-17 — Roadmap created; v1.4 phases 14–16 defined
 
-Progress: [██████████] 100%
+Progress: [__________] 0%
 
 ## Performance Metrics
 
@@ -81,6 +81,18 @@ Key decisions and constraints for v1.3 work:
 - ONBR-07 (access gate middleware) must be implemented after the wizard (Phase 12) is complete — gating before wizard is ready locks everyone out
 - Family config table replaces APP_PARENT* env vars; generate-app-config.js must be updated or removed accordingly
 
+Key decisions and constraints for v1.4 work:
+
+- All v1.4 changes are rendering-layer only — no schema changes, no new Server Actions, no data flow changes
+- MOB-02 clear guard: shadcn AlertDialog 2-tap confirm + `max-sm:opacity-100` on the button; long-press rejected (no keyboard equivalent); swipe-to-reveal rejected (WCAG 2.5.1)
+- MOB-03 date picker: `useMediaQuery` hook with `defaultValue: false` for conditional render of Drawer vs. Calendar popover; never use `useMediaQuery` in layout render paths (hydration flash risk)
+- MOB-01 table reflow: sticky date column + hide/wrap notes on mobile + `min-w-[72px]` child cols; card-per-row rejected (destroys day comparison)
+- `position: sticky` thead may break if ancestor has `overflow-hidden` on iOS — replace with `overflow-clip` before testing on physical device
+- `h-[calc(100vh-8rem)]` must be replaced with `100svh` for iOS Safari toolbar safety
+- Phase 14 (realtime fix) must complete before any visible UI work — silent data loss on background tab is a CRITICAL bug
+- Phase 16 (table reflow) is last — depends on toolbar height being settled by Phase 15
+- Build order from research: realtime fix → header → clear guard → toolbar → stats → table reflow
+
 ### Pending Todos (Operational)
 
 - Start Google OAuth app verification process (3–5 business day wait)
@@ -88,8 +100,6 @@ Key decisions and constraints for v1.3 work:
 - CR-01: git history scrub (`git filter-repo`) for `src/config/app.ts` — force-push still pending; Phase 12 did NOT add new secrets to git
 - Remove legacy env vars from Vercel project settings (Settings → Environment Variables): `PARENT_FATHER_EMAIL`, `PARENT_FATHER_NAME`, `PARENT_FATHER_CALENDAR_ID`, `PARENT_MOTHER_EMAIL`, `PARENT_MOTHER_NAME`, `PARENT_MOTHER_CALENDAR_ID`, `APP_CHILDREN`, `APP_START_DATE`, `APP_FIRST_PARENT`, `APP_CALENDAR_OWNER_EMAIL` — Phase 12 made these unused
 - After Vercel env cleanup, redeploy and confirm production app boots (complete wizard on prod if family_config row not yet seeded there)
-- ~~Configure Google OAuth redirect URI~~ — done in Phase 11 (wsdrguowmcjyfrsjsywn.supabase.co/auth/v1/callback added)
-- ~~Add SUPABASE_SERVICE_ROLE_KEY~~ — not used in codebase; removed from requirements
 
 ### Quick Tasks Completed
 
@@ -128,5 +138,5 @@ Items acknowledged and deferred at milestone close on 2026-05-17 (v1.3):
 
 ## Session Continuity
 
-Last activity: 2026-05-16 - Phase 12 (Onboarding Wizard) complete; DB-driven family config replaces env vars
-Stopped at: Phase 13 UI-SPEC approved
+Last activity: 2026-05-17 — v1.4 roadmap created; Phase 14 is next
+Stopped at: Phase 14 not yet started — run `/gsd:plan-phase 14` to begin

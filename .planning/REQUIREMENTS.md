@@ -44,20 +44,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RTLT-01 | — | Pending |
-| MOB-01 | — | Pending |
-| MOB-01b | — | Pending |
-| MOB-02 | — | Pending |
-| MOB-03 | — | Pending |
-| MOB-03a | — | Pending |
-| MOB-04 | — | Pending |
-| MOB-05 | — | Pending |
+| RTLT-01 | Phase 14 | Pending |
+| MOB-04 | Phase 15 | Pending |
+| MOB-02 | Phase 15 | Pending |
+| MOB-03 | Phase 15 | Pending |
+| MOB-03a | Phase 15 | Pending |
+| MOB-01 | Phase 16 | Pending |
+| MOB-01b | Phase 16 | Pending |
+| MOB-05 | Phase 16 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 8 total
-- Mapped to phases: 0
-- Unmapped: 8 ⚠️
+- Mapped to phases: 8
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-17*
-*Last updated: 2026-05-17 after initial definition*
+*Last updated: 2026-05-17 after roadmap creation (phases 14–16)*
