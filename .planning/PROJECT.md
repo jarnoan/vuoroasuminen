@@ -65,7 +65,7 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - [ ] Clear button visible and guarded against accidental activation on touch (MOB-02)
 - [ ] View toolbar compact and touch-accessible on mobile (MOB-03)
 - [ ] Header/nav adapted for mobile (MOB-04)
-- [ ] Statistics panel stacked/collapsible on mobile (MOB-05)
+- [ ] Statistics panel moved below the schedule table on all viewports; 2-column grid on mobile (MOB-05)
 
 ### Future
 
