@@ -100,7 +100,7 @@ export function SetupWizard({ parentAEmail, parentAName }: SetupWizardProps) {
             onSave={handleSave}
           />
         )}
-        {step === 4 && <StepComplete />}
+        {step === 4 && <StepComplete parent2Name={familyData.parent2Name} />}
       </div>
     </div>
   )
