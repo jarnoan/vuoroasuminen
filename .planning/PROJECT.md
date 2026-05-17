@@ -4,7 +4,18 @@
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention.
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — schedule table reflow without horizontal scroll, clear button safeguarded against accidental activation, and all UI panels optimized for 360–430px viewports.
+
+## Current Milestone: v1.4 Mobile-First Polish
+
+**Goal:** Both parents can comfortably read and edit the custody schedule on any modern smartphone without horizontal scrolling or accidental data loss.
+
+**Target features:**
+- Schedule table reflow — eliminate horizontal scroll; adapt column layout for narrow viewports
+- Clear button fix — visible on mobile; guarded against accidental activation (confirm tap or equivalent)
+- View toolbar — compact, touch-accessible controls on small screens
+- Header / nav — mobile-adapted navigation
+- Statistics panel — stacked/collapsible layout on small screens
 
 ## Core Value
 
@@ -50,8 +61,15 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Active
 
-- [ ] Mobile-optimized layout refinements (ONBR-02)
-- [ ] Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
+- [ ] Schedule table reflow for mobile — no horizontal scroll on 360–430px viewports (MOB-01)
+- [ ] Clear button visible and guarded against accidental activation on touch (MOB-02)
+- [ ] View toolbar compact and touch-accessible on mobile (MOB-03)
+- [ ] Header/nav adapted for mobile (MOB-04)
+- [ ] Statistics panel stacked/collapsible on mobile (MOB-05)
+
+### Future
+
+- Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02) — deferred from v1.3, not in v1.4 scope
 
 ### Out of Scope
 
@@ -129,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 after v1.3 milestone close*
+*Last updated: 2026-05-17 after v1.4 milestone start*
