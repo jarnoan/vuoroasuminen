@@ -51,3 +51,23 @@
 **Known deferred items at close: 6 (see STATE.md Deferred Items)**
 
 ---
+
+## v1.3 Deploy + Onboarding (Shipped: 2026-05-17)
+
+**Phases completed:** 3 phases (11–13), 12 plans, 50 commits
+**Files changed:** 128 files (+19,097 / -850 lines) | Codebase: ~6,784 LOC TypeScript
+**Timeline:** 2 days (2026-05-15 → 2026-05-17)
+
+**Key accomplishments:**
+
+- App live on Vercel at vuoroasuminen.vercel.app — both parents verified signing in with Google on production; all 15 env vars configured; Google OAuth callback and Supabase redirect allowlist set for production domain (DPLY-01–03)
+- Next.js 16 compliance — middleware.ts renamed to proxy.ts; build script exits 1 on missing required env vars (DPLY-04–05)
+- DB-driven family config — familyConfig + inviteTokens schema; getAppConfig() reads from DB at runtime; all APP_PARENT* env vars removed from codebase and documentation (ONBR-04)
+- 4-step Finnish onboarding wizard at /setup — parent names/emails, children list, Google Calendar IDs; saves to DB; shadcn primitives (Input, Label, RadioGroup, Select) (ONBR-03)
+- Invite token system — first parent generates shareable URL from StepComplete and Dashboard; token stored in DB with expiry and single-use enforcement; /invite/[token] acceptance page (ONBR-05)
+- Second parent OAuth flow — invite cookie set at /invite, consumed in /auth/callback, parent2Email written to familyConfig; unauthorized email variant on auth/error page (ONBR-06)
+- Three-tier access gate in proxy.ts — auth → setup completeness → email membership; exempt routes: /, /auth/*, /invite/*, /setup; unauthorized emails signed out before redirect (ONBR-07)
+
+**Known deferred items at close: 18 (see STATE.md Deferred Items)**
+
+---

@@ -159,6 +159,57 @@
 
 ---
 
+## Milestone: v1.3 — Deploy + Onboarding
+
+**Shipped:** 2026-05-17
+**Phases:** 3 (11–13) | **Plans:** 12 | **Timeline:** 2 days (2026-05-15 → 2026-05-17)
+
+### What Was Built
+
+- App deployed to Vercel (vuoroasuminen.vercel.app) — 15 production env vars, Google OAuth callback configured, both parents verified on production domain
+- Next.js 16 compliance (proxy.ts) and build-time env var validation (generate-app-config.js exits 1)
+- familyConfig + inviteTokens DB tables replace all APP_PARENT* env vars; getAppConfig() reads at runtime
+- 4-step Finnish onboarding wizard at /setup — parent names/emails, children list, calendar IDs, all validated inline
+- Invite token system: first parent generates URL from StepComplete/Dashboard; token single-use with DB expiry enforcement
+- Second parent OAuth flow: invite cookie set at /invite → consumed in auth/callback → parent2Email written to familyConfig
+- Three-tier access gate in proxy.ts: auth → setup completeness → email membership; unauthorized emails signed out before redirect
+
+### What Worked
+
+- **Code review agent caught real bugs** — CR-01 (race condition in delete+insert) and CR-02 (Secure flag on cookie) were genuine security issues found before UAT. Running `/gsd-code-review` before human testing is worth the cost.
+- **Security review surfaced actionable findings** — three WR findings (WR-01 rate limiting, WR-02 clipboard try/catch, WR-03 signOut order) were concrete improvements, not theoretical concerns.
+- **Invite flow design was right first time** — cookie-based invite state (set at /invite, consumed in /auth/callback) required no rework. The design from P01 held through P03 without modification.
+- **Worktree recovery tooling worked** — one SUMMARY.md was rescued from an abandoned worktree via `gsd-sdk query commit` before cleanup. The recovery path (`docs(recovery): rescue uncommitted SUMMARY.md`) is now proven.
+
+### What Was Inefficient
+
+- **REQUIREMENTS.md checkboxes not updated during Phase 13** — ONBR-05/06/07 were still `[ ]` at milestone close despite Phase 13 being fully complete. Required manual correction before archiving. Fourth occurrence of this pattern.
+- **ROADMAP.md progress table stale** — Phase 13 showed "Not started / 0/4" at milestone close because the table was never updated during execution. STATE.md percent was also frozen at 67%.
+- **18 open items at audit-open** — 15 were old quick tasks from v1.0/v1.1 with "missing" status (directories deleted but STATE.md not cleaned). Zero actual work needed, but triage took time.
+- **2-day milestone felt rushed** — fast execution is good, but Phase 13 UAT was done with 5 scenarios on the same day as implementation. Human verification depth was shallower than v1.2.
+
+### Patterns Established
+
+- **Three-tier middleware gate** — auth → setup completeness → email membership in proxy.ts. Pattern is now documented and reusable for any new protected section.
+- **Invite token cookie flow** — set at acceptance page, consumed in auth/callback, single-use enforced by DB transaction. Clean and auditable.
+- **`vercel env add` for secrets** — interactive input keeps secrets out of shell history and CI logs. Established as the correct production secret-injection pattern.
+- **Security review as pre-UAT gate** — running `/gsd-code-review` then `/gsd-secure-phase` before human testing caught two security issues in Phase 13. Worth running on every phase with auth/cookie/middleware changes.
+
+### Key Lessons
+
+1. **Update REQUIREMENTS.md checkboxes at plan completion, not milestone close.** This is the fourth milestone where stale checkboxes caused unnecessary triage. The cost is one edit per requirement; the benefit is clean milestone close.
+2. **Update the ROADMAP.md progress table row at phase completion.** A stale "Not started" row at milestone close is confusing and requires manual correction.
+3. **Clean up resolved quick task entries from STATE.md Deferred Items when they complete.** 15 "missing" entries at close were all resolved, but STATE.md was never updated. Zero-cost maintenance per task.
+4. **Shallow UAT on same day as implementation is a risk.** Phase 13 UAT passed 5/5, but the test scenarios were written by the implementer. Independent verification (second parent actually trying the flow) should happen before milestone close for auth-critical phases.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 throughout
+- Sessions: ~4 across the milestone (2 days)
+- Notable: Fastest milestone by wall-clock time (2 days). Code review + security review agents added ~30 min but caught real bugs — positive ROI. The proxy.ts three-tier gate reused the Phase 8 middleware patterns directly, cutting design time to near zero.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -168,6 +219,7 @@
 | v1.0 | 4 | 9 | 12 | First milestone; established all patterns |
 | v1.1 | 3 | 9 | 15 deferred | Pattern reuse (inline panels) as velocity driver |
 | v1.2 | 3 | 16 | 0 new | GATE pattern enforced sequential verification; auth stack replaced cleanly |
+| v1.3 | 3 | 12 | 0 new | Fastest milestone (2 days); code review caught real security bugs pre-UAT |
 
 ### Cumulative Quality
 
@@ -176,6 +228,7 @@
 | v1.0 | 2,272 | 25/25 | Partial (live env needed) |
 | v1.1 | 3,879 | 9/9 | Partial (live env needed) |
 | v1.2 | 4,079 | 16/16 | Partial (RLS-03 impersonation deferred; human GCal approved) |
+| v1.3 | 6,784 | 10/10 | Partial (VERIFICATION.md human_needed; UAT 5/5 passed same-day) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -184,3 +237,4 @@
 3. Pure functions for computed state pay dividends immediately in testability and reactivity.
 4. Explicit pattern cloning in plans ("model exactly on X") cuts execution time — proven in v1.1 Phase 7.
 5. Update traceability and roadmap status at phase completion, not at milestone close.
+6. Code review + security review before UAT catches real bugs — positive ROI even on small phases (v1.3: 2 security bugs found pre-UAT).

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Deploy + Onboarding
-status: executing
-stopped_at: Phase 13 UI-SPEC approved
-last_updated: "2026-05-16T21:41:16.733Z"
-last_activity: 2026-05-16 -- Phase 13 execution started
+status: complete
+stopped_at: v1.3 milestone closed
+last_updated: "2026-05-17T00:00:00.000Z"
+last_activity: 2026-05-17 -- v1.3 milestone archived
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 8
-  percent: 67
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,15 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 13 — invite-access-gate
+**Current focus:** Planning next milestone (v1.4)
 
 ## Current Position
 
-Phase: 13 (invite-access-gate) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 13
-Last activity: 2026-05-16 -- Phase 13 execution started
+Phase: — (v1.3 complete)
+Status: Milestone v1.3 archived — ready for /gsd-new-milestone
+Last activity: 2026-05-17 -- v1.3 milestone closed and archived
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -103,23 +102,28 @@ None currently.
 
 ## Deferred Items
 
-Items carried forward to v1.3:
+Items acknowledged and deferred at milestone close on 2026-05-17 (v1.3):
 
 | Category | Item | Status |
 |----------|------|--------|
-| uat_gap | Phase 07: 07-HUMAN-UAT.md (8 pending scenarios) | partial — v1.1 era, low priority |
-| verification_gap | Phase 05: 05-VERIFICATION.md | human_needed — v1.1 era |
-| verification_gap | Phase 06: 06-VERIFICATION.md | human_needed — v1.1 era |
-| verification_gap | Phase 07: 07-VERIFICATION.md | human_needed — v1.1 era |
-| quick_task | 260420-qex-deploy-this-app | pending — plan stale (refs old Auth.js env vars); needs replan for v1.2 stack |
-| quick_task | 260421-finnish-date-formats | pending — no plan yet |
-| quick_task | 20260515-env-local-dedup | complete — removed 9 unused APP_* vars from .env.local |
-
-Resolved at v1.2 close (had SUMMARY.md, STATE.md was stale):
-
-- 260406-oca, 260406-ogw, 260407-r3q, 260407-rbx, 260407-rim
-- 260412-fhd, 260412-fjd, 260412-u66, 260412-ud9, 260412-ut3, 260412-v2m
-- 260420-p95, 260421-translate-ui-to-finnish, 260425-g08
+| verification_gap | Phase 11: 11-VERIFICATION.md | human_needed |
+| verification_gap | Phase 12: 12-VERIFICATION.md | human_needed |
+| verification_gap | Phase 13: 13-VERIFICATION.md | human_needed |
+| quick_task | 260406-oca-fix-publishbutton-disabled-state-after-p | missing — v1.0 era, likely resolved |
+| quick_task | 260406-ogw-fix-publishbutton-re-enable-after-new-dr | missing — v1.0 era, likely resolved |
+| quick_task | 260407-r3q-fix-inline-use-server-in-header-tsx-brok | missing — v1.0 era, likely resolved |
+| quick_task | 260407-rbx-publish-button-does-not-become-disabled- | missing — v1.0 era, likely resolved |
+| quick_task | 260407-rim-publish-button-still-does-not-become-dis | missing — v1.0 era, likely resolved |
+| quick_task | 260412-fhd-fix-missing-key-prop-on-fragment-in-sche | missing — v1.0 era, likely resolved |
+| quick_task | 260412-fjd-fix-child-columns-not-showing-after-addi | missing — v1.0 era, likely resolved |
+| quick_task | 260412-u66-fix-sign-in-button-compatibility-with-ne | missing — v1.0 era, likely resolved |
+| quick_task | 260412-ud9-fix-gcal-sync-invalid-grant-by-persistin | missing — v1.0 era, likely resolved |
+| quick_task | 260412-ut3-fix-gcal-sync-rate-limit-errors-with-exp | missing — v1.0 era, likely resolved |
+| quick_task | 260412-v2m-add-sync-progress-indicator-to-publish-b | missing — v1.0 era, likely resolved |
+| quick_task | 260420-p95-fix-re-sign-in-not-persisting-fresh-oaut | missing — v1.1 era, likely resolved |
+| quick_task | 260420-qex-deploy-this-app | missing — superseded by Phase 11 |
+| quick_task | 260425-g08-address-the-findings-in-security-review- | missing — v1.1 era |
+| quick_task | 260515-u3b-move-remaining-hardcoded-config-values-i | missing — has SUMMARY.md, STATE.md stale |
 
 ## Session Continuity
 

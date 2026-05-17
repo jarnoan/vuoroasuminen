@@ -4,17 +4,7 @@
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables.
-
-## Current Milestone: v1.3 Deploy + Onboarding
-
-**Goal:** Get the app live on Vercel and replace hardcoded config with a DB-driven onboarding flow so either parent can set up the app without touching env files or config code.
-
-**Target features:**
-- Deploy to Vercel (production only — single Supabase project, Google OAuth redirect URIs configured)
-- Onboarding wizard: first parent enters parent names + emails, children names, and Google Calendar IDs through a UI
-- DB-driven parent/children config replacing `src/config/app.ts` env var pattern (ONBR-01)
-- Invite second parent via share link — first parent generates URL, second parent opens it, signs in with Google, gets access automatically
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention.
 
 ## Core Value
 
@@ -50,11 +40,16 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ Realtime subscription authenticated via JWT before channel subscribe (race condition fixed) — v1.2 Phase 9
 - ✓ Auth.js fully removed — next-auth + @auth/drizzle-adapter uninstalled, Auth.js DB tables dropped, all import sites cleaned, env vars renamed to GOOGLE_CLIENT_* — v1.2 Phase 10
 - ✓ Both parents re-signed in under Supabase Auth; GCal publish round-trip confirmed post-removal — v1.2 Phase 10
+- ✓ App live on Vercel at vuoroasuminen.vercel.app — both parents verified signing in with Google on production (DPLY-01, DPLY-02, DPLY-03) — v1.3 Phase 11
+- ✓ Build exits 1 on missing required env vars; middleware.ts renamed to proxy.ts for Next.js 16 compliance (DPLY-04, DPLY-05) — v1.3 Phase 11
+- ✓ DB-driven family config — familyConfig + inviteTokens schema; getAppConfig() reads from DB; all APP_PARENT* env vars removed (ONBR-04) — v1.3 Phase 12
+- ✓ 4-step Finnish onboarding wizard at /setup — parent names/emails, children list, Google Calendar IDs stored in DB (ONBR-03) — v1.3 Phase 12
+- ✓ Invite token system — first parent generates shareable URL; token stored in DB with expiry and single-use enforcement (ONBR-05) — v1.3 Phase 13
+- ✓ Second parent OAuth flow — invite cookie consumed in auth/callback, parent2Email written to familyConfig; unauthorized email error page (ONBR-06) — v1.3 Phase 13
+- ✓ Three-tier access gate in proxy.ts — auth → setup completeness → email membership (ONBR-07) — v1.3 Phase 13
 
 ### Active
 
-**Future milestones**
-- [ ] Onboarding wizard: first-run UI to configure parents, children, and calendar IDs without editing config files (ONBR-01)
 - [ ] Mobile-optimized layout refinements (ONBR-02)
 - [ ] Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
 
@@ -77,11 +72,13 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - Two parents share custody of multiple children; children can be split between parents on any day
 - Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- Shipped v1.2 with Auth.js fully removed; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis
-- Config-based parent/calendar setup (`src/config/app.ts`) — must be updated with real emails before deploying to two users
+- Shipped v1.3 with app live at vuoroasuminen.vercel.app; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis; ~6,784 LOC TypeScript
+- DB-driven family config via familyConfig table; no APP_PARENT* env vars required; onboarding wizard at /setup
+- Invite token flow: first parent generates link → second parent opens it → OAuth callback writes parent2Email to familyConfig
 - Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
 - Google OAuth app verification takes 3–5 business days — start before sharing with second user
 - Git history scrub still pending for `src/config/app.ts` (CR-01)
+- Legacy Vercel env vars (APP_PARENT*, etc.) still in project settings — remove after confirming prod works
 
 ## Constraints
 
@@ -105,10 +102,14 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 | prompt:consent + access_type:offline on every sign-in | Forces refresh_token re-issue; prevents invalid_grant after token expiry | ✓ Good — solved real invalid_grant bug in testing |
 | GCal sync best-effort (failure doesn't roll back DB publish) | Sync failure shouldn't block confirmed plans | ✓ Good — warning toast informs user; next publish re-syncs |
 | gcal_events mirror table from day one | Needed for idempotent sync; avoids extra GCal API reads on republish | ✓ Good — UNIQUE constraint on (schedule_entry_id, calendar_id) enforces idempotency |
-| Config-based parent setup (not DB-driven) | Simplest approach for a known two-user app | ⚠ Revisit — blocks self-service onboarding; next milestone priority |
+| Config-based parent setup (not DB-driven) | Simplest approach for a known two-user app | ✓ Replaced — familyConfig DB table + getAppConfig() in v1.3 |
 | viewStart as URL param (not DB preference) | Zero write path; per-user by nature (each browser independent); shareable link | ✓ Good — simple and effective for per-user view control |
 | parent_id nullable (unassigned = null, not deleted row) | Preserves draft row; unassigned is a first-class state | ✓ Good — clean semantics through draft/publish/GCal sync |
 | Inline expand panels for ExtendPanel and ClearPanel (not modals) | Consistent with schedule table context; no overlay needed | ✓ Good — established pattern for future panels |
+| Invite token stored in DB (not signed JWT) | DB storage enables single-use enforcement and revocation | ✓ Good — race condition fixed with delete+insert transaction |
+| Three-tier middleware gate (auth → setup → email) | Complete gate logic in one place; exempt routes explicit | ✓ Good — handles all onboarding states cleanly |
+| familyConfig replaces APP_PARENT* env vars | Self-service onboarding requires DB-driven config | ✓ Good — wizard UX straightforward; both parents read same config |
+| Vercel env vars set via `vercel env add` (interactive) | Secrets never appear in shell history or CI logs | ✓ Good — safe secret handling pattern for production |
 
 ## Evolution
 
@@ -128,4 +129,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 after v1.2 milestone close*
+*Last updated: 2026-05-17 after v1.3 milestone close*
