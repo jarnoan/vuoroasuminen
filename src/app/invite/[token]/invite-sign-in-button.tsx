@@ -14,7 +14,9 @@ import { LogIn, Loader2 } from "lucide-react"
  * Cookie note: Max-Age=600 (10 min) survives the OAuth roundtrip.
  * HttpOnly cannot be set via document.cookie (browser ignores it).
  * The token is a single-use random value validated server-side at /auth/callback.
- * Secure flag requires HTTPS — acceptable for a production-only flow.
+ * Secure is set only on HTTPS — omitting it on http://localhost prevents the
+ * browser from silently dropping the cookie, which would break the invite flow
+ * in development.
  */
 export function InviteSignInButton({ token }: { token: string }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -23,7 +25,11 @@ export function InviteSignInButton({ token }: { token: string }) {
     setIsLoading(true)
     // D-07: Set invite_token cookie BEFORE OAuth redirect.
     // Max-Age=600 (10 min) — survives the OAuth roundtrip.
-    document.cookie = `invite_token=${token}; Max-Age=600; Path=/; SameSite=Lax; Secure`
+    // Secure is conditional: browsers silently drop cookies with Secure on plain
+    // http (including localhost), which would break the invite flow in development.
+    const isSecure = window.location.protocol === "https:"
+    const secureFlag = isSecure ? "; Secure" : ""
+    document.cookie = `invite_token=${token}; Max-Age=600; Path=/; SameSite=Lax${secureFlag}`
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
