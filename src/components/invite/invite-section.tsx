@@ -58,9 +58,14 @@ export function InviteSection({
 
   async function handleCopy() {
     if (!inviteUrl) return
-    await navigator.clipboard.writeText(inviteUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard API unavailable (no HTTPS, no focus, or permission denied).
+      // Fail silently — the user can still copy the URL manually from the input.
+    }
   }
 
   async function handleRegenerate() {
