@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Mobile-First Polish
-status: roadmap_ready
-stopped_at: Phase 14
-last_updated: "2026-05-17T00:00:00.000Z"
-last_activity: 2026-05-17 -- Roadmap created for v1.4 (Phases 14–16)
+status: Not started
+stopped_at: Phase 14 context gathered
+last_updated: "2026-05-17T20:33:19.966Z"
+last_activity: 2026-05-17 — Roadmap created; v1.4 phases 14–16 defined
 progress:
   total_phases: 3
   completed_phases: 0
@@ -139,4 +139,4 @@ Items acknowledged and deferred at milestone close on 2026-05-17 (v1.3):
 ## Session Continuity
 
 Last activity: 2026-05-17 — v1.4 roadmap created; Phase 14 is next
-Stopped at: Phase 14 not yet started — run `/gsd:plan-phase 14` to begin
+Stopped at: Phase 14 context gathered
