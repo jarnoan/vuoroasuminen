@@ -1,3 +1,316 @@
+# Architecture Patterns: Mobile-First Responsive Layout (v1.4)
+
+**Domain:** Mobile-first responsive integration into existing Next.js 16 App Router codebase
+**Researched:** 2026-05-17
+**Confidence:** HIGH (based on direct codebase inspection + Tailwind v4 official docs)
+
+---
+
+## v1.4 Architecture: Mobile-First Responsive Layout
+
+The sections below answer the v1.4 research questions. Prior milestone architecture is preserved below.
+
+---
+
+## 1. Responsive Strategy: Tailwind Inline Classes
+
+**Verdict:** Apply `sm:` (and `@container` where appropriate) directly in existing components via inline Tailwind classes. Do not create separate mobile variant files or use CSS-in-JS.
+
+**Rationale:**
+- All domain components already use Tailwind utility classes directly. A separate mobile variant file would split the layout logic across two files with no benefit.
+- CSS-in-JS (`styled-components`, `emotion`) is incompatible with Server Components and would add a client boundary where none is needed.
+- Tailwind v4 does not require a config file — custom breakpoints and container sizes go in `globals.css` under `@theme`. No migration needed.
+
+**The one exception:** `ScheduleTable` needs a structural reflow (table → block), which benefits from a helper class defined once in `globals.css` rather than repeating `block @md:table` 10+ times on every row and cell element.
+
+---
+
+## 2. Tailwind v4 Container Queries vs Viewport Breakpoints
+
+### What v4 ships natively (no plugin required)
+
+Tailwind v4 includes `@container` utilities in core (verified from tailwindcss.com/docs/responsive-design). Browser support: Chrome 105+, Firefox 110+, Safari 16+ (Baseline 2023 — safe to ship).
+
+```html
+<!-- Mark a parent as a containment context -->
+<div class="@container">
+  <!-- Children query the parent's width, not the viewport -->
+  <div class="flex flex-col @md:flex-row">...</div>
+</div>
+```
+
+Named containers for nested contexts:
+```html
+<div class="@container/schedule">
+  <div class="hidden @sm/schedule:block">...</div>
+</div>
+```
+
+Arbitrary sizes: `@min-[400px]:flex-row`, `@max-[600px]:flex-col`
+
+### When to use each
+
+| Concern | Use | Reason |
+|---------|-----|--------|
+| Page-level layout (header height, main padding) | `sm:` viewport breakpoints | Device-level layout decisions |
+| `DashboardShell` flex column structure | `sm:` viewport breakpoints | Shell owns the full-page structure |
+| `ScheduleTable` reflow (table → day-card stacking) | `@container` on the scroll wrapper div | Table sits inside a scrollable region; its width is not equal to viewport width if any future sidebar is added |
+| `StatsPanel` inline → stacked stats rows | `@container` on StatsPanel's own wrapper | Stats panel may be embedded in different contexts |
+| `ViewToolbar` button wrapping | `@container` on toolbar wrapper | Toolbar width can vary independent of viewport |
+| `Header` avatar/name truncation | `sm:` viewport breakpoints | Header always spans the full viewport width |
+
+**Rule of thumb:** Use `sm:` for page-level structure (header, shell, padding). Use `@container` for component-internal layout (table reflow, toolbar wrapping, stats stacking). This matches Tailwind v4's documented best practice: "viewport queries for page structure, container queries for component internals."
+
+---
+
+## 3. Schedule Table Reflow: Pure CSS, No `useMediaQuery`
+
+### Problem statement
+
+`ScheduleTable` (at `src/components/schedule/schedule-table.tsx`) renders a `<table>` with:
+- Fixed `overflow-y-auto h-[calc(100vh-8rem)]` scroll container
+- `whitespace-nowrap` date column
+- `min-w-[90px]` child columns
+- `min-w-[160px]` notes column
+
+At 360–430px viewport, this forces horizontal scroll or squashed illegible cells. MOB-01 requires no horizontal scroll on 360–430px viewports.
+
+### Recommended approach: CSS display-block reflow (pure Tailwind, no JS)
+
+The table-to-block technique uses Tailwind's display utilities to remove tabular layout on narrow containers while preserving semantic `<table>` markup:
+
+```html
+<!-- Outer scroll container gets @container -->
+<div class="@container overflow-y-auto h-[calc(100vh-8rem)]">
+  <table class="w-full border-collapse @md:table block">
+    <thead class="@md:table-header-group hidden">
+      <!-- thead hidden on mobile; labels shown via data-label on each cell -->
+    </thead>
+    <tbody class="@md:table-row-group block">
+      <tr class="@md:table-row block border rounded-lg mb-2 p-2">
+        <td class="@md:table-cell block" data-label="Päivä">
+          <!-- date -->
+        </td>
+        <td class="@md:table-cell block" data-label="[childName]">
+          <!-- cell -->
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+```
+
+The `data-label` approach uses CSS `::before { content: attr(data-label) }` in `globals.css` scoped to mobile (block display) state. This is the standard accessible table reflow pattern.
+
+Week separator rows (the `<tr>` with `<td colSpan={colCount} className="h-px bg-border" />`) need `hidden @md:table-row` to avoid rendering oddly in block mode.
+
+### Why no `useMediaQuery` hook
+
+`useMediaQuery` causes two problems in this codebase:
+1. `ScheduleTable` is already `"use client"` so the hook itself is technically allowed, but it requires a JavaScript-driven layout switch. The first paint renders one layout, JS runs, then the layout switches — producing a flash of incorrect layout on mobile.
+2. CSS `@container` is evaluated before paint, zero JS, zero hydration flash.
+
+The CSS-only approach (`@container` + display block) produces the correct layout on the first paint. `useMediaQuery` should only be used when there is a React state change that must be tied to screen size (none exists here for the table).
+
+### Notes column on mobile
+
+At 360–430px, `NotesCell`'s `<input>` in block mode becomes a full-width text input below the child cells. The existing `w-full` class handles width automatically. No changes needed to `NotesCell`.
+
+---
+
+## 4. Component Integration Map
+
+### Modified in-place (Tailwind class changes, no structural refactor)
+
+| Component | File | What changes | Risk |
+|-----------|------|--------------|------|
+| `ScheduleTable` | `schedule/schedule-table.tsx` | Add `@container` to scroll div; add block/`@md:table` classes to `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<td>`; hide `<thead>` on mobile; add `data-label` attributes to `<td>` cells; add week-separator row visibility toggle | Medium — many class changes, but zero logic changes |
+| `ScheduleCell` | `schedule/schedule-cell.tsx` | Increase `min-h-[40px]` to `min-h-[44px]` for WCAG touch target; replace `opacity-0 group-hover:opacity-100` on clear button with always-visible (hover states do not fire on touch) | Low |
+| `Header` | `layout/header.tsx` | Truncate full name to avatar-only on small viewports (`hidden sm:inline`); shrink padding `px-6 py-4` to `px-3 py-3 sm:px-6 sm:py-4`; make sign-out button icon-only below `sm:` | Low — Server Component, pure class changes |
+| `StatsPanel` | `schedule/stats-panel.tsx` | Add `@container` to outer div; switch from inline `flex items-center gap-4` stats to `flex-col @sm:flex-row` stacked layout; move "solo days" parenthetical to a second line on mobile | Low |
+| `ViewToolbar` | `schedule/view-toolbar.tsx` | Add `@container` to outer div; wrap buttons with `flex-wrap @sm:flex-nowrap`; "Prev week" label → arrow icon-only on `@max-sm`; "Valitse päivä" label → calendar icon-only on `@max-sm` | Low |
+| `DashboardShell` | `schedule/dashboard-shell.tsx` | Tighten `px-4` to `px-2 sm:px-4` on `<main>`; add `flex-wrap` to publish-button row; add `viewport` export | Low |
+| `ClearPanel` | `schedule/clear-panel.tsx` | Expanded panel date-picker rows need `flex-wrap` for narrow viewports | Low |
+| `ExtendPanel` | `schedule/extend-panel.tsx` | Same as ClearPanel — `flex-wrap` on `flex items-center gap-2` rows | Low |
+
+### New component required
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `ConfirmClearButton` | `schedule/confirm-clear-button.tsx` | Wraps the per-cell clear `×` button in a two-tap confirm flow for touch (MOB-02). First tap: button turns destructive color and label changes to "Vahvista?". Second tap within ~2 seconds: fires `onClear`. Timeout or tap elsewhere cancels. This is a new `"use client"` component extracted from `ScheduleCell`. |
+
+### Not modified
+
+| Component | Reason |
+|-----------|--------|
+| `ScheduleWithRealtime` | Pure logic wrapper, no rendering, no layout |
+| `RealtimeProvider` | No layout |
+| `NotesCell` | `w-full` already adapts in block mode; no changes needed |
+| `PublishButton` | shadcn/ui `Dialog` already full-screen on mobile by default |
+| All `ui/` primitives | shadcn/ui canary with Tailwind v4 already handles mobile sizing internally |
+
+---
+
+## 5. Server vs Client Component Boundary Implications
+
+No existing component boundaries need to change for mobile layout. All layout changes are additive.
+
+| Component | Current Boundary | Mobile Impact |
+|-----------|-----------------|---------------|
+| `Header` | Server Component | Pure class changes — stays Server Component |
+| `ScheduleTable` | `"use client"` | `@container` CSS applies at paint; no new hooks needed |
+| `ScheduleCell` | `"use client"` | `ConfirmClearButton` extracted as a new `"use client"` child |
+| `ViewToolbar` | `"use client"` | Tailwind class edits only |
+| `StatsPanel` | `"use client"` | Tailwind class edits only |
+| `DashboardShell` | `"use client"` | No new client boundary needed |
+
+**Critical constraint:** The `@container` approach deliberately avoids `useMediaQuery` hooks, which would introduce layout-flash risk on first hydration (server renders one layout, JS runs, layout switches).
+
+---
+
+## 6. Viewport Meta and Safe Area
+
+The root `layout.tsx` does not currently set an explicit `<meta name="viewport">` tag. Next.js App Router injects a default `viewport` meta, but the explicit recommended form is:
+
+```typescript
+// src/app/layout.tsx — add alongside the Metadata export
+import type { Viewport } from "next"
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+}
+```
+
+For iPhone notch/Dynamic Island safe area insets, the `tailwindcss-safe-area` plugin provides `pb-safe`, `pt-safe` utilities. Only needed if content risks being obscured by device chrome. For this app with a top-only header (no bottom nav), this is optional — add if QA surfaces issues on iPhone Safari.
+
+Additionally, add to `globals.css` under `@layer base`:
+```css
+* {
+  touch-action: manipulation; /* eliminates 300ms tap delay on iOS */
+}
+```
+
+---
+
+## 7. Suggested Build Order (Maximum Impact, Minimum Risk)
+
+Ordered by: highest user-facing impact first, lowest coupling first, avoids breaking working components.
+
+### Step 1: Viewport meta + body baseline (no risk, prerequisite)
+- Add `viewport` export to `layout.tsx`
+- Add `touch-action: manipulation` to `globals.css` `@layer base`
+- Add `px-2 sm:px-4` to `DashboardShell` `<main>` (was hard-coded `p-4`)
+- Verify no horizontal scroll at 375px before touching any component
+
+**Dependency:** None. This is a prerequisite for accurate mobile testing of all subsequent steps.
+
+### Step 2: Header mobile adaptation (isolated, Server Component)
+- Truncate user name: `<span class="hidden sm:inline">{fullName}</span>`
+- Shrink padding: `px-3 py-3 sm:px-6 sm:py-4`
+- Sign-out: text hidden below `sm:`, icon visible always
+
+**Dependency:** None (Server Component, no client state).
+
+### Step 3: ScheduleCell clear button — touch fix (isolated, new component)
+- Extract `ConfirmClearButton` from `ScheduleCell`
+- Remove `opacity-0 group-hover:opacity-100` (hover does not fire on touch)
+- Add two-tap confirm: first tap turns button destructive; second tap within 2s fires `onClear`; timeout or blur cancels
+- Increase touch target to `min-h-[44px] min-w-[44px]`
+
+**Dependency:** None. Directly addresses MOB-02. Isolated from table layout work.
+
+### Step 4: ViewToolbar compact layout
+- Add `@container` to toolbar wrapper div
+- `flex-wrap`, icon-only labels below `@sm`
+- Verify Popover (date picker) still positions correctly at narrow widths
+
+**Dependency:** Must precede Step 6 because toolbar height feeds into the `h-[calc(100vh-8rem)]` calculation.
+
+### Step 5: StatsPanel stacked layout
+- Add `@container` to stats wrapper
+- `flex-col @sm:flex-row` for child stat rows
+- Move "solo days" to second line on mobile
+
+**Dependency:** None (rendered above the table, no interaction with table state).
+
+### Step 6: ScheduleTable reflow (most complex)
+- Add `@container` to the scroll wrapper div
+- Apply block/`@md:table` display toggle classes to all table elements
+- Add `data-label` attributes to each `<td>`
+- Add `globals.css` `::before { content: attr(data-label) }` rule scoped to block-display state
+- Hide week separator rows in block mode (`hidden @md:table-row`)
+- Recalculate scroll container height if toolbar height changed in Step 4
+
+**Dependency:** Steps 3, 4 must be complete (touch fix ensures clear button works in block mode; toolbar height affects calc). This is the highest-complexity change.
+
+### Step 7: ClearPanel and ExtendPanel touch polish
+- `flex-wrap` on inline panel date-picker rows
+- Verify date-picker Popovers open in usable positions at 360px
+
+**Dependency:** Step 6 (table reflow may shift panel position on-screen).
+
+---
+
+## 8. Data Flow: No Changes Required
+
+The mobile layout integration does not affect any data flow:
+- Server Actions (`toggleCell`, `saveNotes`, `clearCell`, `clearRange`, `extendSchedule`) are unchanged
+- Supabase Realtime subscription in `ScheduleWithRealtime` is unchanged
+- The `days`/`setDays` state in `DashboardShell` is unchanged
+- All changes are purely in the rendering/styling layer
+
+The `ConfirmClearButton` component calls the existing `onClear` prop callback — no new Server Actions.
+
+---
+
+## 9. Anti-Patterns to Avoid
+
+### Anti-Pattern 1: `useMediaQuery` for layout switching
+**What:** `const isMobile = useMediaQuery("(max-width: 640px)")` → render different JSX
+**Why bad:** Hydration mismatch (server renders desktop, client re-renders mobile after JS), layout flash on first paint, JS-dependent (broken if JS is slow or fails)
+**Instead:** CSS `@container` or `sm:` breakpoint classes, evaluated before paint
+
+### Anti-Pattern 2: Separate `MobileScheduleTable` component
+**What:** Create `schedule-table-mobile.tsx` duplicating the logic in `schedule-table.tsx`
+**Why bad:** Two components sharing the same state interface but duplicating all handler logic (`handleToggle`, `handleClear`, `handleAssignEmpty`, `handleNoteSave`, refs); drift is guaranteed
+**Instead:** Single `ScheduleTable` with responsive Tailwind classes
+
+### Anti-Pattern 3: `overflow-x: auto` wrapper
+**What:** Wrap `<table>` in `overflow-x-auto` so it scrolls horizontally
+**Why bad:** This is not a reflow — it just moves the horizontal scroll into a sub-container. MOB-01 explicitly requires eliminating horizontal scroll, not relocating it
+**Instead:** Block-display table reflow with `@container`
+
+### Anti-Pattern 4: Custom `@media` in CSS for table reflow
+**What:** `@media (max-width: 430px) { table { display: block } }` in `globals.css`
+**Why bad:** Bypasses Tailwind's design system; not composable with other utilities; viewport-scoped rather than component-scoped; harder to reason about in code review
+**Instead:** `@container` Tailwind utilities (`block @md:table`)
+
+### Anti-Pattern 5: Removing `min-h-[40px]` without replacing it
+**What:** Removing the min-height to let cells shrink for table reflow
+**Why bad:** WCAG 2.5.8 requires 24px minimum touch target; WCAG 2.5.5 (AAA) recommends 44px. The schedule cell is the primary interactive element for the entire app
+**Instead:** Keep and increase to `min-h-[44px]`; in block layout the cell becomes full-width automatically
+
+### Anti-Pattern 6: Always-visible confirm dialog for cell clear
+**What:** Show a modal dialog every time the `×` button is tapped
+**Why bad:** Adds friction to a common operation on desktop; the spec is touch-guard only
+**Instead:** `ConfirmClearButton` with two-tap inline confirm (no modal); the first tap is the guard
+
+---
+
+## Sources
+
+- Tailwind CSS v4 Responsive Design and Container Queries (official): https://tailwindcss.com/docs/responsive-design
+- Container queries native in Tailwind v4 core, no plugin required (HIGH confidence, verified from official docs)
+- Tailwind v4 container queries overview: https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/
+- CSS table-to-block reflow pattern: https://tryhoverify.com/blog/how-to-build-responsive-tables-that-dont-break-on-mobile-a-step-by-step-guide-with-css-grid-and-tailwind/
+- WCAG 2.5.5 Touch Target Size (44×44px AAA): https://www.w3.org/WAI/WCAG21/Understanding/target-size.html
+- WCAG 2.5.8 Target Size Minimum (24px AA): https://testparty.ai/blog/wcag-target-size-guide
+- Accessible responsive table pattern: https://adrianroselli.com/2017/11/a-responsive-accessible-table.html
+- Next.js viewport export API: https://nextjs.org/docs/app/getting-started/server-and-client-components
+
+---
+
 # Architecture Patterns: Supabase Auth + RLS Migration (v1.2)
 
 **Domain:** Real-time collaborative scheduling app with Google Calendar integration
@@ -226,7 +539,7 @@ Document the two-environment structure. No runtime impact. Add a section comment
 
 ---
 
-## Suggested Build Order
+## Suggested Build Order (v1.3)
 
 Dependencies are noted for each step. A step cannot start until its dependency is complete.
 

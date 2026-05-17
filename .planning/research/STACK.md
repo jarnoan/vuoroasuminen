@@ -405,3 +405,276 @@ Note: `--db-url` with `SUPABASE_ACCESS_TOKEN` bypasses the interactive `supabase
 ---
 *Stack addendum for: Vuoroasuminen v1.3 — Vercel deployment*
 *Updated: 2026-05-15*
+
+---
+
+# Stack — Mobile-First Responsive Layout (v1.4)
+
+**Researched:** 2026-05-17
+**Scope:** Additions and config changes only. Existing stack (Next.js 16, Tailwind v4, shadcn/ui canary, Supabase, TypeScript 5) is NOT re-evaluated.
+**Confidence:** HIGH — verified against Tailwind v4 official docs, Next.js 16.2.6 official docs, Context7 shadcn/ui corpus, and npm registry.
+
+---
+
+## New Package Additions
+
+| Package | Version | Install Command | Why |
+|---------|---------|----------------|-----|
+| `vaul` | `^1.1.2` | via `npx shadcn@canary add drawer` (auto-installed) | shadcn/ui Drawer component wraps vaul; needed for the statistics panel bottom-sheet on mobile (MOB-05). Not in project node_modules yet. |
+| `tailwindcss-safe-area` | `^1.3.0` | `npm install tailwindcss-safe-area` | iOS notch/home-indicator safe-area insets. Required only if the implementation adds fixed/sticky elements that touch screen edges. Conditional — flag during phase planning. |
+
+No other npm installs are required. All other responsive work uses existing Tailwind v4 utilities, copy-pasted shadcn hooks, and configuration changes.
+
+---
+
+## Tailwind v4 Responsive Utilities
+
+**Confidence: HIGH** — verified against official Tailwind v4 documentation.
+
+Tailwind v4 is mobile-first by default. No patterns from the existing codebase break. The relevant additions for v1.4:
+
+### Container queries (built into v4, no plugin)
+
+Container queries let a component respond to its *parent container's* width rather than the viewport. This is the correct pattern for the schedule table: the table lives inside a constrained column, so it should reflow based on available container width, not a guess about viewport width.
+
+Mark a container element with `@container`, then use `@sm:`, `@md:`, etc. on children:
+
+```html
+<div class="@container">
+  <div class="flex-col @md:flex-row">…</div>
+</div>
+```
+
+Named containers work for nested layouts:
+```html
+<div class="@container/table">
+  <th class="hidden @sm/table:table-cell">Notes</th>
+</div>
+```
+
+No plugin install needed. No `tailwind.config.js` entry. Works in v4 out of the box.
+
+### Column hide/show pattern
+
+Standard Tailwind pattern for hiding table columns on narrow viewports:
+
+```html
+<th class="hidden sm:table-cell">Notes</th>
+<td class="hidden sm:table-cell">…</td>
+```
+
+For the custody schedule: the Notes column is the natural candidate to hide at the narrowest viewports (360px). Day and child columns stay always visible.
+
+### Range variants (new in v4)
+
+`md:max-lg:flex` — applies only between md and lg breakpoints. Useful for mid-range adjustments without extra class clutter.
+
+### Custom breakpoints (v4 syntax — CSS, not config file)
+
+```css
+/* app/globals.css */
+@import "tailwindcss";
+@theme {
+  --breakpoint-xs: 22.5rem; /* 360px — target phone minimum */
+}
+```
+
+No `tailwind.config.js` needed. Adding an `xs` breakpoint makes `xs:`, `max-xs:` available throughout the app for 360px targeting.
+
+---
+
+## shadcn/ui Mobile Components
+
+**Confidence: HIGH** — verified against Context7 shadcn/ui corpus (llms.txt, May 2026).
+
+### Drawer (bottom sheet)
+
+shadcn/ui Drawer wraps vaul. Install via:
+
+```bash
+npx shadcn@canary add drawer
+```
+
+This adds `vaul` as a runtime dependency automatically. The Drawer renders as a bottom sheet that slides up from the screen bottom — the right UX for the statistics panel collapse on mobile (MOB-05).
+
+The official shadcn/ui responsive pattern pairs Drawer (mobile) with Dialog (desktop) using `useMediaQuery`:
+
+```tsx
+const isDesktop = useMediaQuery("(min-width: 768px)")
+if (isDesktop) return <Dialog>…</Dialog>
+return <Drawer open={open} onOpenChange={setOpen}>…</Drawer>
+```
+
+### Sheet (slide-in panel)
+
+shadcn/ui Sheet slides from any edge (top/right/bottom/left). The Sidebar component already uses Sheet for mobile nav internally. Relevant for header/nav adaptation (MOB-04).
+
+Install via:
+```bash
+npx shadcn@canary add sheet
+```
+
+### Table
+
+shadcn/ui Table wraps in `overflow-x-auto` by default — this creates horizontal scroll, which is exactly what v1.4 must eliminate. The fix is to override the table markup with grid/flex-based layout for narrow viewports using container query classes. No new component is needed; the change is in how the existing schedule table is structured.
+
+---
+
+## useMediaQuery Hook
+
+**Confidence: HIGH** — verified against shadcn.io/hooks documentation.
+
+shadcn.io provides a `useMediaQuery` hook as a copy-paste TypeScript snippet at https://shadcn.io/hooks/use-media-query. This is not an installable package — per the shadcn design philosophy, you own the code.
+
+Copy it into `src/hooks/use-media-query.ts`. The hook:
+- Uses `window.matchMedia` API
+- Accepts a `defaultValue` parameter for SSR safety (prevents hydration mismatch)
+- Must be used inside a `'use client'` component
+
+**Set `defaultValue: false` (assume mobile)** to avoid a desktop-layout flash on first render on phones. The component will correct to the actual value after hydration.
+
+**Server-side breakpoint detection:** Not needed for v1.4. All responsive layout switching is CSS-driven (Tailwind utilities + container queries). No server-side user-agent sniffing or cookie-based breakpoint detection should be added — this pattern is fragile and unnecessary when CSS handles the layout.
+
+---
+
+## Viewport Meta Tag
+
+**Confidence: HIGH** — verified against Next.js 16.2.6 official docs (last updated 2026-05-13).
+
+Next.js App Router automatically injects into every page:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+No action is needed for basic mobile scaling.
+
+**Do not add `maximum-scale=1` or `user-scalable=no`.** Pinch-to-zoom is an accessibility requirement. Disabling it fails WCAG 1.4.4 and frustrates users with low vision.
+
+**Add a `viewport` export only if `tailwindcss-safe-area` is used**, because safe-area insets require `viewport-fit=cover`:
+
+```ts
+// app/layout.tsx
+import type { Viewport } from 'next'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',   // enables env(safe-area-inset-*) on iOS
+}
+```
+
+---
+
+## iOS Safe Area Insets
+
+**Confidence: HIGH** — verified against tailwindcss-safe-area GitHub README (v4 section confirmed) and npm registry (v1.3.0).
+
+iPhones with notches and home indicators need `env(safe-area-inset-*)` padding to prevent content hiding behind system chrome.
+
+`tailwindcss-safe-area` v1.3.0 supports Tailwind v4 natively via `@import` (not `@plugin` — v4 uses a different plugin API):
+
+```bash
+npm install tailwindcss-safe-area
+```
+
+```css
+/* app/globals.css */
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+```
+
+Provides utilities: `pb-safe`, `pt-safe`, `px-safe`, `pr-safe-offset-4` (safe area + 4), `pb-safe-or-8` (max of safe area or 8).
+
+**Prerequisite:** `viewportFit: 'cover'` in the `viewport` export (see above). Without it, `env(safe-area-inset-*)` evaluates to 0.
+
+**Scope flag:** Only add `tailwindcss-safe-area` if the implementation adds fixed/sticky bottom elements (e.g. a floating action toolbar). If all content scrolls normally without fixed positioning near screen edges, safe area insets are not needed.
+
+---
+
+## Touch Gesture Libraries
+
+**Confidence: HIGH** — verified against npm registry and library documentation.
+
+**Recommendation: Do not add any gesture library for v1.4.**
+
+The five v1.4 requirements (MOB-01 through MOB-05) are all solved by CSS layout changes and existing shadcn/ui components:
+
+| Requirement | Solution | Needs gesture lib? |
+|-------------|---------|-------------------|
+| MOB-01 — table reflow | Tailwind container queries + column hiding | No |
+| MOB-02 — clear button guard | shadcn/ui AlertDialog (confirm tap) | No |
+| MOB-03 — view toolbar compact | Tailwind responsive classes | No |
+| MOB-04 — header/nav mobile | shadcn/ui Sheet | No |
+| MOB-05 — statistics panel collapse | shadcn/ui Drawer | No |
+
+**If a future phase requires swipe-to-reveal on table rows**, the right library is `react-swipeable` v7.0.2 (2.1 KB, zero dependencies, `useSwipeable` hook, supports mouse + touch). Do not install it now.
+
+Do not use `@use-gesture/react` for this use case — it is a full gesture system (drag, pinch, scroll, wheel) that adds unnecessary bundle weight for a layout-only task.
+
+---
+
+## What NOT to Add
+
+| Package | Why Not |
+|---------|---------|
+| `react-swipeable` | No swipe interactions in v1.4 scope |
+| `@use-gesture/react` | Full gesture system, overkill for layout work |
+| `next-useragent` / `ua-parser-js` | Server-side breakpoint sniffing is fragile and unnecessary; CSS + container queries handle all layout |
+| Any `window.matchMedia` polyfill | Not needed — target is modern smartphones (iOS 15+, Chrome 100+) |
+| `framer-motion` | Animation is not a v1.4 requirement; Tailwind transitions are sufficient |
+
+---
+
+## Installation Summary
+
+```bash
+# Drawer component — also installs vaul@^1.1.2 automatically:
+npx shadcn@canary add drawer
+
+# Sheet component (if not already installed):
+npx shadcn@canary add sheet
+
+# Safe area insets (conditional — only if fixed/sticky bottom elements are added):
+npm install tailwindcss-safe-area
+```
+
+```css
+/* app/globals.css — add only if tailwindcss-safe-area is installed */
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+```
+
+```ts
+/* app/layout.tsx — add only if tailwindcss-safe-area is installed */
+import type { Viewport } from 'next'
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+```
+
+```ts
+/* Copy to src/hooks/use-media-query.ts — no npm install */
+// Source: https://shadcn.io/hooks/use-media-query
+```
+
+---
+
+## Sources
+
+- Tailwind CSS v4 Responsive Design (official docs): https://tailwindcss.com/docs/responsive-design
+- Tailwind CSS v4 Container Queries (SitePoint, 2025): https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/
+- shadcn/ui Drawer component docs: https://ui.shadcn.com/docs/components/drawer
+- shadcn/ui Sheet component docs: https://ui.shadcn.com/docs/components/sheet
+- shadcn/ui Table component docs: https://ui.shadcn.com/docs/components/table
+- shadcn.io useMediaQuery hook: https://www.shadcn.io/hooks/use-media-query
+- Next.js 16 generateViewport API reference (updated 2026-05-13): https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+- tailwindcss-safe-area GitHub (v4 @import support): https://github.com/mvllow/tailwindcss-safe-area
+- vaul npm (v1.1.2, React 19 peer dep confirmed): https://github.com/emilkowalski/vaul
+- react-swipeable v7.0.2 (FormidableLabs — for future reference): https://github.com/FormidableLabs/react-swipeable
+
+---
+*Stack addendum for: Vuoroasuminen v1.4 — Mobile-First Responsive Layout*
+*Updated: 2026-05-17*

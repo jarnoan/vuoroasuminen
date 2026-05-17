@@ -1,3 +1,85 @@
+# Research Summary: v1.4 Mobile-First Polish
+
+**Researched:** 2026-05-17
+**Confidence:** HIGH
+
+---
+
+## Executive Summary
+
+v1.4 is a pure styling and UX milestone — no new Server Actions, no schema changes, no new data flows. The goal is making five existing UI areas usable on 360–430px viewports. The approach is CSS-first: Tailwind v4 container queries for component-level reflow, `sm:` viewport breakpoints for page-level structure, one new shadcn component (Drawer via `vaul`) for the mobile date picker. No gesture library needed.
+
+Build order: infrastructure fix (Realtime reconnection) → header → cell touch guard → toolbar → stats → table reflow.
+
+---
+
+## Stack Additions
+
+- `vaul ^1.1.2` — auto-installed via `npx shadcn@canary add drawer` (MOB-03 date picker)
+- `tailwindcss-safe-area ^1.3.0` — **conditional only**; only if fixed/sticky bottom elements are added
+- `useMediaQuery` hook — copy from shadcn.io/hooks → `src/hooks/use-media-query.ts`; `defaultValue: false`; use only for Drawer/Dialog toggle, never in layout render paths
+- No gesture library; no `framer-motion`
+
+---
+
+## Feature Approach
+
+| Req | Pattern | Anti-pattern (explicitly rejected) |
+|-----|---------|-------------------------------------|
+| MOB-01 table | Sticky date col + hide notes on mobile + `min-w-[72px]` child cols | Card-per-row (destroys day comparison) |
+| MOB-02 clear guard | shadcn AlertDialog 2-tap + `max-sm:opacity-100` on button | Swipe-to-reveal (WCAG 2.5.1 violation), long-press (no keyboard equiv) |
+| MOB-03 toolbar | Inline compact + Drawer for date picker only | Full drawer/sheet for entire toolbar |
+| MOB-04 header/nav | Sticky top with 2 visible links | Bottom tab bar (needs 3+ items per HIG/MD3) |
+| MOB-05 stats | `grid-cols-2` on mobile | Accordion (10–12 stats is below the threshold) |
+
+---
+
+## Architecture
+
+All changes are additive, rendering-layer only. No data flow, Server Action, or schema changes.
+
+**One new component:** `ConfirmClearButton` (`src/components/schedule/confirm-clear-button.tsx`) — two-tap inline confirm extracted from `ScheduleCell`.
+
+**Responsive strategy:** `@container` for component internals; `sm:` for page structure. CSS-only prevents hydration mismatch.
+
+**Build order:**
+1. `realtime-provider.tsx` reconnection fix (FIRST — silent data loss on background tab)
+2. Viewport meta + `touch-action: manipulation`
+3. `header.tsx` mobile adaptation
+4. `ConfirmClearButton` + `schedule-cell.tsx` (MOB-02)
+5. `view-toolbar.tsx` compact + Drawer (MOB-03)
+6. `stats-panel.tsx` card grid (MOB-05)
+7. `schedule-table.tsx` full reflow (MOB-01 — last; depends on toolbar height settled)
+8. `clear-panel.tsx` / `extend-panel.tsx` `flex-wrap` polish
+
+---
+
+## Critical Pitfalls
+
+| Pitfall | Severity | Fix |
+|---------|----------|-----|
+| Realtime WebSocket silently dies after mobile background tab (15+ min) | CRITICAL | `realtime: { worker: true }` + `visibilitychange` reconnect |
+| `display: block` on `<table>` destroys ARIA semantics | CRITICAL | Explicit ARIA roles on all overridden elements, or CSS Grid div rewrite |
+| `opacity-0 group-hover:opacity-100` clear button untappable on touch | CRITICAL | `max-sm:opacity-100` + `ConfirmClearButton` + `min-h-[44px]` |
+| `h-[calc(100vh-8rem)]` clips under iOS Safari toolbar | HIGH | Replace with `100svh` (schedule-table.tsx ~line 221) |
+| `position: sticky` thead breaks if ancestor has `overflow: hidden` (iOS 26 regression) | CRITICAL | Replace `overflow-hidden` with `overflow-clip` in ancestors; test on physical iPhone |
+| Container `@md` threshold = 448px, not 768px | MEDIUM | Verify all `@container` breakpoints against actual parent width |
+
+---
+
+## Watch Out For
+
+1. **iOS Safari sticky thead** — only reproducible on physical device, not simulator. Audit `overflow-hidden` ancestors before starting table reflow.
+2. **ARIA roles on display-block table** — test VoiceOver early. Escalate to CSS Grid div rewrite if roles are insufficient.
+3. **`useMediaQuery` hydration flash** — `defaultValue: false` means server renders mobile path; acceptable for date picker only (not in initial viewport). Never use in layout render paths.
+
+---
+
+*Synthesized: 2026-05-17*
+
+---
+---
+
 # Research Summary: v1.2 Supabase Auth Migration
 
 **Synthesized:** 2026-05-09

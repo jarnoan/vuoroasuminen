@@ -1,8 +1,308 @@
 # Pitfalls Research
 
 **Domain:** Co-parenting custody scheduling web app with Google Calendar integration and real-time collaboration
-**Researched:** 2026-04-04 (original); 2026-05-09 (v1.2 migration supplement); 2026-05-15 (v1.3 Vercel deployment)
-**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources; migration pitfalls verified against Supabase official docs and open GitHub issues; v1.3 pitfalls verified against Next.js 16 upgrade guide, Supabase production docs, and codebase inspection)
+**Researched:** 2026-04-04 (original); 2026-05-09 (v1.2 migration supplement); 2026-05-15 (v1.3 Vercel deployment); 2026-05-17 (v1.4 mobile-first polish)
+**Confidence:** HIGH (OAuth/Calendar API behavior verified against official Google docs; real-time patterns from multiple corroborating sources; migration pitfalls verified against Supabase official docs and open GitHub issues; v1.3 pitfalls verified against Next.js 16 upgrade guide, Supabase production docs, and codebase inspection; v1.4 pitfalls verified against source code inspection + official docs + tracked GitHub issues)
+
+---
+
+## v1.4 Mobile-First Polish Pitfalls
+
+**Stack:** Next.js 16, Tailwind v4, shadcn/ui (canary), Supabase Realtime, TypeScript  
+**Focus:** Adding mobile responsiveness to an existing desktop-first app (360–430px target viewports)  
+**Verified against source code:** `schedule-table.tsx`, `schedule-cell.tsx`, `realtime-provider.tsx`, `stats-panel.tsx`, `header.tsx`, `view-toolbar.tsx`
+
+---
+
+### MOB-P1: `display: block` on `<table>` destroys screen reader semantics (CRITICAL)
+
+**What goes wrong:**
+`schedule-table.tsx` renders a real `<table>` element. When mobile CSS rewrites `table`, `thead`, `tr`, `td` to `display: block` or `display: flex`, browsers silently strip the element's implicit ARIA table role. Screen readers see a column of generic blocks, not a data grid — column headers no longer associate with cells, and table navigation shortcuts (`T` in NVDA/JAWS to jump between tables) stop working.
+
+**Warning sign:**
+Axe or Lighthouse accessibility audit reports "element has role `row` but required parent/owner is not present" after mobile styles are applied. VoiceOver/TalkBack reads a flat list of values with no column context.
+
+**Prevention:**
+- Preferred: rewrite the table as CSS Grid `div` elements on mobile. No semantic destruction, no ARIA patching required. Apply explicit `role="grid"`, `role="row"`, `role="gridcell"` in JSX.
+- If keeping `<table>` HTML: add static ARIA role attributes — `role="table"`, `role="row"`, `role="columnheader"`, `role="gridcell"` — to every element that gets a `display` override. These must be in JSX (not CSS) to survive SSR.
+- Do NOT use Tailwind's responsive `display` utilities alone on `<table>` internals (e.g., `sm:block`) without the matching ARIA role attributes.
+
+**Which phase/component:** MOB-01 — `schedule-table.tsx`. Address before any other reflow work.
+
+**Confidence:** HIGH — confirmed by Adrian Roselli's canonical analysis and MDN table accessibility docs.
+
+---
+
+### MOB-P2: `position: sticky` on `<thead>` breaks on iOS Safari with `overflow: hidden` ancestor (CRITICAL)
+
+**What goes wrong:**
+`schedule-table.tsx` uses `sticky top-0` on `<thead>` inside a `overflow-y-auto h-[calc(100vh-8rem)]` wrapper. On iOS Safari, `position: sticky` does not function when any ancestor element has `overflow: hidden` set — even on a different axis. The sticky header scrolls away with the table body. This WebKit bug was reintroduced in iOS 26 (2025–2026).
+
+**Warning sign:**
+Test on a physical iPhone (not simulator — the simulator does not reproduce this). The sticky header disappears as soon as you scroll the schedule table.
+
+**Prevention:**
+- Audit `dashboard-shell.tsx` and `app/layout.tsx` for any `overflow-hidden` Tailwind class on an ancestor of `<thead>`.
+- Replace `overflow-hidden` with `overflow-clip` on ancestors where clipping is desired without creating a scroll container. `overflow: clip` does not break sticky children.
+- Add `-webkit-sticky` alongside `sticky` (Tailwind v4 generates both).
+- Last resort: add `transform: translateZ(0)` to `<thead>` to force GPU compositing and work around the WebKit repaint timing bug.
+
+**Which phase/component:** MOB-01 — `schedule-table.tsx` and `dashboard-shell.tsx`.
+
+**Confidence:** HIGH — multiple confirmed WebKit bug reports; still present in iOS 26 (2025–2026).
+
+---
+
+### MOB-P3: Horizontal scroll bleed from hard-coded column `min-w-` constraints (HIGH)
+
+**What goes wrong:**
+`schedule-table.tsx` has `min-w-[90px]` on child columns and `min-w-[160px]` on the notes column. With two children on a 360px viewport, the minimum table width is approximately 90+90+160+60 (date) = 400px — wider than the viewport. The overflow escapes the scroll container and scrolls the `<body>` instead of the inner wrapper.
+
+**Warning sign:**
+Chrome DevTools mobile emulator (360px) shows a horizontal scrollbar on `<html>` or `<body>`, not on the inner container.
+
+**Prevention:**
+- On mobile, collapse the notes column to an icon or hide it behind a tap-to-expand affordance. Remove or significantly reduce `min-w-[160px]`.
+- Stack or abbreviate child columns on narrow viewports (show initials instead of full names).
+- Apply `overflow-x: clip` (not `hidden`) on the outermost layout container in `dashboard-shell.tsx` to prevent body-level bleed without breaking sticky children (see MOB-P2).
+
+**Which phase/component:** MOB-01 — column widths in `schedule-table.tsx` + wrapper in `dashboard-shell.tsx`.
+
+**Confidence:** HIGH — directly measurable from source code constraints vs. 360–430px target.
+
+---
+
+### MOB-P4: Clear button invisible on touch — `opacity-0 group-hover:opacity-100` never triggers on mobile (CRITICAL)
+
+**What goes wrong:**
+`schedule-cell.tsx` renders the clear (×) button with `opacity-0 group-hover:opacity-100`. On iOS Safari, `:hover` fires a synthetic event on first tap and clears on a tap elsewhere — so the button is briefly visible but only after the first tap. The button is `h-5 w-5` (20px), far below the WCAG 2.5.5 recommended 44px minimum touch target. The result: touch users cannot reliably see or tap the clear button, and the first tap often fires the toggle action below it instead.
+
+**Warning sign:**
+On a physical iPhone, tapping a cell shows the name (synthetic hover activates), but the tiny × button is either invisible, invisible until hover, or fires the wrong action due to the 20px target size.
+
+**Prevention:**
+- On mobile viewports, make the clear button unconditionally visible: `opacity-0 group-hover:opacity-100 max-sm:opacity-100`.
+- Add a confirmation step on mobile before clearing (PROJECT.md MOB-02 already requires this — "guarded against accidental activation").
+- Increase the touch target to at least 44×44px using a padding-and-negative-margin trick: `h-8 w-8 flex items-center justify-center` with appropriate padding.
+- Apply `touch-action: manipulation` to prevent double-tap zoom on the button.
+
+**Which phase/component:** MOB-02 — `schedule-cell.tsx`. Highest-priority single component fix.
+
+**Confidence:** HIGH — confirmed directly from source code + shadcn/ui GitHub issue #4195 (hover persists on touch devices).
+
+---
+
+### MOB-P5: Double-tap zoom on cell buttons — missing `touch-action: manipulation` (HIGH)
+
+**What goes wrong:**
+The main toggle button in `schedule-cell.tsx` and the empty-cell button in `schedule-table.tsx` have no `touch-action` attribute. The browser waits 300ms after each tap to check for a double-tap zoom gesture. This makes cell taps feel sluggish on a real device. If a cell is narrowed by mobile reflow, a double-tap fires zoom instead of toggle.
+
+**Warning sign:**
+Observable 300ms sluggishness when toggling cells on a physical device. Occasional accidental zoom on narrow cells.
+
+**Prevention:**
+- Add `touch-action: manipulation` to all interactive buttons in the schedule. Tailwind v4 has no built-in utility for this; use arbitrary property syntax: `[touch-action:manipulation]` or add a CSS variable in `globals.css`.
+- Apply to: toggle button and clear button in `schedule-cell.tsx`, the empty-cell button in `schedule-table.tsx`.
+- Never use `<meta name="viewport" content="user-scalable=no">` as a workaround — this violates WCAG 1.4.4.
+
+**Which phase/component:** MOB-01/MOB-02 — `schedule-cell.tsx` and `schedule-table.tsx` (empty-cell button).
+
+**Confidence:** HIGH — MDN and Chrome developer blog confirm `touch-action: manipulation` as the correct fix; the property is supported in all major browsers since 2016.
+
+---
+
+### MOB-P6: `h-[calc(100vh-8rem)]` clips content under iOS Safari toolbar (HIGH)
+
+**What goes wrong:**
+`schedule-table.tsx` line 221 uses `h-[calc(100vh-8rem)]` to constrain the scrollable table area. On iOS Safari, `100vh` equals the large viewport height (browser chrome hidden). When the page loads with the address bar visible, the actual usable space is smaller than `100vh`. The scroll container overflows the visible area, pushing the bottom rows under the Safari bottom toolbar.
+
+**Warning sign:**
+On iPhone, the last visible table row is cut off by the Safari bottom toolbar. The user cannot scroll to the last row because the scroll container's bottom edge is hidden.
+
+**Prevention:**
+- Replace `100vh` with `100svh` (small viewport height — stable when browser chrome is visible): `h-[calc(100svh-8rem)]`.
+- `svh` reached Baseline Widely Available status in June 2025 (95%+ global support). No fallback needed for this project's target audience.
+- Do NOT use `100dvh` in `calc()` for layout containers — `dvh` changes value during scroll, causing layout jitter as the browser chrome shows and hides.
+
+**Which phase/component:** MOB-01 — `schedule-table.tsx` line 221 (the `h-[calc(100vh-8rem)]` class on the wrapper `div`).
+
+**Confidence:** HIGH — directly visible in source code; confirmed by multiple iOS Safari viewport height documentation sources; Baseline data confirms broad support.
+
+---
+
+### MOB-P7: `useMediaQuery` hydration mismatch and Flash of Wrong Layout (FOWL) (HIGH)
+
+**What goes wrong:**
+If any component conditionally renders different markup structures based on `window.matchMedia` or `useMediaQuery` (e.g., `isMobile ? <MobileTable /> : <DesktopTable />`), the Next.js App Router server renders one DOM tree (its default/guess) and the client immediately renders a different one on hydration. React throws a hydration error or silently patches the DOM, causing a visual flash of desktop layout on mobile before the correct layout appears.
+
+**Warning sign:**
+Browser console shows `Hydration failed because the initial UI does not match what was rendered on the server`. More subtly: brief flash of full desktop column layout before it collapses on a 360px phone.
+
+**Prevention:**
+- Preferred: use only CSS to switch layouts (Tailwind responsive prefixes). The DOM tree stays identical between server and client; only visual appearance changes via CSS. This eliminates FOWL entirely.
+- If JS-conditional markup is truly necessary: use the shadcn `useMediaQuery` hook with a `defaultValue` parameter (`const isMobile = useMediaQuery("(max-width: 640px)", { defaultValue: false })`). It returns `false` on the server, then hydrates correctly.
+- Never call `window.innerWidth` directly during render — it throws during SSR.
+- `dynamic(() => import('./MobileTable'), { ssr: false })` is a valid escape hatch but produces a blank slot during SSR — use only when the markup truly cannot be shared.
+
+**Which phase/component:** All MOB-* components, especially `schedule-table.tsx` and `stats-panel.tsx` if they adopt layout-switching logic.
+
+**Confidence:** HIGH — confirmed by Next.js official hydration error docs and Next.js GitHub Discussion #70753.
+
+---
+
+### MOB-P8: Tailwind v4 drops desktop-first `max-width` breakpoint configuration (HIGH)
+
+**What goes wrong:**
+The app was built desktop-first without explicit responsive prefixes on most classes. In Tailwind v4, the v3 `{ max: "value" }` syntax for max-width breakpoint configuration was removed entirely. If any work during v1.4 attempts to use `max-sm:` patterns without understanding the new syntax, or tries to configure desktop-first breakpoints in `@theme`, it will silently produce wrong media queries.
+
+**Warning sign:**
+A class intended to apply "only on desktop" (e.g., `md:hidden`) behaves as mobile-first (hides above 768px) when the developer expected it to hide below that threshold. Layout looks correct on desktop but breaks on tablet-sized viewports.
+
+**Prevention:**
+- Use `max-sm:hidden`, `max-md:flex`, etc. (v4's downward-targeting variants) for any "apply below breakpoint" patterns.
+- Never configure breakpoints with the `{ max: "value" }` object syntax in `@theme` — it does nothing in v4.
+- Add a comment in `app/globals.css` near any `@theme` breakpoint overrides: "v4 breakpoints are mobile-first only — use `max-*` variants for downward targeting."
+
+**Which phase/component:** All MOB-* components — affects every new responsive class added during v1.4 work.
+
+**Confidence:** HIGH — confirmed via Tailwind GitHub Discussion #16340 and Tailwind v4 official changelog.
+
+---
+
+### MOB-P9: Container query breakpoints are much smaller than viewport breakpoints (MEDIUM)
+
+**What goes wrong:**
+Tailwind v4 has built-in container queries. Container breakpoints are intentionally smaller than viewport breakpoints (`@md = 448px` vs. `md = 768px`). If a developer wraps `stats-panel.tsx` in `@container` and uses `@md:grid-cols-2` expecting "medium desktop" behavior, the two-column layout activates at 448px — on a narrow phone screen — rather than at tablet width.
+
+**Warning sign:**
+A container-queried component shows multi-column layout on a 430px phone because the parent `div` is 430px wide and `@md` threshold is 448px — only 18px away.
+
+**Prevention:**
+- Use container queries (`@container` + `@sm:`, `@md:`) for component-level layout decisions (e.g., stats cards that can vary by their parent container width).
+- Use viewport breakpoints (`sm:`, `md:`) for page-level layout decisions (e.g., whether the stats panel is visible at all).
+- Always verify container query thresholds against actual parent widths on mobile, not viewport widths.
+
+**Which phase/component:** MOB-05 — `stats-panel.tsx` if container queries are used for the collapsible layout.
+
+**Confidence:** HIGH — Tailwind v4 official docs and Sitepoint article confirm the different threshold values.
+
+---
+
+### MOB-P10: View toolbar Popover calendar not reliably usable on touch (MEDIUM)
+
+**What goes wrong:**
+`view-toolbar.tsx` uses a shadcn Popover with a Calendar inside. On touch devices, the `PopoverTrigger` button with a `CalendarIcon` (`h-3.5 w-3.5` = 14px) is well below the minimum 44px touch target. The Popover may open briefly then close on `touchend`, or the calendar navigation arrows (prev/next month) may be too small to tap accurately. shadcn HoverCard and related components have open GitHub issues for incomplete mobile/touch support.
+
+**Warning sign:**
+On a physical phone, tapping "Valitse päivä" causes the popover to open and immediately close, or the calendar month navigation is impossible to use with a fingertip.
+
+**Prevention:**
+- Ensure the Popover `open`/`onOpenChange` state is driven by explicit `onClick` (not pointer hover events). The current `PopoverTrigger` with a `Button` child should work, but verify on a real device.
+- Increase the trigger button size on mobile: `h-9 w-9` or use text label with icon.
+- Consider replacing the calendar picker with a native `<input type="date">` on mobile as a simpler alternative.
+
+**Which phase/component:** MOB-03 — `view-toolbar.tsx`.
+
+**Confidence:** MEDIUM — shadcn GitHub issues #2402 and #4457 confirm touch/hover inconsistencies; specific behavior depends on Radix Popover event handling.
+
+---
+
+### MOB-P11: Header overflows on 360px viewports (MEDIUM)
+
+**What goes wrong:**
+`header.tsx` uses `flex items-center justify-between px-6 py-4`. On 360px, the header contains: "Vuoroasuminen" (logo text), a 32px avatar, the user's full name, and a "Kirjaudu ulos" button. With `px-6` on both sides (48px total), only 312px is available for content. Long Finnish names and the button will overflow or wrap awkwardly.
+
+**Warning sign:**
+On a 360px viewport, the header text overlaps the sign-out button, or the header wraps to two lines and takes up 20%+ of the screen.
+
+**Prevention:**
+- Hide the name text on mobile, show only the avatar: `hidden sm:inline` on the `<span>` with the full name.
+- Replace "Kirjaudu ulos" text with a `LogOut` icon on mobile: `sm:hidden` on the text, `hidden sm:block` on a text-only version.
+- Reduce horizontal padding on mobile: `px-3 sm:px-6`.
+
+**Which phase/component:** MOB-04 — `header.tsx`.
+
+**Confidence:** HIGH — directly measurable from source code layout vs. 360px target.
+
+---
+
+### MOB-P12: Stats panel horizontal flex row wraps mid-sentence on mobile (MEDIUM)
+
+**What goes wrong:**
+`stats-panel.tsx` renders each child stat row as `flex items-center gap-4` with multiple `<span>` elements (child name, father days, separator, mother days, solo stats). On 360px, this wraps mid-sentence — separating "Isä 42 pv" from its sibling spans — producing broken lines with no visual grouping.
+
+**Warning sign:**
+On mobile, the stats panel shows fragmented lines such as `"Lapsi1: Isä 42 pv / Äiti 38 pv (yksin:"` on one line and `"Isä 10 pv / Äiti 8 pv)"` on the next.
+
+**Prevention:**
+- Convert the horizontal flex row to a stacked layout on mobile. Each child becomes a mini-card with labeled rows.
+- Use `flex-wrap` with explicit `whitespace-nowrap` on individual stat segments to control wrap points.
+- Consider a collapsible section (shadcn Collapsible or HTML `<details>`) so the stats panel does not dominate the viewport.
+
+**Which phase/component:** MOB-05 — `stats-panel.tsx`.
+
+**Confidence:** HIGH — directly visible from source layout vs. 360px target.
+
+---
+
+### MOB-P13: Supabase Realtime WebSocket silently dies when mobile tab goes to background (CRITICAL)
+
+**What goes wrong:**
+`realtime-provider.tsx` creates a Supabase Realtime channel subscription with no reconnection logic. When a parent switches to another app or locks their phone, the browser throttles JavaScript timer execution on the background tab. The Supabase Realtime client sends periodic heartbeats; when heartbeats stop (due to JS throttling), the server closes the WebSocket after ~60 seconds. The subscription is silently dead when the parent returns. Both parents continue editing, but one parent no longer receives the other's changes — a silent data divergence failure with no visible error.
+
+**Warning sign:**
+After returning from background (15+ minutes), a parent's schedule shows stale data. No error in console. Changes from the other parent only appear after a manual page refresh.
+
+**Prevention (in priority order):**
+1. Enable the Supabase Realtime Web Worker option: `createBrowserClient({ realtime: { worker: true } })`. Workers run in a separate thread and are less susceptible to background tab throttling.
+2. Add a `heartbeatCallback` to detect disconnection: `heartbeatCallback: (status) => { if (status === 'disconnected') supabase.realtime.connect() }`.
+3. Add a `visibilitychange` listener: when `document.visibilityState === 'visible'`, check channel state and resubscribe if not in `SUBSCRIBED` state.
+4. Show a subtle "Yhteys katkennut — päivitetään..." banner when the subscription is not in `SUBSCRIBED` state.
+
+**Current gap in `realtime-provider.tsx`:**
+The provider has no reconnection logic, no worker option, no visibility handler. The `useEffect` subscribes once at mount with no recovery mechanism.
+
+**Which phase/component:** MOB-01 or a standalone reliability fix — `realtime-provider.tsx`. Infrastructure-level; affects both parents on mobile.
+
+**Confidence:** HIGH — Supabase official troubleshooting docs explicitly describe this problem and the `worker: true` + `heartbeatCallback` solution. The current source code confirms the gap.
+
+---
+
+### MOB-P14: Access token expires after ~1 hour — realtime re-auth fails silently (MEDIUM)
+
+**What goes wrong:**
+`realtime-provider.tsx` calls `supabase.auth.getSession()` once at mount and passes the `access_token` to `supabase.realtime.setAuth()`. Supabase access tokens expire after 1 hour. If the mobile app runs or is restored from background after 1 hour, the realtime channel uses an expired token. Re-subscription fails silently or with a swallowed "invalid token" error.
+
+**Warning sign:**
+After 60+ minutes of use, realtime updates stop working. No visible error. Confirmed by supabase/realtime-js GitHub issue #123.
+
+**Prevention:**
+- Subscribe to `supabase.auth.onAuthStateChange` inside `RealtimeProvider`. On `TOKEN_REFRESHED` event, call `supabase.realtime.setAuth(newSession.access_token)`.
+- The Supabase client auto-refreshes tokens (`autoRefreshToken: true` by default in `@supabase/supabase-js` 2.x) — this listener just needs to propagate the new token to the realtime layer.
+
+**Which phase/component:** `realtime-provider.tsx` — can be addressed alongside MOB-P13.
+
+**Confidence:** MEDIUM — confirmed by GitHub issue tracker; specific behavior depends on Supabase client auto-refresh configuration.
+
+---
+
+## v1.4 Phase-Specific Warning Summary
+
+| Phase / Requirement | Pitfall | Risk | Mitigation |
+|---------------------|---------|------|------------|
+| MOB-01 `schedule-table.tsx` | `display: block` table destroys ARIA semantics | CRITICAL | CSS Grid divs or explicit ARIA roles on all overridden elements |
+| MOB-01 `schedule-table.tsx` | `sticky top-0` thead broken by `overflow: hidden` ancestor on iOS Safari | CRITICAL | Replace `overflow-hidden` ancestors with `overflow-clip`; add `-webkit-sticky` |
+| MOB-01 `schedule-table.tsx` | `h-[calc(100vh-8rem)]` clips content under Safari toolbar | HIGH | Change to `h-[calc(100svh-8rem)]` |
+| MOB-01 `schedule-table.tsx` | Hard-coded `min-w-` columns bleed beyond viewport, body scrolls | HIGH | Remove/reduce min-width on mobile; `overflow-x: clip` on outer container |
+| MOB-02 `schedule-cell.tsx` | Clear button invisible on touch (group-hover, 20px target) | CRITICAL | Always visible on mobile; 44px min target; confirmation on tap |
+| MOB-02 `schedule-cell.tsx` | Double-tap zoom on cell buttons | HIGH | `[touch-action:manipulation]` on all cell buttons |
+| MOB-03 `view-toolbar.tsx` | Calendar Popover unreliable on touch; 14px icon trigger | MEDIUM | Verify onClick-driven Popover; enlarge trigger; consider native date input |
+| MOB-04 `header.tsx` | Header overflows on 360px with full name + sign-out button | MEDIUM | Hide name on mobile; icon-only sign-out on mobile |
+| MOB-05 `stats-panel.tsx` | Horizontal flex row wraps mid-sentence on mobile | MEDIUM | Stack layout on mobile; consider collapsible |
+| All MOB-* components | `useMediaQuery` hydration mismatch / Flash of Wrong Layout | HIGH | CSS-only responsive switching preferred; use shadcn `useMediaQuery` with `defaultValue` if JS needed |
+| All MOB-* components | Tailwind v4 `max-*` prefix confusion for desktop-first patterns | HIGH | Use `max-sm:` prefix; never use `{ max: "value" }` in `@theme` |
+| `realtime-provider.tsx` | WebSocket silently dies after background tab (15+ min) | CRITICAL | `worker: true`; `visibilitychange` reconnect; heartbeat callback |
+| `realtime-provider.tsx` | Access token expires after ~1h; realtime re-auth fails silently | MEDIUM | `onAuthStateChange TOKEN_REFRESHED` → call `setAuth()` with new token |
 
 ---
 
@@ -249,7 +549,7 @@ GCal sync runs without error but events appear in the wrong calendar or the goog
 Developer (parent 1) can sign in. Parent 2 sees "Google hasn't verified this app" warning. If the app is still in Testing mode with an explicit test user list, parent 2 may be completely blocked unless added to the list.
 
 **Why it happens:**
-New Google Cloud projects start in OAuth consent screen "Testing" mode. Non-developer users see the unverified warning; if the test user list is used, unlisted users are blocked.
+New Google Cloud projects start in OAuth consent screen "Testing" publishing status. Non-developer users see the unverified warning; if the test user list is used, unlisted users are blocked.
 
 **Prevention:**
 - Publish the app (move from Testing to Production on the OAuth consent screen) before sharing with parent 2. Publishing without verification shows the "unverified" warning but allows any Google user to sign in.
@@ -958,6 +1258,8 @@ Shortcuts that seem reasonable but create long-term problems.
 | No reconnection re-fetch after WebSocket drop | Simpler client code | Stale data served as live; edits based on stale state get silently overwritten | Never — always re-fetch on reconnect |
 | Read provider_refresh_token from supabase.auth.getSession() in Server Actions | Familiar session API pattern | Always null outside the initial OAuth callback — token was never there | Never — store tokens in user_google_tokens at callback time |
 | Use service_role Drizzle client for user-facing Server Actions under RLS | Works immediately, no RLS setup needed | RLS policies are silently bypassed — security goal of v1.2 not achieved | Never once RLS is required — use anon key client or set JWT context per transaction |
+| CSS-only responsive switching with `display: block` on `<table>` internals | Quickest visual result | Destroys ARIA table semantics; screen readers read flat list with no column context | Never — use CSS Grid divs or add explicit ARIA roles |
+| `opacity-0 group-hover:opacity-100` for clear button on mobile | Works fine on desktop | Button is invisible and untappable on touch devices | Never on mobile — always-visible required |
 
 ---
 
@@ -979,12 +1281,36 @@ Common mistakes when connecting to external services.
 | Supabase Auth | Initializing `createServerClient` at module scope | Always initialize inside the request handler body to prevent cross-request session leakage |
 | Supabase RLS | Enabling RLS but using service_role client for all queries | Service_role bypasses RLS entirely; use anon key client for user-authenticated queries |
 | Supabase Realtime | Assuming no changes were missed after reconnect | Re-fetch full schedule window on every reconnect event |
+| Supabase Realtime | No reconnection on mobile background tab | Enable `worker: true`; add `visibilitychange` reconnect + `heartbeatCallback` |
+| Supabase Realtime | Access token not refreshed in realtime channel | Listen to `onAuthStateChange TOKEN_REFRESHED`; call `supabase.realtime.setAuth()` |
 | Vercel deploy | Using Supabase direct DB URL (port 5432) for runtime queries | Use Supavisor pooler URL (port 6543) for Vercel serverless; direct URL only for drizzle-kit |
 | Vercel deploy | Setting env vars without explicit environment scope | Scope each Supabase var to "Production" or "Preview" explicitly to prevent cross-environment data writes |
+| Mobile CSS | `100vh` for fixed-height containers | Use `100svh` (Baseline Widely Available June 2025) — stable when Safari address bar is visible |
+| Mobile CSS | `overflow: hidden` on ancestor of sticky element | Use `overflow: clip` — clips without creating scroll context, does not break `position: sticky` |
+| Mobile touch | No `touch-action` on interactive buttons | Add `[touch-action:manipulation]` to all schedule buttons — eliminates 300ms delay and double-tap zoom |
 
 ---
 
 ## Sources
+
+**v1.4 Mobile-First Polish:**
+- Adrian Roselli — A Responsive Accessible Table (ARIA roles when display overridden): https://adrianroselli.com/2017/11/a-responsive-accessible-table.html
+- Supabase Docs — Realtime: Handling Silent Disconnections in Background Applications: https://supabase.com/docs/guides/troubleshooting/realtime-handling-silent-disconnections-in-backgrounded-applications-592794
+- Supabase realtime-js GitHub Issue #121 — WebSocket loses connection when tab goes to background: https://github.com/supabase/realtime-js/issues/121
+- Supabase realtime-js GitHub Issue #123 — Invalid token on disconnect/reconnect after token refresh: https://github.com/supabase/realtime-js/issues/123
+- Tailwind CSS GitHub Discussion #16340 — v4.0.4 breaks desktop-first support: https://github.com/tailwindlabs/tailwindcss/discussions/16340
+- Tailwind CSS v4.0 Official Release Blog — Container queries, breakpoints: https://tailwindcss.com/blog/tailwindcss-v4
+- Sitepoint — Tailwind CSS v4 Container Queries (breakpoint size differences): https://www.sitepoint.com/tailwind-css-v4-container-queries-modern-layouts/
+- shadcn/ui GitHub Discussion #4195 — Hover effect persists on touch devices: https://github.com/shadcn-ui/ui/discussions/4195
+- shadcn/ui GitHub Issue #2402 — Tooltip and HoverCard Mobile Support: https://github.com/shadcn-ui/ui/issues/2402
+- Next.js — Hydration error: https://nextjs.org/docs/messages/react-hydration-error
+- Next.js Discussion #70753 — useMediaQuery causes hydration failed: https://github.com/vercel/next.js/discussions/70753
+- shadcn.io — useMediaQuery hook (SSR-safe with defaultValue): https://www.shadcn.io/hooks/use-media-query
+- MDN — CSS touch-action: https://developer.mozilla.org/en-US/docs/Web/CSS/touch-action
+- Chrome Developers — 300ms tap delay, gone away: https://developer.chrome.com/blog/300ms-tap-delay-gone-away
+- Savvy — CSS dvh/svh/lvh Baseline Widely Available June 2025: https://savvy.co.il/en/blog/css/css-dynamic-viewport-height-dvh/
+- WebKit Bug #160953 — overflow:hidden clips position:sticky: https://bugs.webkit.org/show_bug.cgi?id=160953
+- Accessibility Developer Guide — Responsive tables: https://www.accessibility-developer-guide.com/examples/tables/responsive/
 
 **v1.3 Vercel Deployment:**
 - Supabase Redirect URLs docs (wildcard syntax): https://supabase.com/docs/guides/auth/redirect-urls
@@ -994,19 +1320,14 @@ Common mistakes when connecting to external services.
 - Supabase Postgres Changes: https://supabase.com/docs/guides/realtime/postgres-changes
 - Supabase Managing Environments: https://supabase.com/docs/guides/deployment/managing-environments
 - Vercel + Supabase connection pooling: https://www.iloveblogs.blog/guides/supabase-connection-pooling-vercel
-- Vercel Supabase issues 2026: https://kuberns.com/blogs/vercel-supabase/
 - Next.js 16 Upgrade Guide (middleware → proxy, async APIs): https://nextjs.org/docs/app/guides/upgrading/version-16
 - Google Sensitive Scope Verification: https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification
 - Supabase service_role key exposure (CVE-2025-48757): https://gptsters.com/fix/lovable/service-role-key-exposed
-- Vercel Community — Google OAuth redirect URL with preview URLs: https://community.vercel.com/t/google-oauth-redirect-url-with-vercel-preview-urls-supabase/6345
-- NEXT_PUBLIC_ security guide: https://www.hashbuilds.com/articles/next-js-environment-variables-complete-security-guide-2025
 
 **v1.2 Migration and Original Research:**
 - Supabase Docs — Login with Google (official): https://supabase.com/docs/guides/auth/social-login/auth-google
 - Supabase Docs — Server-Side Auth for Next.js (official): https://supabase.com/docs/guides/auth/server-side/nextjs
-- Supabase Docs — Advanced SSR Auth Guide (official): https://supabase.com/docs/guides/auth/server-side/advanced-guide
 - Supabase Docs — Row Level Security (official): https://supabase.com/docs/guides/database/postgres/row-level-security
-- Drizzle ORM Docs — RLS support (official): https://orm.drizzle.team/docs/rls
 - GitHub: supabase/supabase-js#934 — provider_refresh_token missing after session refresh: https://github.com/supabase/supabase-js/issues/934
 - GitHub: supabase/auth#1387 — Cross-origin refreshing of provider_token not allowed: https://github.com/supabase/auth/issues/1387
 - GitHub: supabase/supabase#21490 — PKCE flow messes with provider_token refresh: https://github.com/supabase/supabase/issues/21490
@@ -1016,4 +1337,4 @@ Common mistakes when connecting to external services.
 ---
 
 *Pitfalls research for: Co-parenting custody scheduling app with Google Calendar integration (vuoroasuminen)*
-*Original research: 2026-04-04 | v1.2 migration supplement: 2026-05-09 | v1.3 Vercel deployment: 2026-05-15*
+*Original research: 2026-04-04 | v1.2 migration supplement: 2026-05-09 | v1.3 Vercel deployment: 2026-05-15 | v1.4 mobile-first polish: 2026-05-17*
