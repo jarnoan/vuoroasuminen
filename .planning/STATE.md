@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Deploy + Onboarding
-status: ready_to_execute
-stopped_at: Phase 13 planned — 4 plans ready
-last_updated: "2026-05-17T00:00:00.000Z"
-last_activity: 2026-05-17
+status: executing
+stopped_at: Phase 13 UI-SPEC approved
+last_updated: "2026-05-16T21:41:16.733Z"
+last_activity: 2026-05-16 -- Phase 13 execution started
 progress:
   total_phases: 3
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase 11 — production-deploy
+**Current focus:** Phase 13 — invite-access-gate
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
-Status: Ready to execute (4 plans)
-Last activity: 2026-05-17
+Phase: 13 (invite-access-gate) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 13
+Last activity: 2026-05-16 -- Phase 13 execution started
 
 Progress: [░░░░░░░░░░] 0%
 

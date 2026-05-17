@@ -94,10 +94,10 @@ Full archive: [.planning/milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   4. Visiting the schedule URL without being signed in redirects to the sign-in page
   5. Visiting the schedule URL signed in but with onboarding incomplete redirects to the setup wizard
 **Plans**: 4 plans
-- [ ] 13-P01-PLAN.md — generateInviteToken + getActiveInviteToken Server Actions + /invite/[token] acceptance page (ONBR-05, ONBR-06)
-- [ ] 13-P02-PLAN.md — StepComplete invite URL display + Dashboard invite section with Parent B join detection (ONBR-05)
-- [ ] 13-P03-PLAN.md — auth/callback invite cookie consumption + auth/error unauthorized_email variant (ONBR-06)
-- [ ] 13-P04-PLAN.md — proxy.ts three-tier middleware gate: auth + family_config + email match (ONBR-07)
+- [x] 13-P01-PLAN.md — generateInviteToken + getActiveInviteToken Server Actions + /invite/[token] acceptance page (ONBR-05, ONBR-06)
+- [x] 13-P02-PLAN.md — StepComplete invite URL display + Dashboard invite section with Parent B join detection (ONBR-05)
+- [x] 13-P03-PLAN.md — auth/callback invite cookie consumption + auth/error unauthorized_email variant (ONBR-06)
+- [x] 13-P04-PLAN.md — proxy.ts three-tier middleware gate: auth + family_config + email match (ONBR-07)
 **UI hint**: yes
 
 ## Coverage
