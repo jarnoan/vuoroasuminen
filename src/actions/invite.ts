@@ -26,6 +26,8 @@ export async function generateInviteToken(): Promise<
   if (!user?.email) {
     return { success: false, error: "Ei kirjautunut" }
   }
+  // Capture email in a const so TypeScript's narrowing holds inside async callbacks.
+  const createdBy = user.email
 
   // D-04: 43-char URL-safe token (32 bytes base64url)
   const token = crypto.randomBytes(32).toString("base64url")
@@ -33,19 +35,22 @@ export async function generateInviteToken(): Promise<
   const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000)
 
   try {
-    // D-06: Delete prior unused tokens for this creator (one outstanding at a time)
-    await db.delete(inviteTokens).where(
-      and(
-        eq(inviteTokens.createdBy, user.email),
-        isNull(inviteTokens.usedAt),
+    // D-06: Delete prior unused tokens and insert new one atomically.
+    // A transaction prevents a race condition where two concurrent requests
+    // (e.g. double-click) both delete zero rows and both insert a new token,
+    // violating the "one outstanding token per creator" invariant.
+    await db.transaction(async (tx) => {
+      await tx.delete(inviteTokens).where(
+        and(
+          eq(inviteTokens.createdBy, createdBy),
+          isNull(inviteTokens.usedAt),
+        )
       )
-    )
-
-    // Insert new token
-    await db.insert(inviteTokens).values({
-      token,
-      createdBy: user.email,
-      expiresAt,
+      await tx.insert(inviteTokens).values({
+        token,
+        createdBy,
+        expiresAt,
+      })
     })
 
     return { success: true, token, expiresAt }
