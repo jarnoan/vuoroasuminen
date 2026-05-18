@@ -10,6 +10,8 @@ import { getWindowBounds, generateDefaultEntries } from "@/lib/schedule/generate
 import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCalendarDays } from "date-fns"
 import { syncCalendarsAfterPublish } from "@/lib/gcal/sync"
 import type { SyncResult } from "@/lib/gcal/sync"
+import { getScheduleWindow } from "@/lib/schedule/queries"
+import type { ScheduleDay } from "@/lib/schedule/types"
 
 const VALID_PARENT_IDS: ParentId[] = ["father", "mother"]
 
@@ -232,4 +234,10 @@ export async function clearRange(input: {
     .returning({ id: scheduleEntries.id })
 
   return { success: true, clearedCount: result.length }
+}
+
+export async function getScheduleDays(viewStart?: string): Promise<ScheduleDay[]> {
+  await requireAuthorizedParent()
+  const result = await getScheduleWindow(viewStart)
+  return result.days
 }
