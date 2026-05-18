@@ -71,7 +71,10 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
   1. A parent who leaves the app open in a background tab for 15+ minutes returns to see the current schedule without a manual page reload
   2. Any edits made by the other parent during the background period appear automatically within seconds of the tab becoming active
   3. The browser does not display a stale or blank schedule after returning from background
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 14-01-PLAN.md — Server Action (getScheduleDays) + mobile viewport baseline (layout.tsx, globals.css)
+- [ ] 14-02-PLAN.md — RealtimeProvider visibilitychange recovery + viewStart/onRefresh prop threading
 **UI hint**: yes
 
 ### Phase 15: Header, Clear Guard, and Toolbar
@@ -144,6 +147,6 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 | 11. Production Deploy | v1.3 | 3/3 | Complete | 2026-05-16 |
 | 12. Onboarding Wizard | v1.3 | 5/5 | Complete | 2026-05-16 |
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
-| 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/? | Not started | - |
+| 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/2 | Not started | - |
 | 15. Header, Clear Guard, and Toolbar | v1.4 | 0/? | Not started | - |
 | 16. Schedule Table Reflow and Stats | v1.4 | 0/? | Not started | - |
