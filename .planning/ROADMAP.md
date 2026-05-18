@@ -74,7 +74,7 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 **Plans**: 2 plans
 Plans:
 - [x] 14-01-PLAN.md — Server Action (getScheduleDays) + mobile viewport baseline (layout.tsx, globals.css)
-- [ ] 14-02-PLAN.md — RealtimeProvider visibilitychange recovery + viewStart/onRefresh prop threading
+- [x] 14-02-PLAN.md — RealtimeProvider visibilitychange recovery + viewStart/onRefresh prop threading
 **UI hint**: yes
 
 ### Phase 15: Header, Clear Guard, and Toolbar
