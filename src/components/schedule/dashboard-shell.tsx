@@ -54,7 +54,7 @@ export function DashboardShell({
         <PublishButton days={days} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} />
+        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
         <ClearPanel childCount={childCount} />
       </main>
