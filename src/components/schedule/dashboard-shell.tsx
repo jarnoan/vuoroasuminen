@@ -30,10 +30,19 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const publishRef = useRef<(() => void) | null>(null)
+  const initialDataRef = useRef(initialData)
 
-  // Re-sync when server refreshes (e.g. after clearRange + router.refresh())
+  // Re-sync only when the date window itself changes (e.g. after clearRange + router.refresh()),
+  // not on every referential re-render of initialData. This prevents discarding in-flight
+  // optimistic updates when router.refresh() returns an identical-data but new-object prop.
   useEffect(() => {
-    setDays(initialData.days)
+    if (
+      initialData.startDate !== initialDataRef.current.startDate ||
+      initialData.endDate !== initialDataRef.current.endDate
+    ) {
+      initialDataRef.current = initialData
+      setDays(initialData.days)
+    }
   }, [initialData])
 
   const handlePublished = useCallback(() => {
