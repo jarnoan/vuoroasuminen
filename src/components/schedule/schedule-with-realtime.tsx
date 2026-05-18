@@ -20,17 +20,22 @@ interface ScheduleWithRealtimeProps {
   setDays: React.Dispatch<React.SetStateAction<ScheduleDay[]>>
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
+  viewStart?: string
 }
 
-export function ScheduleWithRealtime({ days, setDays, publishRef, parents }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
     realtimeRef.current?.(entry)
   }, [])
 
+  const handleRefresh = useCallback((days: ScheduleDay[]) => {
+    setDays(days)
+  }, [setDays])
+
   return (
-    <RealtimeProvider onEntryChange={handleEntryChange}>
+    <RealtimeProvider onEntryChange={handleEntryChange} onRefresh={handleRefresh} viewStart={viewStart}>
       <ScheduleTable
           days={days}
           setDays={setDays}
