@@ -13,7 +13,7 @@ interface RealtimePayload {
     id: string
     child_id: string
     day: string
-    parent_id: string
+    parent_id: string | null   // null when cell is cleared
     status: string
     notes: string | null
   }
@@ -25,7 +25,7 @@ interface RealtimeProviderProps {
     id: string
     childId: string
     day: string
-    parentId: ParentId
+    parentId: ParentId | null
     status: "draft" | "published"
     notes: string | null
   }) => void
@@ -41,10 +41,13 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
   onRefreshRef.current = onRefresh
 
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("[RealtimeProvider] Missing Supabase env vars — realtime disabled")
+      return
+    }
+    const supabase = createBrowserClient(supabaseUrl, supabaseKey)
 
     let channel: ReturnType<typeof supabase.channel> | null = null
     let cancelled = false
@@ -53,13 +56,14 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
     const handlePayload = (payload: { new: Record<string, unknown> }) => {
       const row = payload.new as RealtimePayload["new"]
       if (!row || typeof row.id !== "string" || typeof row.child_id !== "string" || typeof row.day !== "string") return
-      if (!VALID_PARENT_IDS.includes(row.parent_id as ParentId)) return
+      // Allow null (cleared cell) and valid parent ids; reject anything else
+      if (row.parent_id !== null && !VALID_PARENT_IDS.includes(row.parent_id as ParentId)) return
       if (!VALID_STATUSES.includes(row.status as "draft" | "published")) return
       onEntryChangeRef.current({
         id: row.id,
         childId: row.child_id,
         day: row.day,
-        parentId: row.parent_id as ParentId,
+        parentId: row.parent_id as ParentId | null,
         status: row.status as "draft" | "published",
         notes: row.notes,
       })
@@ -96,10 +100,21 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
       const { data: { session } } = await supabase.auth.getSession()
       if (cancelled || !session?.access_token) return
       supabase.realtime.setAuth(session.access_token)
-      channel = supabase
+
+      // Guard: check cancelled again right before creating the channel so we can
+      // clean up immediately if the component unmounted while we were awaiting.
+      if (cancelled) return
+      const newChannel = supabase
         .channel("schedule-changes")
         .on("postgres_changes", { event: "*", schema: "public", table: "schedule_entries" }, handlePayload)
         .subscribe()
+
+      if (cancelled) {
+        // Component unmounted between the last await and here — clean up immediately
+        supabase.removeChannel(newChannel)
+        return
+      }
+      channel = newChannel
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange)
