@@ -1,10 +1,11 @@
 ---
 phase: 15
 slug: header-clear-guard-and-toolbar
-status: draft
+status: approved
 shadcn_initialized: true
 preset: base-nova
 created: 2026-05-19
+reviewed_at: 2026-05-19T00:00:00Z
 ---
 
 # Phase 15 — UI Design Contract
