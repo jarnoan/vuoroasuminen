@@ -87,7 +87,11 @@ Plans:
   3. On desktop, the existing hover × button for clearing behaves exactly as before
   4. The view toolbar controls (date navigation, window controls) fit within a 360–430px viewport without horizontal overflow or clipping
   5. On mobile, tapping the date field opens the native system date picker; on desktop the existing calendar popover appears
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 15-01-PLAN.md — Header mobile shrink: title/name hide, avatar fallback, icon-only sign-out, responsive padding (MOB-04)
+- [ ] 15-02-PLAN.md — ScheduleCell long-press clear guard: isArmed state, pointer event handlers, desktop unchanged (MOB-02)
+- [ ] 15-03-PLAN.md — ViewToolbar @container + icon Prev + native date input; ClearPanel native date inputs (MOB-03, MOB-03a)
 **UI hint**: yes
 
 ### Phase 16: Schedule Table Reflow and Stats
@@ -148,5 +152,5 @@ Plans:
 | 12. Onboarding Wizard | v1.3 | 5/5 | Complete | 2026-05-16 |
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
 | 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/2 | Not started | - |
-| 15. Header, Clear Guard, and Toolbar | v1.4 | 0/? | Not started | - |
+| 15. Header, Clear Guard, and Toolbar | v1.4 | 0/3 | Not started | - |
 | 16. Schedule Table Reflow and Stats | v1.4 | 0/? | Not started | - |
