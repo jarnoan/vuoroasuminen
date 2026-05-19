@@ -62,9 +62,9 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 ### Active
 
 - [ ] Schedule table reflow for mobile — no horizontal scroll on 360–430px viewports (MOB-01)
-- [ ] Clear button visible and guarded against accidental activation on touch (MOB-02)
-- [ ] View toolbar compact and touch-accessible on mobile (MOB-03)
-- [ ] Header/nav adapted for mobile (MOB-04)
+- ✓ Clear button guarded on touch — 1s long-press arms ×; desktop hover unchanged (MOB-02) — v1.4 Phase 15
+- ✓ View toolbar: @container icon-only Prev, native date input on mobile (MOB-03, MOB-03a) — v1.4 Phase 15
+- ✓ Header adapted for mobile — title/name hidden, avatar fallback, icon sign-out (MOB-04) — v1.4 Phase 15
 - [ ] Statistics panel moved below the schedule table on all viewports; 2-column grid on mobile (MOB-05)
 
 ### Future
