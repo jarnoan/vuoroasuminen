@@ -50,19 +50,21 @@ Exceptions:
 
 ## Typography
 
+Two weights only: 400 (regular) and 600 (semibold).
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (text-sm) | 400 (regular) | 1.5 |
 | Label | 14px (text-sm) | 600 (semibold) | 1.25 |
-| Heading | 20px (text-xl) | 700 (bold) | 1.2 |
-| App title | 20px (text-xl) | 700 (bold) | 1.2 |
+| Heading | 20px (text-xl) | 600 (semibold) | 1.2 |
+| App title | 20px (text-xl) | 600 (semibold) | 1.2 |
 
 Notes:
-- "Vuoroasuminen" app title: `text-xl font-bold`. Hidden on mobile (`hidden sm:block`). Source: CONTEXT.md D-07 + existing header.tsx.
+- "Vuoroasuminen" app title: `text-xl font-semibold`. Hidden on mobile (`hidden sm:block`). Source: CONTEXT.md D-07 + existing header.tsx.
 - Toolbar button labels: `text-sm font-semibold` — existing shadcn Button size="sm" default.
 - ClearPanel labels ("Alkaen:", "Päättyy:"): `text-sm`, weight 400. Source: existing clear-panel.tsx.
 - Native date input: `text-sm` to match Button visual weight in toolbar. Source: CONTEXT.md specifics section.
-- First initial in avatar fallback circle: `text-sm font-medium`. Source: CONTEXT.md D-09.
+- First initial in avatar fallback circle: `text-sm font-semibold`. Source: CONTEXT.md D-09. (Do NOT use `font-medium` — only 2 weights are permitted in this contract.)
 
 ---
 
@@ -78,6 +80,8 @@ Notes:
 Accent reserved for:
 1. "Tänään" button (`variant="default"` = primary fill)
 2. Avatar fallback circle (`bg-primary text-primary-foreground`)
+
+**Focal point:** Primary visual anchor is the "Tänään" button (accent fill, near-black background). Secondary anchor is the avatar circle (same accent fill, 32×32 rounded-full). All other interactive controls use `variant="outline"` — no competing accent fills.
 
 Semantic cell colors (not part of the 60/30/10 — they are data visualization):
 - Father published: `bg-blue-500 text-white`
@@ -107,7 +111,7 @@ New elements (not new shadcn components — native HTML or Tailwind-only):
 | Element | Usage |
 |---------|-------|
 | `<input type="date">` | Native date picker on mobile in ViewToolbar and ClearPanel; styled with `border rounded-md px-2 py-1 text-sm` |
-| Avatar fallback `<div>` | `w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium select-none` |
+| Avatar fallback `<div>` | `w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold select-none` |
 
 Icons used (lucide-react, already installed):
 
@@ -149,7 +153,7 @@ Icons used (lucide-react, already installed):
 
 Sign-out button on mobile: `aria-label="Kirjaudu ulos"` required (icon-only, no visible text). Source: CONTEXT.md D-07, D-08, D-09, D-10.
 
-Avatar fallback (when `avatar_url` is null): first character of display name in colored circle. Use `bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium select-none`. Source: CONTEXT.md D-09.
+Avatar fallback (when `avatar_url` is null): first character of display name in colored circle. Use `bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold select-none`. Source: CONTEXT.md D-09.
 
 ### ViewToolbar (MOB-03, MOB-03a)
 
@@ -194,7 +198,7 @@ Both "Alkaen:" and "Päättyy:" date pickers get the same CSS toggle treatment:
 | Destructive action — clear single cell | Long-press arms ×; second tap on × fires clear. No modal confirmation. Auto-disarms in 2s if no action. |
 | Destructive action — clear date range | "Vahvista" button inside inline panel. Preview label shows scope before confirming: "Tyhjennetään: N päivää (N lasta)". |
 | In-progress label | "Tyhjennetään..." (replaces "Vahvista" during pending) |
-| Cancel | "Peruuta" |
+| Cancel | "Peruuta tyhjennys" |
 
 No new error copy introduced in this phase — the clear single cell action has no server-side error path; it calls `onClear` which is handled upstream.
 
