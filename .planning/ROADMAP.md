@@ -89,9 +89,9 @@ Plans:
   5. On mobile, tapping the date field opens the native system date picker; on desktop the existing calendar popover appears
 **Plans**: 3 plans
 Plans:
-- [ ] 15-01-PLAN.md — Header mobile shrink: title/name hide, avatar fallback, icon-only sign-out, responsive padding (MOB-04)
-- [ ] 15-02-PLAN.md — ScheduleCell long-press clear guard: isArmed state, pointer event handlers, desktop unchanged (MOB-02)
-- [ ] 15-03-PLAN.md — ViewToolbar @container + icon Prev + native date input; ClearPanel native date inputs (MOB-03, MOB-03a)
+- [x] 15-01-PLAN.md — Header mobile shrink: title/name hide, avatar fallback, icon-only sign-out, responsive padding (MOB-04)
+- [x] 15-02-PLAN.md — ScheduleCell long-press clear guard: isArmed state, pointer event handlers, desktop unchanged (MOB-02)
+- [x] 15-03-PLAN.md — ViewToolbar @container + icon Prev + native date input; ClearPanel native date inputs (MOB-03, MOB-03a)
 **UI hint**: yes
 
 ### Phase 16: Schedule Table Reflow and Stats
