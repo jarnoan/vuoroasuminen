@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 
 import type { ParentId } from "@/lib/schedule/types"
 
@@ -42,6 +42,14 @@ export function ScheduleCell({
   const disarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startXRef = useRef<number>(0)
   const startYRef = useRef<number>(0)
+
+  // Cleanup timers on unmount to prevent state updates on unmounted component
+  useEffect(() => {
+    return () => {
+      if (armTimerRef.current !== null) clearTimeout(armTimerRef.current)
+      if (disarmTimerRef.current !== null) clearTimeout(disarmTimerRef.current)
+    }
+  }, [])
 
   function handleCellPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
     startXRef.current = e.clientX
