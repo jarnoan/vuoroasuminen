@@ -58,7 +58,7 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 ### v1.4 Mobile-First Polish
 
 - [ ] **Phase 14: Realtime Reliability + Mobile Baseline** — Fix silent data loss on background tab; establish mobile viewport foundation
-- [ ] **Phase 15: Header, Clear Guard, and Toolbar** — Adapt header, clear interactions, and view toolbar for mobile
+- [x] **Phase 15: Header, Clear Guard, and Toolbar** — Adapt header, clear interactions, and view toolbar for mobile (completed 2026-05-19)
 - [ ] **Phase 16: Schedule Table Reflow and Stats** — Full table reflow for 360–430px; stats panel repositioning
 
 ## Phase Details
@@ -152,5 +152,5 @@ Plans:
 | 12. Onboarding Wizard | v1.3 | 5/5 | Complete | 2026-05-16 |
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
 | 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/2 | Not started | - |
-| 15. Header, Clear Guard, and Toolbar | v1.4 | 0/3 | Not started | - |
+| 15. Header, Clear Guard, and Toolbar | v1.4 | 3/3 | Complete    | 2026-05-19 |
 | 16. Schedule Table Reflow and Stats | v1.4 | 0/? | Not started | - |
