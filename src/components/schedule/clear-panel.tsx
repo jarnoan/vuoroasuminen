@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { differenceInCalendarDays, format } from "date-fns"
+import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { fi as fiFormat } from "date-fns/locale"
 import { fi as fiPicker } from "react-day-picker/locale"
 import { CalendarIcon } from "lucide-react"
@@ -91,11 +91,24 @@ export function ClearPanel({ childCount }: ClearPanelProps) {
   return (
     <div className="px-4 pb-4">
       <div className="border rounded-lg p-3 bg-muted/30 text-sm space-y-3">
-        <div className="flex items-center gap-2">
-          <span>Alkaen:</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-sm" htmlFor="clear-start-date">Alkaen:</label>
+          {/* Native date input — mobile only */}
+          <input
+            id="clear-start-date"
+            type="date"
+            className="sm:hidden border rounded-md px-2 py-1 text-sm"
+            value={pickedStart ? format(pickedStart, "yyyy-MM-dd") : ""}
+            onChange={(e) => {
+              if (!e.target.value) return
+              setPickedStart(parseISO(e.target.value))
+            }}
+            disabled={isPending}
+          />
+          {/* Calendar Popover — desktop only */}
           <Popover>
             <PopoverTrigger
-              render={<Button variant="outline" size="sm" className="font-semibold" disabled={isPending} />}
+              render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" disabled={isPending} />}
             >
               <CalendarIcon className="mr-1 h-3.5 w-3.5" />
               {pickedStart
@@ -116,11 +129,24 @@ export function ClearPanel({ childCount }: ClearPanelProps) {
           </Popover>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span>Päättyy:</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-sm" htmlFor="clear-end-date">Päättyy:</label>
+          {/* Native date input — mobile only */}
+          <input
+            id="clear-end-date"
+            type="date"
+            className="sm:hidden border rounded-md px-2 py-1 text-sm"
+            value={pickedEnd ? format(pickedEnd, "yyyy-MM-dd") : ""}
+            onChange={(e) => {
+              if (!e.target.value) return
+              setPickedEnd(parseISO(e.target.value))
+            }}
+            disabled={isPending}
+          />
+          {/* Calendar Popover — desktop only */}
           <Popover>
             <PopoverTrigger
-              render={<Button variant="outline" size="sm" className="font-semibold" disabled={isPending} />}
+              render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" disabled={isPending} />}
             >
               <CalendarIcon className="mr-1 h-3.5 w-3.5" />
               {pickedEnd
