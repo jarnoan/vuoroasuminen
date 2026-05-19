@@ -1,5 +1,6 @@
 import React from "react"
 import Image from "next/image"
+import { LogOut } from "lucide-react"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { signOutAction } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
@@ -15,13 +16,13 @@ export default async function Header({ children }: { children?: React.ReactNode 
   const fullName = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "Käyttäjä"
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b">
+    <header className="flex items-center justify-between px-3 py-3 sm:px-6 sm:py-4 border-b">
       <div className="flex items-center gap-2">
-        <span className="text-xl font-bold">Vuoroasuminen</span>
+        <span className="text-xl font-semibold hidden sm:block">Vuoroasuminen</span>
       </div>
       <div className="flex items-center gap-4">
         {children}
-        {avatarUrl && (
+        {avatarUrl ? (
           <Image
             src={avatarUrl}
             alt={fullName}
@@ -29,11 +30,19 @@ export default async function Header({ children }: { children?: React.ReactNode 
             height={32}
             className="rounded-full"
           />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold select-none"
+            aria-label={fullName}
+          >
+            {fullName.charAt(0).toUpperCase()}
+          </div>
         )}
-        <span className="text-sm">{fullName}</span>
+        <span className="text-sm hidden sm:inline">{fullName}</span>
         <form action={signOutAction}>
-          <Button variant="outline" size="sm" type="submit">
-            Kirjaudu ulos
+          <Button variant="outline" size="sm" type="submit" aria-label="Kirjaudu ulos">
+            <LogOut className="h-4 w-4 sm:hidden" aria-hidden="true" />
+            <span className="hidden sm:inline">Kirjaudu ulos</span>
           </Button>
         </form>
       </div>
