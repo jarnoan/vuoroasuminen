@@ -4,7 +4,7 @@ import { useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { parseISO, startOfWeek, subDays, format } from "date-fns"
 import { fi } from "react-day-picker/locale"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -55,18 +55,32 @@ export function ViewToolbar({ initialViewStart }: ViewToolbarProps) {
   const selectedDate = initialViewStart ? parseISO(initialViewStart) : undefined
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b">
+    <div className="@container flex flex-wrap items-center gap-2 px-4 py-2 border-b">
       <Button
         variant="outline"
         size="sm"
         className="font-semibold"
         onClick={handlePrevWeek}
+        aria-label="Edellinen viikko"
       >
-        ‹ Prev week
+        <ChevronLeft className="h-4 w-4 @sm:hidden" aria-hidden="true" />
+        <span className="hidden @sm:inline">‹ Prev week</span>
       </Button>
+      {/* Native date input — visible on mobile, hidden on desktop */}
+      <input
+        type="date"
+        className="sm:hidden border rounded-md px-2 py-1 text-sm"
+        value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+        onChange={(e) => {
+          if (!e.target.value) return
+          handleDateSelect(parseISO(e.target.value))
+        }}
+        aria-label="Valitse aloituspäivä"
+      />
+      {/* Calendar Popover — hidden on mobile, visible on desktop */}
       <Popover>
         <PopoverTrigger
-          render={<Button variant="outline" size="sm" className="font-semibold" />}
+          render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" />}
         >
           <CalendarIcon className="mr-1 h-3.5 w-3.5" />
           Valitse päivä
