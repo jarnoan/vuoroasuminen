@@ -59,7 +59,7 @@ Full archive: [.planning/milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 - [ ] **Phase 14: Realtime Reliability + Mobile Baseline** — Fix silent data loss on background tab; establish mobile viewport foundation
 - [x] **Phase 15: Header, Clear Guard, and Toolbar** — Adapt header, clear interactions, and view toolbar for mobile (completed 2026-05-19)
-- [ ] **Phase 16: Schedule Table Reflow and Stats** — Full table reflow for 360–430px; stats panel repositioning
+- [x] **Phase 16: Schedule Table Reflow and Stats** — Full table reflow for 360–430px; stats panel repositioning (completed 2026-05-20)
 
 ## Phase Details
 
@@ -106,8 +106,8 @@ Plans:
   5. On mobile viewports the statistics display in a 2-column grid so all values are visible without scrolling past them
 **Plans**: 2 plans
 Plans:
-- [ ] 16-01-PLAN.md — StatsPanel child-column grid redesign (MOB-05 grid)
-- [ ] 16-02-PLAN.md — ScheduleTable mobile reflow (scroll container, sticky date column, hidden notes column, two-row notes, PlusIcon add-notes) + StatsPanel sibling placement (MOB-01, MOB-01b, MOB-05 positioning)
+- [x] 16-01-PLAN.md — StatsPanel child-column grid redesign (MOB-05 grid)
+- [x] 16-02-PLAN.md — ScheduleTable mobile reflow (scroll container, sticky date column, hidden notes column, two-row notes, PlusIcon add-notes) + StatsPanel sibling placement (MOB-01, MOB-01b, MOB-05 positioning)
 **UI hint**: yes
 
 ## Coverage
@@ -156,4 +156,4 @@ Plans:
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
 | 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/2 | Not started | - |
 | 15. Header, Clear Guard, and Toolbar | v1.4 | 3/3 | Complete    | 2026-05-19 |
-| 16. Schedule Table Reflow and Stats | v1.4 | 0/2 | Not started | - |
+| 16. Schedule Table Reflow and Stats | v1.4 | 2/2 | Complete | 2026-05-20 |
