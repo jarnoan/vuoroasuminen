@@ -10,6 +10,7 @@ import { userGoogleTokens } from "@/db/schema/tokens"
 import { getAppConfig } from "@/config/app"
 import { getActiveInviteToken } from "@/actions/invite"
 import { redirect } from "next/navigation"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 function validateViewStart(raw: string | undefined): string | undefined {
   if (!raw) return undefined
@@ -80,6 +81,12 @@ export default async function Dashboard({
 
   const parentsForUI = config.parents.map((p) => ({ id: p.id, name: p.name }))
 
+  // Derive the current user's parentId so the UI assigns cells to the right parent
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const currentUserEmail = user?.email ?? null
+  const currentParentId = config.parents.find((p) => p.email === currentUserEmail)?.id ?? null
+
   return (
     <>
       {!parentBJoined && activeInvite.success && (
@@ -99,6 +106,7 @@ export default async function Dashboard({
         showOwnerWarning={showOwnerWarning}
         parents={parentsForUI}
         childCount={config.children.length}
+        currentParentId={currentParentId ?? undefined}
       />
     </>
   )

@@ -17,6 +17,7 @@ interface DashboardShellProps {
   showOwnerWarning?: boolean
   parents: Array<{ id: ParentId; name: string }>
   childCount: number
+  currentParentId?: ParentId
 }
 
 export function DashboardShell({
@@ -27,6 +28,7 @@ export function DashboardShell({
   showOwnerWarning = false,
   parents,
   childCount,
+  currentParentId,
 }: DashboardShellProps) {
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const publishRef = useRef<(() => void) | null>(null)
@@ -63,7 +65,7 @@ export function DashboardShell({
         <PublishButton days={days} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} />
+        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} currentParentId={currentParentId} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
         <ClearPanel childCount={childCount} />
       </main>

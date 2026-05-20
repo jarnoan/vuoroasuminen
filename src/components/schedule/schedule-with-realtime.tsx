@@ -21,9 +21,10 @@ interface ScheduleWithRealtimeProps {
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
   viewStart?: string
+  currentParentId?: ParentId
 }
 
-export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, currentParentId }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -42,6 +43,7 @@ export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewS
         realtimeRef={realtimeRef}
         publishRef={publishRef}
         parents={parents}
+        currentParentId={currentParentId}
       />
       <StatsPanel days={days} parents={parents} />
     </RealtimeProvider>
