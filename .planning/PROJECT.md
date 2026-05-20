@@ -4,7 +4,19 @@
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — background tab recovery, schedule table reflow without horizontal scroll, clear button safeguarded against accidental touch activation, and all UI panels optimized for 360–430px viewports.
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — background tab recovery, schedule table reflow without horizontal scroll, clear button safeguarded against accidental touch activation, and all UI panels optimized for 360–430px viewports. v1.5 polishes the schedule UI with six targeted improvements: week number rows, unified desktop scroll, pen icon for mobile notes, full-cell Tyhjennä clear with haptic feedback, note attribution clarity on mobile, and stats column alignment.
+
+## Current Milestone: v1.5 UI Refinements
+
+**Goal:** Polish the schedule UI with six targeted improvements — week numbers, unified desktop scroll, cleaner mobile interactions, and aligned stats columns.
+
+**Target features:**
+- Week number row above Monday in the schedule table (e.g. "Viikko 21")
+- Desktop: full-page scroll, no separate table scroll container; sticky `<thead>` same as mobile
+- Mobile note button: pen icon instead of + icon
+- Mobile clear: long-press transforms entire cell into "Tyhjennä" button with haptic feedback via `navigator.vibrate()`
+- Mobile: note row visually connected to the day row above it
+- Stats panel: child columns aligned with schedule table columns
 
 ## Core Value
 
@@ -56,6 +68,12 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Active
 
+- Week number row shown above Monday in the schedule table (UI-01)
+- Desktop full-page scroll — no separate table scroll container; sticky thead on desktop (UI-02)
+- Mobile note button uses pen icon instead of + icon (UI-03)
+- Mobile clear: long-press transforms entire cell into "Tyhjennä" button with haptic vibration feedback (UI-04)
+- Mobile note row is visually attributed to the day row above it (UI-05)
+- Stats panel child columns aligned with schedule table child columns (UI-06)
 - Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
 
 ### Out of Scope
@@ -140,4 +158,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after v1.4 milestone*
+*Last updated: 2026-05-20 after v1.5 milestone start*
