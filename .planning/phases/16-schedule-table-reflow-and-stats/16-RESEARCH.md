@@ -476,7 +476,7 @@ const childNames = stats.childStats.map(c => c.childName)
 | A5 | Second-row notes `<tr className="max-sm:table-row sm:hidden">` produces correct display value on mobile | Code Examples | Low — `table-row` is the correct display value for a `<tr>` element; `sm:hidden` sets `display: none` on desktop |
 | A6 | `touch-action: manipulation` already present on `ScheduleCell` main button — `NotesCell` `<input>` does not need it (native inputs handle 300ms delay automatically in modern iOS) | Architecture Patterns | Low — native inputs in iOS 13+ do not have the 300ms delay |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Notes "add" button triggers focus on NotesCell**
    - What we know: D-11 requires a `+` button to appear on mobile when a day has no notes. Tapping it should trigger the notes editor.
