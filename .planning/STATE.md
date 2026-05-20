@@ -27,8 +27,8 @@ See: .planning/PROJECT.md
 
 Phase: 16
 Plan: Complete (2/2)
-Status: Verification pending
-Last activity: 2026-05-20 -- Phase 16 execution complete
+Status: Complete — human UAT pending
+Last activity: 2026-05-20 -- Phase 16 complete (automated checks passed, human UAT saved)
 
 Progress: [██████████] 100%
 

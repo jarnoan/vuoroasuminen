@@ -13,13 +13,13 @@ Requirements for milestone v1.4 — Mobile-First Polish.
 
 ### Mobile Layout
 
-- [ ] **MOB-01**: Schedule table fits 360–430px viewport without horizontal scrolling
-- [ ] **MOB-01b**: Each day row on mobile shows child cells on top and notes text on a second row below (desktop layout unchanged)
+- [x] **MOB-01**: Schedule table fits 360–430px viewport without horizontal scrolling
+- [x] **MOB-01b**: Each day row on mobile shows child cells on top and notes text on a second row below (desktop layout unchanged)
 - [x] **MOB-02**: Long-press on a custody cell shows a clear option on touch devices; existing hover × button unchanged on desktop
 - [x] **MOB-03**: Date picker on mobile uses native `<input type="date">`; desktop keeps existing calendar popover
 - [x] **MOB-03a**: View toolbar controls fit within mobile viewport without overflow
 - [x] **MOB-04**: Header fits on mobile — parent name truncated or hidden; sign-out accessible
-- [ ] **MOB-05**: Statistics panel positioned below the schedule table on all viewports; 2-column grid on mobile
+- [x] **MOB-05**: Statistics panel positioned below the schedule table on all viewports; 2-column grid on mobile
 
 ## Future Requirements
 
@@ -49,9 +49,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOB-02 | Phase 15 | Complete |
 | MOB-03 | Phase 15 | Complete |
 | MOB-03a | Phase 15 | Complete |
-| MOB-01 | Phase 16 | Pending |
-| MOB-01b | Phase 16 | Pending |
-| MOB-05 | Phase 16 | Pending |
+| MOB-01 | Phase 16 | Complete |
+| MOB-01b | Phase 16 | Complete |
+| MOB-05 | Phase 16 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 8 total
@@ -60,4 +60,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-17*
-*Last updated: 2026-05-17 after roadmap creation (phases 14–16)*
+*Last updated: 2026-05-20 after Phase 16 completion (MOB-01, MOB-01b, MOB-05 validated)*
