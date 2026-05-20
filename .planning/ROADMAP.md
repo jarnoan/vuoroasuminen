@@ -104,7 +104,10 @@ Plans:
   3. On desktop, the existing single-row layout (child cells and notes side by side) is unchanged
   4. The custody statistics panel appears below the schedule table on all screen sizes
   5. On mobile viewports the statistics display in a 2-column grid so all values are visible without scrolling past them
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 16-01-PLAN.md — StatsPanel child-column grid redesign (MOB-05 grid)
+- [ ] 16-02-PLAN.md — ScheduleTable mobile reflow (scroll container, sticky date column, hidden notes column, two-row notes, PlusIcon add-notes) + StatsPanel sibling placement (MOB-01, MOB-01b, MOB-05 positioning)
 **UI hint**: yes
 
 ## Coverage
@@ -153,4 +156,4 @@ Plans:
 | 13. Invite + Access Gate | v1.3 | 4/4 | Complete | 2026-05-17 |
 | 14. Realtime Reliability + Mobile Baseline | v1.4 | 0/2 | Not started | - |
 | 15. Header, Clear Guard, and Toolbar | v1.4 | 3/3 | Complete    | 2026-05-19 |
-| 16. Schedule Table Reflow and Stats | v1.4 | 0/? | Not started | - |
+| 16. Schedule Table Reflow and Stats | v1.4 | 0/2 | Not started | - |
