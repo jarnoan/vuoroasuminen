@@ -37,13 +37,13 @@ export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewS
   return (
     <RealtimeProvider onEntryChange={handleEntryChange} onRefresh={handleRefresh} viewStart={viewStart}>
       <ScheduleTable
-          days={days}
-          setDays={setDays}
-          realtimeRef={realtimeRef}
-          publishRef={publishRef}
-          parents={parents}
-          renderAbove={(days) => <StatsPanel days={days} parents={parents} />}
-        />
+        days={days}
+        setDays={setDays}
+        realtimeRef={realtimeRef}
+        publishRef={publishRef}
+        parents={parents}
+      />
+      <StatsPanel days={days} parents={parents} />
     </RealtimeProvider>
   )
 }

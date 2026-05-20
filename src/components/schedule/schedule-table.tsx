@@ -22,11 +22,10 @@ interface ScheduleTableProps {
   setDays: React.Dispatch<React.SetStateAction<ScheduleDay[]>>
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   publishRef?: React.RefObject<(() => void) | null>
-  renderAbove?: (days: ScheduleDay[]) => React.ReactNode
   parents: Array<{ id: ParentId; name: string }>
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAbove, parents }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents }: ScheduleTableProps) {
 
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
@@ -219,8 +218,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
   const colCount = childNames.length + 2 // Date + children + Notes
 
   return (
-    <>
-      <div className="sm:overflow-y-auto sm:h-[calc(100svh-8rem)]">
+    <div className="sm:overflow-y-auto sm:h-[calc(100svh-8rem)]">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
@@ -334,6 +332,5 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
           </tbody>
         </table>
       </div>
-    </>
   )
 }
