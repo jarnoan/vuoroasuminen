@@ -7,6 +7,7 @@
 - ✅ **v1.2 Supabase Auth Migration** — Phases 8–10 (shipped 2026-05-15)
 - ✅ **v1.3 Deploy + Onboarding** — Phases 11–13 (shipped 2026-05-17)
 - ✅ **v1.4 Mobile-First Polish** — Phases 14–16 (shipped 2026-05-20)
+- 🔄 **v1.5 UI Refinements** — Phases 17–19 (in progress)
 
 ## Phases
 
@@ -66,7 +67,49 @@ Full archive: [.planning/milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 
 </details>
 
+### v1.5 UI Refinements (Phases 17–19)
+
+- [ ] Phase 17: Schedule Table Structure — Week numbers + desktop full-page scroll (UI-01, UI-02)
+- [ ] Phase 18: Mobile Cell and Note Interactions — Pen icon, Tyhjennä cell, note attribution (UI-03, UI-04, UI-05)
+- [ ] Phase 19: Stats Column Alignment — Stats columns match table columns (UI-06)
+
 ## Phase Details
+
+### Phase 17: Schedule Table Structure
+**Goal**: The schedule table shows week number labels and scrolls as part of the full page on desktop
+**Depends on**: Phase 16
+**Requirements**: UI-01, UI-02
+**Success Criteria** (what must be TRUE):
+  1. A week number label row (e.g. "Viikko 21") appears above each Monday in the schedule table for every week in the view window
+  2. On desktop, scrolling the page scrolls the entire schedule — there is no separate inner scroll container on the table
+  3. On desktop, the table header row stays sticky as the user scrolls down, the same as on mobile
+  4. On mobile, scroll behavior is unchanged from v1.4
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 18: Mobile Cell and Note Interactions
+**Goal**: Mobile users have clearer, friendlier interactions for adding notes and clearing cells
+**Depends on**: Phase 16
+**Requirements**: UI-03, UI-04, UI-05
+**Success Criteria** (what must be TRUE):
+  1. On mobile, the button that reveals the note input shows a pen icon, not a plus icon
+  2. On mobile, long-pressing a parent custody cell triggers a brief vibration and transforms the entire cell into a full-width "Tyhjennä" button
+  3. Tapping the "Tyhjennä" button clears the cell; auto-disarm timeout still applies if not tapped
+  4. On desktop, the existing hover × clear behavior is unchanged
+  5. On mobile, the note row is visually attributed to its day row — the design makes clear the note belongs to the row above it
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 19: Stats Column Alignment
+**Goal**: Stats panel columns align with schedule table columns so the layout is visually coherent when both are on screen
+**Depends on**: Phase 17
+**Requirements**: UI-06
+**Success Criteria** (what must be TRUE):
+  1. Each child column in the stats panel is the same width as the corresponding child column in the schedule table above it
+  2. The columns visually align when both elements are visible on screen
+  3. The alignment holds across viewport widths (both mobile and desktop)
+**Plans**: TBD
+**UI hint**: yes
 
 ### Phase 14: Realtime Reliability + Mobile Baseline
 **Goal**: The app stays live and data-correct when a parent returns from a background tab, and the mobile viewport is correctly configured as the foundation for all subsequent UI work
@@ -117,12 +160,18 @@ Plans:
 
 ## Coverage
 
-- Requirements: 8 total
-- Mapped: 8
+- v1.5 requirements: 6 total
+- Mapped: 6
 - Unmapped: 0 ✓
 
 | Requirement | Phase |
 |-------------|-------|
+| UI-01 | Phase 17 |
+| UI-02 | Phase 17 |
+| UI-03 | Phase 18 |
+| UI-04 | Phase 18 |
+| UI-05 | Phase 18 |
+| UI-06 | Phase 19 |
 | DPLY-01 | Phase 11 |
 | DPLY-02 | Phase 11 |
 | DPLY-03 | Phase 11 |
