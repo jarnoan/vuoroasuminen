@@ -217,23 +217,22 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
 
   return (
     <>
-      {renderAbove?.(days)}
-      <div className="overflow-y-auto h-[calc(100vh-8rem)]">
+      <div className="sm:overflow-y-auto sm:h-[calc(100svh-8rem)]">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
-              <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b">
+              <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b sticky left-0 z-10 bg-background">
                 Päivä
               </th>
               {childNames.map((name) => (
                 <th
                   key={name}
-                  className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[90px]"
+                  className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[72px] sm:min-w-[90px]"
                 >
                   {name}
                 </th>
               ))}
-              <th className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[160px]">
+              <th className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[160px] max-sm:hidden">
                 Muistiinpanot
               </th>
             </tr>
@@ -255,7 +254,10 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
                   data-today={day.isToday ? "true" : undefined}
                   className={day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20" : undefined}
                 >
-                  <td className="px-3 py-2 text-sm whitespace-nowrap font-mono">
+                  <td
+                    className="px-3 py-2 text-sm whitespace-nowrap font-mono sticky left-0 bg-background data-[today=true]:bg-yellow-50 dark:data-[today=true]:bg-yellow-950/20"
+                    data-today={day.isToday ? "true" : undefined}
+                  >
                     {day.dayLabel}
                   </td>
                   {day.cells.map((cell) => (
@@ -283,7 +285,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
                       )}
                     </td>
                   ))}
-                  <td className="px-1 py-1">
+                  <td className="px-1 py-1 max-sm:hidden">
                     <NotesCell
                       entryId={day.notesEntryId}
                       value={day.notes}
