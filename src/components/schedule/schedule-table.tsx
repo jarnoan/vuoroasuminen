@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
+import React, { useEffect, useCallback, useState } from "react"
+import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -85,6 +86,8 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
       todayRow.scrollIntoView({ behavior: "instant", block: "center" })
     }
   }, [])
+
+  const [notesOpenDates, setNotesOpenDates] = useState<Set<string>>(new Set())
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
     // Optimistic update
@@ -285,6 +288,19 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
                       )}
                     </td>
                   ))}
+                  <td className="px-1 py-1 max-sm:table-cell sm:hidden">
+                    {!day.notes && !notesOpenDates.has(day.date) ? (
+                      <button
+                        type="button"
+                        onClick={() => setNotesOpenDates(prev => new Set(prev).add(day.date))}
+                        aria-label={`Lisää muistiinpano — ${day.dayLabel}`}
+                        className="text-muted-foreground hover:text-foreground"
+                        style={{ touchAction: "manipulation" }}
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </td>
                   <td className="px-1 py-1 max-sm:hidden">
                     <NotesCell
                       entryId={day.notesEntryId}
@@ -293,6 +309,26 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, renderAb
                     />
                   </td>
                 </tr>
+                {(day.notes || notesOpenDates.has(day.date)) && (
+                  <tr className="max-sm:table-row sm:hidden">
+                    <td colSpan={colCount} className="px-1 py-1 pb-1">
+                      <NotesCell
+                        entryId={day.notesEntryId}
+                        value={day.notes}
+                        onSave={(entryId, notes) => {
+                          handleNoteSave(entryId, notes)
+                          if (!notes) {
+                            setNotesOpenDates(prev => {
+                              const next = new Set(prev)
+                              next.delete(day.date)
+                              return next
+                            })
+                          }
+                        }}
+                      />
+                    </td>
+                  </tr>
+                )}
               </React.Fragment>
             ))}
           </tbody>
