@@ -23,14 +23,16 @@ interface ScheduleTableProps {
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
+  currentParentId?: ParentId
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId }: ScheduleTableProps) {
 
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
     setDays(prev => prev.map(day => {
       if (day.date !== entry.day) return day
+      const isNotesEntry = day.notesEntryId === entry.id
       return {
         ...day,
         cells: day.cells.map(cell =>
@@ -38,8 +40,9 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
             ? { ...cell, entryId: entry.id, parentId: entry.parentId, status: entry.status }
             : cell
         ),
-        notes: entry.notes ?? day.notes,
-        notesEntryId: day.notesEntryId === entry.id ? entry.id : day.notesEntryId,
+        // Only update notes when this realtime event is for the notes-bearing entry
+        notes: isNotesEntry ? (entry.notes ?? "") : day.notes,
+        notesEntryId: isNotesEntry ? entry.id : day.notesEntryId,
       }
     }))
   }, [])
@@ -117,21 +120,29 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
   }
 
   async function handleClear(entryId: string) {
-    // Capture prior state so we can revert on failure
+    // Capture prior state from current prop snapshot — safe, synchronous
     let priorParentId: ParentId | null = null
     let priorStatus: "draft" | "published" = "draft"
-    setDays((prev) => {
-      // Capture & optimistically null the cell in a single pass
-      return prev.map((day) => ({
+    for (const day of days) {
+      const cell = day.cells.find((c) => c.entryId === entryId)
+      if (cell) {
+        priorParentId = cell.parentId
+        priorStatus = cell.status
+        break
+      }
+    }
+
+    // Optimistic clear
+    setDays((prev) =>
+      prev.map((day) => ({
         ...day,
-        cells: day.cells.map((cell) => {
-          if (cell.entryId !== entryId) return cell
-          priorParentId = cell.parentId
-          priorStatus = cell.status
-          return { ...cell, parentId: null, status: "draft" as const }
-        }),
+        cells: day.cells.map((cell) =>
+          cell.entryId === entryId
+            ? { ...cell, parentId: null, status: "draft" as const }
+            : cell
+        ),
       }))
-    })
+    )
 
     try {
       const result = await clearCell(entryId)
@@ -162,26 +173,36 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
       return
     }
 
-    // Capture for revert
+    // Capture prior state from current prop snapshot — safe, synchronous
     let priorParentId: ParentId | null = null
     let priorStatus: "draft" | "published" = "draft"
+    const targetDay = days.find((d) => d.date === day)
+    if (targetDay) {
+      const cell = targetDay.cells.find((c) => c.childId === childId)
+      if (cell) {
+        priorParentId = cell.parentId
+        priorStatus = cell.status
+      }
+    }
+
+    const assignedParentId = currentParentId ?? parents[0]?.id ?? ("father" as ParentId)
+
     setDays((prev) =>
       prev.map((d) => {
         if (d.date !== day) return d
         return {
           ...d,
-          cells: d.cells.map((cell) => {
-            if (cell.childId !== childId) return cell
-            priorParentId = cell.parentId
-            priorStatus = cell.status
-            return { ...cell, parentId: "father" as ParentId, status: "draft" as const }
-          }),
+          cells: d.cells.map((cell) =>
+            cell.childId === childId
+              ? { ...cell, parentId: assignedParentId, status: "draft" as const }
+              : cell
+          ),
         }
       })
     )
 
     try {
-      await toggleCell(entryId, "father")
+      await toggleCell(entryId, assignedParentId)
     } catch {
       setDays((prev) =>
         prev.map((d) => {
@@ -201,6 +222,12 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
   }
 
   async function handleNoteSave(entryId: string, notes: string) {
+    // Capture prior value before optimistic update
+    let priorNotes = ""
+    for (const day of days) {
+      if (day.notesEntryId === entryId) { priorNotes = day.notes; break }
+    }
+
     setDays((prev) =>
       prev.map((day) =>
         day.notesEntryId === entryId ? { ...day, notes } : day
@@ -209,13 +236,19 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
     try {
       await saveNotes(entryId, notes)
     } catch {
+      // Revert on failure
+      setDays((prev) =>
+        prev.map((day) =>
+          day.notesEntryId === entryId ? { ...day, notes: priorNotes } : day
+        )
+      )
       toast.error("Muistiinpanon tallennus epäonnistui.")
     }
   }
 
   // Derive column headers from first day's cells
   const childNames = days[0]?.cells.map((c) => c.childName) ?? []
-  const colCount = childNames.length + 2 // Date + children + Notes
+  const colCount = childNames.length + 3 // Date + children + mobile-notes-btn + desktop-notes
 
   return (
     <div className="sm:overflow-y-auto sm:h-[calc(100svh-8rem)]">
@@ -242,7 +275,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
             {days.map((day, index) => (
               <React.Fragment key={day.date}>
                 {day.isWeekStart && index > 0 && (
-                  <tr key={`sep-${day.date}`}>
+                  <tr>
                     <td
                       colSpan={colCount}
                       className="h-px bg-border"
@@ -250,7 +283,6 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents 
                   </tr>
                 )}
                 <tr
-                  key={day.date}
                   data-date={day.date}
                   data-today={day.isToday ? "true" : undefined}
                   className={day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20" : undefined}
