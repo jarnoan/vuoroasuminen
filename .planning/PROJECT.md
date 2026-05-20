@@ -6,16 +6,11 @@ A shared web application for co-parents to plan and track which children stay wi
 
 v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — schedule table reflow without horizontal scroll, clear button safeguarded against accidental activation, and all UI panels optimized for 360–430px viewports.
 
-## Current Milestone: v1.4 Mobile-First Polish
+## Current Milestone: v1.4 Mobile-First Polish — COMPLETE
 
 **Goal:** Both parents can comfortably read and edit the custody schedule on any modern smartphone without horizontal scrolling or accidental data loss.
 
-**Target features:**
-- Schedule table reflow — eliminate horizontal scroll; adapt column layout for narrow viewports
-- Clear button fix — visible on mobile; guarded against accidental activation (confirm tap or equivalent)
-- View toolbar — compact, touch-accessible controls on small screens
-- Header / nav — mobile-adapted navigation
-- Statistics panel — stacked/collapsible layout on small screens
+Phase 16 complete 2026-05-20 — all v1.4 phases done; milestone ready for ship/audit.
 
 ## Core Value
 
@@ -61,11 +56,11 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 
 ### Active
 
-- [ ] Schedule table reflow for mobile — no horizontal scroll on 360–430px viewports (MOB-01)
+- ✓ Schedule table reflow for mobile — sticky date column, hidden notes column, second-row notes on mobile, no horizontal scroll on 360–430px viewports (MOB-01, MOB-01b) — v1.4 Phase 16
 - ✓ Clear button guarded on touch — 1s long-press arms ×; desktop hover unchanged (MOB-02) — v1.4 Phase 15
 - ✓ View toolbar: @container icon-only Prev, native date input on mobile (MOB-03, MOB-03a) — v1.4 Phase 15
 - ✓ Header adapted for mobile — title/name hidden, avatar fallback, icon sign-out (MOB-04) — v1.4 Phase 15
-- [ ] Statistics panel moved below the schedule table on all viewports; 2-column grid on mobile (MOB-05)
+- ✓ Statistics panel moved below the schedule table on all viewports; child-column HTML table grid on all viewports (MOB-05) — v1.4 Phase 16
 
 ### Future
 
