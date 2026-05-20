@@ -210,6 +210,55 @@
 
 ---
 
+## Milestone: v1.4 — Mobile-First Polish
+
+**Shipped:** 2026-05-20
+**Phases:** 3 (14–16) | **Plans:** 7 | **Timeline:** 3 days (2026-05-17 → 2026-05-20)
+
+### What Was Built
+
+- Background tab recovery — visibilitychange handler tears down channel, re-fetches schedule via Server Action, re-subscribes with fresh JWT; silent delivery with no toast or reload (RTLT-01)
+- Mobile-responsive header — title and name hidden at 360px, icon-only sign-out, avatar fallback circle
+- Two-step touch clear guard — 1s long-press arms ×, auto-disarms after 2s; desktop hover behavior unchanged; no swipe-to-reveal (WCAG 2.5.1) (MOB-02)
+- ViewToolbar: `@container` responsive Prev button (icon-only at narrow widths), native `<input type="date">` on mobile, Calendar Popover on desktop (MOB-03, MOB-03a)
+- StatsPanel HTML `<table>` grid with children as columns and per-child custody/solo counts (MOB-05)
+- Full schedule table mobile reflow — sticky date column, hidden notes on main row, second-row notes with PlusIcon affordance, StatsPanel moved outside scroll container (MOB-01, MOB-01b)
+
+### What Worked
+
+- **All v1.4 changes stayed rendering-layer only** — no schema changes, no new Server Actions, no data flow changes. The constraint was set in research and held throughout all three phases. Zero DB migrations.
+- **Container queries for responsive Prev button** — `@container` avoided the hydration-flash risk of `useMediaQuery` in layout render paths. The pattern is clean and reusable.
+- **Build order from research held** — realtime fix → header → clear guard → toolbar → stats → table reflow. Each phase delivered stable foundations for the next; no rework across phases.
+- **Phase 14 "ugly but correct" approach validated** — the visibilitychange D-01–D-05 sequence (remove, refetch, setDays, setAuth, re-subscribe) was flagged as verbose in research but shipped without simplification. Code review later confirmed the cleanup guards and cancelled flag were all necessary.
+- **Long-press UX decision was right** — shadcn AlertDialog was considered then rejected (extra tap on desktop); swipe-to-reveal was rejected (WCAG 2.5.1). Long-press with 2s auto-disarm satisfied both touch and accessibility requirements.
+
+### What Was Inefficient
+
+- **Phase 14 ROADMAP.md progress row never updated** — Phase 14 completed successfully (2/2 plans, VERIFICATION.md present) but the progress table showed "Not started / 0/2" at milestone close. Fifth occurrence of this pattern.
+- **RTLT-01 traceability checkbox not updated** — the REQUIREMENTS.md traceability table showed RTLT-01 as "Pending" even after Phase 14 delivered and verified it. Required manual correction at milestone close.
+- **Human UAT deferred to milestone close** — all three HUMAN-UAT.md files were in `partial` or `human_needed` state at close. The pattern of deferring human testing accumulates into a milestone-close bottleneck. Better: sign off each phase's UAT before starting the next.
+
+### Patterns Established
+
+- **`@container` for viewport-responsive components** — prefer container queries over `useMediaQuery` for any responsive behavior in components that appear in layout render paths. Avoids hydration flash.
+- **Native `<input type="date">` on mobile** — zero JS overhead, uses OS picker, correct locale. Pattern for any date input in a mobile context.
+- **Second-row notes via sibling `<tr>`** — for table rows that need to expand with extra content on mobile, a sibling `<tr>` with a `colspan` spanning the full table width is cleaner than absolute positioning.
+- **StatsPanel as DOM sibling, not child of scroll container** — any panel that should be "below the table" on mobile must be outside the scroll container in the DOM, not just visually positioned.
+
+### Key Lessons
+
+1. **Update REQUIREMENTS.md checkboxes and ROADMAP.md progress table at plan completion.** Fifth milestone where stale state at close required manual triage. The fix is one edit per requirement/phase; the cost of deferring is repeated confusion at close.
+2. **Sign off human UAT per phase, not at milestone close.** Three HUMAN-UAT.md files in deferred state at close created a bottleneck. UAT should be signed off before starting the next phase — it surfaces bugs while the implementation is still fresh.
+3. **Rendering-layer-only constraints are highly effective.** Stating "no schema changes, no new Server Actions" in research eliminated entire categories of rework and kept each phase scoped and fast.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 throughout
+- Sessions: ~5 across the milestone (3 days)
+- Notable: 3-day milestone, rendering-layer only. Phase 14 (realtime) was the most technically subtle — the visibilitychange recovery sequence required careful ordering. Phases 15–16 were pattern-driven CSS/component work with predictable execution.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -220,6 +269,7 @@
 | v1.1 | 3 | 9 | 15 deferred | Pattern reuse (inline panels) as velocity driver |
 | v1.2 | 3 | 16 | 0 new | GATE pattern enforced sequential verification; auth stack replaced cleanly |
 | v1.3 | 3 | 12 | 0 new | Fastest milestone (2 days); code review caught real security bugs pre-UAT |
+| v1.4 | 3 | 7 | 0 new | Rendering-layer constraint kept all 3 phases scoped and zero-migration |
 
 ### Cumulative Quality
 
@@ -229,6 +279,7 @@
 | v1.1 | 3,879 | 9/9 | Partial (live env needed) |
 | v1.2 | 4,079 | 16/16 | Partial (RLS-03 impersonation deferred; human GCal approved) |
 | v1.3 | 6,784 | 10/10 | Partial (VERIFICATION.md human_needed; UAT 5/5 passed same-day) |
+| v1.4 | 7,070 | 8/8 | Passed (all UAT scenarios signed off at milestone close) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -238,3 +289,4 @@
 4. Explicit pattern cloning in plans ("model exactly on X") cuts execution time — proven in v1.1 Phase 7.
 5. Update traceability and roadmap status at phase completion, not at milestone close.
 6. Code review + security review before UAT catches real bugs — positive ROI even on small phases (v1.3: 2 security bugs found pre-UAT).
+7. Rendering-layer-only constraints eliminate whole categories of risk and rework — state it explicitly in research and hold it throughout execution (v1.4: zero DB migrations across 3 phases).

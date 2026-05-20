@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.4 Mobile-First Polish (Shipped: 2026-05-20)
+
+**Phases completed:** 3 phases (14–16), 7 plans
+**Files changed:** 13 source files (+417 / -130 lines) | Codebase: ~7,070 LOC TypeScript
+**Timeline:** 3 days (2026-05-17 → 2026-05-20)
+
+**Key accomplishments:**
+
+- Silent background tab recovery — visibilitychange handler tears down and re-subscribes Realtime channel, re-fetches schedule via Server Action, and delivers fresh data with no toast or reload (RTLT-01)
+- Mobile-responsive header — title and name hidden on narrow viewports, icon-only sign-out button, avatar fallback circle with first initial (MOB-04)
+- Two-step touch clear guard — 1s long-press arms the × button, auto-disarms after 2s; desktop hover behavior unchanged (MOB-02)
+- ViewToolbar and ClearPanel adapted for mobile — `@container` responsive Prev button (icon-only at narrow width), native `<input type="date">` on mobile, Calendar Popover on desktop (MOB-03, MOB-03a)
+- StatsPanel grid redesign — HTML `<table>` with children as columns and per-child custody count; replaces flat flex layout (MOB-05)
+- Full schedule table mobile reflow — sticky date column, hidden notes column on main row, second-row notes with PlusIcon affordance, StatsPanel moved to sibling position outside scroll container (MOB-01, MOB-01b)
+
+---
+
 ## v1.0 MVP (Shipped: 2026-04-20)
 
 **Phases completed:** 4 phases, 9 plans, 19 tasks

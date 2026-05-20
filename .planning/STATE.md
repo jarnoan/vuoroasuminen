@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Mobile-First Polish
-status: complete
-stopped_at: Phase 16 complete
-last_updated: "2026-05-20T07:51:00.000Z"
-last_activity: 2026-05-20 -- Phase 16 execution complete
+status: Awaiting next milestone
+stopped_at: Phase 16 context gathered
+last_updated: "2026-05-20T18:57:57.283Z"
+last_activity: 2026-05-20 — Milestone v1.4 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,16 +21,14 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Phase --phase — 15
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 16
-Plan: Complete (2/2)
-Status: Complete — human UAT pending
-Last activity: 2026-05-20 -- Phase 16 complete (automated checks passed, human UAT saved)
-
-Progress: [██████████] 100%
+Phase: Milestone v1.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-20 — Milestone v1.4 completed and archived
 
 ## Performance Metrics
 
@@ -141,3 +139,7 @@ Items acknowledged and deferred at milestone close on 2026-05-17 (v1.3):
 
 Last activity: 2026-05-17 — v1.4 roadmap created; Phase 14 is next
 Stopped at: Phase 16 context gathered
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

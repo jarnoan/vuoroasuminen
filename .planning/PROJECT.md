@@ -4,13 +4,7 @@
 
 A shared web application for co-parents to plan and track which children stay with which parent on each day. Both parents log in with their Google accounts, see and edit the same schedule in real time, and confirmed plans automatically sync to dedicated Google Calendars — one per parent. The name "vuoroasuminen" is Finnish for alternating custody.
 
-v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — schedule table reflow without horizontal scroll, clear button safeguarded against accidental activation, and all UI panels optimized for 360–430px viewports.
-
-## Current Milestone: v1.4 Mobile-First Polish — COMPLETE
-
-**Goal:** Both parents can comfortably read and edit the custody schedule on any modern smartphone without horizontal scrolling or accidental data loss.
-
-Phase 16 complete 2026-05-20 — all v1.4 phases done; milestone ready for ship/audit.
+v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — background tab recovery, schedule table reflow without horizontal scroll, clear button safeguarded against accidental touch activation, and all UI panels optimized for 360–430px viewports.
 
 ## Core Value
 
@@ -53,18 +47,16 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ Invite token system — first parent generates shareable URL; token stored in DB with expiry and single-use enforcement (ONBR-05) — v1.3 Phase 13
 - ✓ Second parent OAuth flow — invite cookie consumed in auth/callback, parent2Email written to familyConfig; unauthorized email error page (ONBR-06) — v1.3 Phase 13
 - ✓ Three-tier access gate in proxy.ts — auth → setup completeness → email membership (ONBR-07) — v1.3 Phase 13
+- ✓ Background tab recovery — visibilitychange handler re-fetches schedule and re-subscribes Realtime channel silently without page reload (RTLT-01) — v1.4 Phase 14
+- ✓ Header adapted for mobile — title/name hidden, avatar fallback, icon sign-out on 360px viewports (MOB-04) — v1.4 Phase 15
+- ✓ Clear button guarded on touch — 1s long-press arms ×; desktop hover behavior unchanged (MOB-02) — v1.4 Phase 15
+- ✓ View toolbar and ClearPanel adapted for mobile — `@container` icon-only Prev button, native date input on mobile, Calendar Popover on desktop (MOB-03, MOB-03a) — v1.4 Phase 15
+- ✓ Statistics panel redesigned with HTML table grid (children as columns); moved below schedule table on all viewports (MOB-05) — v1.4 Phase 16
+- ✓ Schedule table full mobile reflow — sticky date column, hidden notes column on main row, second-row notes with PlusIcon affordance, no horizontal scroll on 360–430px viewports (MOB-01, MOB-01b) — v1.4 Phase 16
 
 ### Active
 
-- ✓ Schedule table reflow for mobile — sticky date column, hidden notes column, second-row notes on mobile, no horizontal scroll on 360–430px viewports (MOB-01, MOB-01b) — v1.4 Phase 16
-- ✓ Clear button guarded on touch — 1s long-press arms ×; desktop hover unchanged (MOB-02) — v1.4 Phase 15
-- ✓ View toolbar: @container icon-only Prev, native date input on mobile (MOB-03, MOB-03a) — v1.4 Phase 15
-- ✓ Header adapted for mobile — title/name hidden, avatar fallback, icon sign-out (MOB-04) — v1.4 Phase 15
-- ✓ Statistics panel moved below the schedule table on all viewports; child-column HTML table grid on all viewports (MOB-05) — v1.4 Phase 16
-
-### Future
-
-- Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02) — deferred from v1.3, not in v1.4 scope
+- Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
 
 ### Out of Scope
 
@@ -85,7 +77,7 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - Two parents share custody of multiple children; children can be split between parents on any day
 - Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- Shipped v1.3 with app live at vuoroasuminen.vercel.app; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis; ~6,784 LOC TypeScript
+- Shipped v1.4 with app fully usable on mobile at vuoroasuminen.vercel.app; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis; ~7,070 LOC TypeScript
 - DB-driven family config via familyConfig table; no APP_PARENT* env vars required; onboarding wizard at /setup
 - Invite token flow: first parent generates link → second parent opens it → OAuth callback writes parent2Email to familyConfig
 - Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
@@ -123,6 +115,12 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 | Three-tier middleware gate (auth → setup → email) | Complete gate logic in one place; exempt routes explicit | ✓ Good — handles all onboarding states cleanly |
 | familyConfig replaces APP_PARENT* env vars | Self-service onboarding requires DB-driven config | ✓ Good — wizard UX straightforward; both parents read same config |
 | Vercel env vars set via `vercel env add` (interactive) | Secrets never appear in shell history or CI logs | ✓ Good — safe secret handling pattern for production |
+| Long-press clear guard (not AlertDialog or swipe-to-reveal) | WCAG 2.5.1 rejects swipe; AlertDialog adds extra tap on desktop; long-press has keyboard-equivalent (armed × stays tappable) | ✓ Good — 1s arm + 2s auto-disarm works on both touch and keyboard paths |
+| `@container` for ViewToolbar Prev button (not `useMediaQuery`) | `useMediaQuery` causes hydration flash in layout render paths; container queries are pure CSS | ✓ Good — no hydration mismatch; Prev collapses to icon-only within narrow toolbar |
+| Native `<input type="date">` on mobile (not Drawer with Calendar) | Drawer approach requires JS hydration and extra state; native input uses OS date picker which is already familiar | ✓ Good — zero JS overhead; OS picker handles locale and accessibility |
+| Sticky date column + second-row notes (not card-per-row) | Card-per-row destroys day-to-day comparison which is the core use case | ✓ Good — table relationship preserved; notes accessible via PlusIcon affordance |
+| StatsPanel as sibling outside scroll container (not inside) | Inside scroll container hides stats behind horizontal scroll on mobile | ✓ Good — stats always visible below table regardless of scroll position |
+| HTML `<table>` for stats grid (not CSS grid) | CSS grid with `subgrid` lacks baseline support at target browser range; HTML table semantics correct for tabular data | ✓ Good — children as columns, parents as rows; accessible by screen readers |
 
 ## Evolution
 
@@ -142,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 after v1.4 milestone start*
+*Last updated: 2026-05-20 after v1.4 milestone*
