@@ -12,39 +12,63 @@ interface StatsPanelProps {
 export function StatsPanel({ days, parents }: StatsPanelProps) {
   const stats = useMemo(() => computeStats(days, parents), [days, parents])
 
-  const parentName = (id: string) =>
-    parents.find((p) => p.id === id)?.name ?? id
-
   return (
-    <div className="border rounded-lg p-3 mb-4 bg-muted/30 text-sm space-y-1">
-      {stats.childStats.map((child) => (
-        <div key={child.childName} className="flex items-center gap-4">
-          <span className="font-medium w-16">{child.childName}:</span>
-          <span className="text-blue-700">
-            {parentName("father")} {child.father} pv
-          </span>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-rose-700">
-            {parentName("mother")} {child.mother} pv
-          </span>
-          <span className="text-muted-foreground ml-2">
-            (yksin: {parentName("father")} {child.soloFather} pv /{" "}
-            {parentName("mother")} {child.soloMother} pv)
-          </span>
-        </div>
-      ))}
-      <div className="border-t pt-1 mt-1 flex items-center gap-4">
-        <span className="font-medium w-16">Vapaa:</span>
-        {stats.parentFreeStats.map((ps) => (
-          <span
-            key={ps.parentId}
-            className={ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}
-          >
-            {ps.parentName} {ps.childFreeDays} pv ({ps.childFreeWeekends}{" "}
-            vkl)
-          </span>
-        ))}
-      </div>
+    <div className="border rounded-lg p-3 mt-4 bg-muted/30 text-sm">
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th className="text-left font-medium pr-2 pb-1" />
+            {stats.childStats.map((child) => (
+              <th key={child.childName} className="text-left font-medium px-2 pb-1">
+                {child.childName}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {/* Father row */}
+          <tr>
+            <td className="text-blue-700 font-medium pr-2 py-1 align-top">
+              {stats.parentFreeStats.find((p) => p.parentId === "father")?.parentName ?? "Isä"}
+            </td>
+            {stats.childStats.map((child) => (
+              <td key={child.childName} className="px-2 py-1 align-top">
+                <div>{child.father} pv</div>
+                <div className="text-xs text-muted-foreground">yksin {child.soloFather}</div>
+              </td>
+            ))}
+          </tr>
+          {/* Mother row */}
+          <tr>
+            <td className="text-rose-700 font-medium pr-2 py-1 align-top">
+              {stats.parentFreeStats.find((p) => p.parentId === "mother")?.parentName ?? "Äiti"}
+            </td>
+            {stats.childStats.map((child) => (
+              <td key={child.childName} className="px-2 py-1 align-top">
+                <div>{child.mother} pv</div>
+                <div className="text-xs text-muted-foreground">yksin {child.soloMother}</div>
+              </td>
+            ))}
+          </tr>
+          {/* Separator */}
+          <tr>
+            <td colSpan={stats.childStats.length + 1} className="py-1">
+              <div className="border-t" />
+            </td>
+          </tr>
+          {/* Vapaa rows */}
+          {stats.parentFreeStats.map((ps) => (
+            <tr key={ps.parentId}>
+              <td
+                colSpan={stats.childStats.length + 1}
+                className={`py-0.5 ${ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}`}
+              >
+                {ps.parentName} {ps.childFreeDays} pv ({ps.childFreeWeekends} vkl)
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
