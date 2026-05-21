@@ -84,7 +84,11 @@ Full archive: [.planning/milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
   2. On desktop, scrolling the page scrolls the entire schedule — there is no separate inner scroll container on the table
   3. On desktop, the table header row stays sticky as the user scrolls down, the same as on mobile
   4. On mobile, scroll behavior is unchanged from v1.4
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 17-01-PLAN.md — Replace hairline separator row with "Viikko X" week label row using date-fns getISOWeek (UI-01)
+- [ ] 17-02-PLAN.md — Remove desktop inner scroll container, switch auto-scroll to block:start with scroll-mt-10 offset (UI-02)
+- [ ] 17-03-PLAN.md — Human-verify checkpoint: SC-1..SC-4 on desktop and mobile viewports
 **UI hint**: yes
 
 ### Phase 18: Mobile Cell and Note Interactions
