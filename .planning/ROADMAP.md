@@ -116,7 +116,17 @@ Plans:
   4. On desktop, the existing hover × clear behavior is unchanged
   5. On mobile, the note row is visually attributed to its day row — the design makes clear the note belongs to the row above it
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1**
+
+- [ ] 18-01-PLAN.md — Extend ScheduleCell with isHolding state, 1s color fade, navigator.vibrate(100), full-cell Tyhjennä armed render, @media (hover) split (UI-04)
+- [ ] 18-02-PLAN.md — Swap PlusIcon -> Pencil on mobile note button + mobile note row attribution (pt-0 + pl-8, day-row border removal) (UI-03, UI-05)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 18-03-PLAN.md — Human-verify checkpoint: SC-1..SC-5 on mobile and desktop viewports
+
 **UI hint**: yes
 
 ### Phase 19: Stats Column Alignment
