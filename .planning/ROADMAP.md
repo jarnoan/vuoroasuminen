@@ -76,90 +76,123 @@ Full archive: [.planning/milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 ## Phase Details
 
 ### Phase 17: Schedule Table Structure
+
 **Goal**: The schedule table shows week number labels and scrolls as part of the full page on desktop
 **Depends on**: Phase 16
 **Requirements**: UI-01, UI-02
 **Success Criteria** (what must be TRUE):
+
   1. A week number label row (e.g. "Viikko 21") appears above each Monday in the schedule table for every week in the view window
   2. On desktop, scrolling the page scrolls the entire schedule — there is no separate inner scroll container on the table
   3. On desktop, the table header row stays sticky as the user scrolls down, the same as on mobile
   4. On mobile, scroll behavior is unchanged from v1.4
+
 **Plans**: 3 plans
 Plans:
+**Wave 1**
+
 - [ ] 17-01-PLAN.md — Replace hairline separator row with "Viikko X" week label row using date-fns getISOWeek (UI-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 17-02-PLAN.md — Remove desktop inner scroll container, switch auto-scroll to block:start with scroll-mt-10 offset (UI-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 17-03-PLAN.md — Human-verify checkpoint: SC-1..SC-4 on desktop and mobile viewports
+
 **UI hint**: yes
 
 ### Phase 18: Mobile Cell and Note Interactions
+
 **Goal**: Mobile users have clearer, friendlier interactions for adding notes and clearing cells
 **Depends on**: Phase 16
 **Requirements**: UI-03, UI-04, UI-05
 **Success Criteria** (what must be TRUE):
+
   1. On mobile, the button that reveals the note input shows a pen icon, not a plus icon
   2. On mobile, long-pressing a parent custody cell triggers a brief vibration and transforms the entire cell into a full-width "Tyhjennä" button
   3. Tapping the "Tyhjennä" button clears the cell; auto-disarm timeout still applies if not tapped
   4. On desktop, the existing hover × clear behavior is unchanged
   5. On mobile, the note row is visually attributed to its day row — the design makes clear the note belongs to the row above it
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 19: Stats Column Alignment
+
 **Goal**: Stats panel columns align with schedule table columns so the layout is visually coherent when both are on screen
 **Depends on**: Phase 17
 **Requirements**: UI-06
 **Success Criteria** (what must be TRUE):
+
   1. Each child column in the stats panel is the same width as the corresponding child column in the schedule table above it
   2. The columns visually align when both elements are visible on screen
   3. The alignment holds across viewport widths (both mobile and desktop)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 14: Realtime Reliability + Mobile Baseline
+
 **Goal**: The app stays live and data-correct when a parent returns from a background tab, and the mobile viewport is correctly configured as the foundation for all subsequent UI work
 **Depends on**: Nothing (first v1.4 phase)
 **Requirements**: RTLT-01
 **Success Criteria** (what must be TRUE):
+
   1. A parent who leaves the app open in a background tab for 15+ minutes returns to see the current schedule without a manual page reload
   2. Any edits made by the other parent during the background period appear automatically within seconds of the tab becoming active
   3. The browser does not display a stale or blank schedule after returning from background
+
 **Plans**: 2 plans
 Plans:
+
 - [x] 14-01-PLAN.md — Server Action (getScheduleDays) + mobile viewport baseline (layout.tsx, globals.css)
 - [x] 14-02-PLAN.md — RealtimeProvider visibilitychange recovery + viewStart/onRefresh prop threading
+
 **UI hint**: yes
 
 ### Phase 15: Header, Clear Guard, and Toolbar
+
 **Goal**: Both parents can navigate the app, clear cells safely on touch, and control their view window without overflow or accidental activation on mobile
 **Depends on**: Phase 14
 **Requirements**: MOB-02, MOB-03, MOB-03a, MOB-04
 **Success Criteria** (what must be TRUE):
+
   1. The header fits on a 360px viewport — parent name is truncated or hidden and the sign-out control remains tappable
   2. On a touch device, tapping a custody cell does not immediately clear it; a long-press reveals a clear option that requires a second deliberate action to confirm
   3. On desktop, the existing hover × button for clearing behaves exactly as before
   4. The view toolbar controls (date navigation, window controls) fit within a 360–430px viewport without horizontal overflow or clipping
   5. On mobile, tapping the date field opens the native system date picker; on desktop the existing calendar popover appears
+
 **Plans**: 3 plans
 Plans:
+
 - [x] 15-01-PLAN.md — Header mobile shrink: title/name hide, avatar fallback, icon-only sign-out, responsive padding (MOB-04)
 - [x] 15-02-PLAN.md — ScheduleCell long-press clear guard: isArmed state, pointer event handlers, desktop unchanged (MOB-02)
 - [x] 15-03-PLAN.md — ViewToolbar @container + icon Prev + native date input; ClearPanel native date inputs (MOB-03, MOB-03a)
+
 **UI hint**: yes
 
 ### Phase 16: Schedule Table Reflow and Stats
+
 **Goal**: Both parents can read and edit the full custody schedule on any modern smartphone without horizontal scrolling, and custody statistics are visible below the table on all viewports
 **Depends on**: Phase 15
 **Requirements**: MOB-01, MOB-01b, MOB-05
 **Success Criteria** (what must be TRUE):
+
   1. The schedule table fits completely within a 360px viewport without requiring horizontal scrolling
   2. On mobile, each day row shows child custody cells on top and the shared notes text on a second row directly below — no notes are hidden or truncated
   3. On desktop, the existing single-row layout (child cells and notes side by side) is unchanged
   4. The custody statistics panel appears below the schedule table on all screen sizes
   5. On mobile viewports the statistics display in a 2-column grid so all values are visible without scrolling past them
+
 **Plans**: 2 plans
 Plans:
+
 - [x] 16-01-PLAN.md — StatsPanel child-column grid redesign (MOB-05 grid)
 - [x] 16-02-PLAN.md — ScheduleTable mobile reflow (scroll container, sticky date column, hidden notes column, two-row notes, PlusIcon add-notes) + StatsPanel sibling placement (MOB-01, MOB-01b, MOB-05 positioning)
+
 **UI hint**: yes
 
 ## Coverage
