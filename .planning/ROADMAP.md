@@ -69,7 +69,7 @@ Full archive: [.planning/milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 
 ### v1.5 UI Refinements (Phases 17–19)
 
-- [ ] Phase 17: Schedule Table Structure — Week numbers + desktop full-page scroll (UI-01, UI-02)
+- [x] Phase 17: Schedule Table Structure — Week numbers + desktop full-page scroll (UI-01, UI-02) (completed 2026-05-21)
 - [ ] Phase 18: Mobile Cell and Note Interactions — Pen icon, Tyhjennä cell, note attribution (UI-03, UI-04, UI-05)
 - [ ] Phase 19: Stats Column Alignment — Stats columns match table columns (UI-06)
 
@@ -99,7 +99,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 17-03-PLAN.md — Human-verify checkpoint: SC-1..SC-4 on desktop and mobile viewports
+- [x] 17-03-PLAN.md — Human-verify checkpoint: SC-1..SC-4 on desktop and mobile viewports
 
 **UI hint**: yes
 

@@ -9,8 +9,8 @@ Requirements for v1.5 UI Refinements. All changes are rendering-layer only — n
 
 ### UI (Schedule Display + Interaction)
 
-- [ ] **UI-01**: User sees a week number label row above each Monday in the schedule table (e.g. "Viikko 21")
-- [ ] **UI-02**: On desktop, the entire page scrolls — the schedule table has no separate scroll container; the sticky `<thead>` behaves the same as on mobile
+- [x] **UI-01**: User sees a week number label row above each Monday in the schedule table (e.g. "Viikko 21")
+- [x] **UI-02**: On desktop, the entire page scrolls — the schedule table has no separate scroll container; the sticky `<thead>` behaves the same as on mobile
 - [ ] **UI-03**: On mobile, the note affordance button shows a pen icon instead of a plus icon
 - [ ] **UI-04**: On mobile, long-pressing a parent cell arms a "Tyhjennä" state: the cell transforms into a full-cell "Tyhjennä" button (replacing the corner-X behavior); the device vibrates via `navigator.vibrate()` when armed
 - [ ] **UI-05**: On mobile, the note row is visually connected to its day row — the design makes clear the note belongs to the day above it
@@ -38,8 +38,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 17 | Pending |
-| UI-02 | Phase 17 | Pending |
+| UI-01 | Phase 17 | Complete |
+| UI-02 | Phase 17 | Complete |
 | UI-03 | Phase 18 | Pending |
 | UI-04 | Phase 18 | Pending |
 | UI-05 | Phase 18 | Pending |
