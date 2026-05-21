@@ -3,6 +3,7 @@
 import React, { useEffect, useCallback, useState } from "react"
 import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
+import { getISOWeek } from "date-fns"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
 import { ScheduleCell } from "./schedule-cell"
@@ -272,14 +273,16 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
             </tr>
           </thead>
           <tbody>
-            {days.map((day, index) => (
+            {days.map((day) => (
               <React.Fragment key={day.date}>
-                {day.isWeekStart && index > 0 && (
+                {day.isWeekStart && (
                   <tr>
                     <td
                       colSpan={colCount}
-                      className="h-px bg-border"
-                    />
+                      className="px-3 pt-3 pb-1 text-xs text-muted-foreground"
+                    >
+                      Viikko {getISOWeek(new Date(day.date))}
+                    </td>
                   </tr>
                 )}
                 <tr
