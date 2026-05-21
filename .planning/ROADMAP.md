@@ -91,7 +91,7 @@ Full archive: [.planning/milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 Plans:
 **Wave 1**
 
-- [ ] 17-01-PLAN.md — Replace hairline separator row with "Viikko X" week label row using date-fns getISOWeek (UI-01)
+- [x] 17-01-PLAN.md — Replace hairline separator row with "Viikko X" week label row using date-fns getISOWeek (UI-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

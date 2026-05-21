@@ -4,8 +4,8 @@ milestone: v1.5
 milestone_name: UI Refinements
 status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-05-21T05:55:54.053Z"
-last_activity: 2026-05-21 -- Phase 17 planning complete
+last_updated: "2026-05-21T06:07:22.884Z"
+last_activity: 2026-05-21 -- Phase 17 execution started
 progress:
   total_phases: 6
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md
 
 **Core value:** Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
-**Current focus:** Planning next milestone
+**Current focus:** Phase 17 — schedule-table-structure
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-21 -- Phase 17 planning complete
+Phase: 17 (schedule-table-structure) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 17
+Last activity: 2026-05-21 -- Phase 17 execution started
 
 ## Performance Metrics
 
