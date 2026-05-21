@@ -38,6 +38,7 @@ export function ScheduleCell({
   const colorClass = colorMap[parentId][status]
 
   const [isArmed, setIsArmed] = useState(false)
+  const [isHolding, setIsHolding] = useState(false)
   const armTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const disarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startXRef = useRef<number>(0)
@@ -55,12 +56,17 @@ export function ScheduleCell({
     startXRef.current = e.clientX
     startYRef.current = e.clientY
     armTimerRef.current = setTimeout(() => {
+      setIsHolding(false)
       setIsArmed(true)
+      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+        navigator.vibrate(100)
+      }
       // Auto-disarm after 2000ms
       disarmTimerRef.current = setTimeout(() => {
         setIsArmed(false)
       }, 2000)
     }, 1000)
+    setIsHolding(true)
   }
 
   function cancelArm() {
@@ -68,6 +74,7 @@ export function ScheduleCell({
       clearTimeout(armTimerRef.current)
       armTimerRef.current = null
     }
+    setIsHolding(false)
   }
 
   function handleCellPointerUp() {
@@ -90,8 +97,27 @@ export function ScheduleCell({
     <div className="relative group w-full h-full">
       <button
         type="button"
-        className={`w-full h-full min-h-[40px] rounded-md font-medium text-sm transition-colors ${colorClass}`}
-        onClick={() => onToggle(entryId, newParentId)}
+        className={[
+          "w-full h-full min-h-[40px] rounded-md font-medium text-sm",
+          isArmed
+            ? `[@media(hover:none)]:bg-destructive [@media(hover:none)]:text-white ${colorClass}`
+            : isHolding
+              ? `${colorClass} [@media(hover:none)]:[transition:background-color_1s_linear] [@media(hover:none)]:bg-destructive`
+              : `transition-colors ${colorClass}`,
+        ].join(" ")}
+        onClick={
+          isArmed
+            ? () => {
+                onClear(entryId)
+                setIsArmed(false)
+                setIsHolding(false)
+                if (disarmTimerRef.current !== null) {
+                  clearTimeout(disarmTimerRef.current)
+                  disarmTimerRef.current = null
+                }
+              }
+            : () => onToggle(entryId, newParentId)
+        }
         title={`${displayName} (${status}) — klikkaa vaihtaaksesi`}
         onPointerDown={handleCellPointerDown}
         onPointerUp={handleCellPointerUp}
@@ -99,11 +125,14 @@ export function ScheduleCell({
         onPointerMove={handleCellPointerMove}
         style={{ touchAction: "manipulation" }}
       >
-        {displayName}
+        <span className="[@media(hover:hover)]:hidden">
+          {isArmed ? "Tyhjennä" : displayName}
+        </span>
+        <span className="[@media(hover:none)]:hidden">{displayName}</span>
       </button>
       <button
         type="button"
-        className={`absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded-sm text-xs leading-none bg-black/20 hover:bg-black/40 text-white transition-opacity focus:opacity-100 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 ${isArmed ? "max-sm:opacity-100" : "max-sm:opacity-0"}`}
+        className="[@media(hover:none)]:hidden absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded-sm text-xs leading-none bg-black/20 hover:bg-black/40 text-white transition-opacity focus:opacity-100 focus-visible:opacity-100 opacity-0 group-hover:opacity-100"
         onClick={(e) => {
           e.stopPropagation()
           onClear(entryId)
