@@ -95,7 +95,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 17-02-PLAN.md — Remove desktop inner scroll container, switch auto-scroll to block:start with scroll-mt-10 offset (UI-02)
+- [x] 17-02-PLAN.md — Remove desktop inner scroll container, switch auto-scroll to block:start with scroll-mt-10 offset (UI-02)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
