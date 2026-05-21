@@ -65,6 +65,8 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ View toolbar and ClearPanel adapted for mobile — `@container` icon-only Prev button, native date input on mobile, Calendar Popover on desktop (MOB-03, MOB-03a) — v1.4 Phase 15
 - ✓ Statistics panel redesigned with HTML table grid (children as columns); moved below schedule table on all viewports (MOB-05) — v1.4 Phase 16
 - ✓ Schedule table full mobile reflow — sticky date column, hidden notes column on main row, second-row notes with PlusIcon affordance, no horizontal scroll on 360–430px viewports (MOB-01, MOB-01b) — v1.4 Phase 16
+- ✓ Schedule table week labels — "Viikko N" label row (ISO week, `date-fns getISOWeek`) replaces hairline separator above every Monday including the first (UI-01) — v1.5 Phase 17
+- ✓ Desktop full-page scroll — removed inner scroll container (`sm:overflow-y-auto`), whole page scrolls; sticky `<thead>` preserved; today auto-scrolls to top with `scroll-mt-10` offset (UI-02) — v1.5 Phase 17
 
 ### Active
 
@@ -158,4 +160,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after v1.5 milestone start*
+*Last updated: 2026-05-21 after Phase 17 complete*
