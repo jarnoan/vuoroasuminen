@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
-import { PlusIcon } from "lucide-react"
+import { Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -327,7 +327,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                         className="text-muted-foreground hover:text-foreground"
                         style={{ touchAction: "manipulation" }}
                       >
-                        <PlusIcon className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                     ) : null}
                   </td>
