@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback, useState } from "react"
+import React, { useEffect, useCallback, useState, useRef } from "react"
 import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { getISOWeek } from "date-fns"
@@ -37,7 +37,8 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
       return {
         ...day,
         cells: day.cells.map(cell =>
-          cell.entryId === entry.id || (cell.childId === entry.childId && cell.entryId === null)
+          (cell.entryId === entry.id && cell.childId === entry.childId)
+            || (cell.childId === entry.childId && cell.entryId === null)
             ? { ...cell, entryId: entry.id, parentId: entry.parentId, status: entry.status }
             : cell
         ),
@@ -91,8 +92,22 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
   }, [])
 
   const [notesOpenDates, setNotesOpenDates] = useState<Set<string>>(new Set())
+  const prevDaysLengthRef = useRef(days.length)
+  useEffect(() => {
+    if (days.length !== prevDaysLengthRef.current) {
+      setNotesOpenDates(new Set())
+      prevDaysLengthRef.current = days.length
+    }
+  }, [days.length])
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
+    // Capture prior state before optimistic update
+    let priorParentId: ParentId | null = null
+    for (const day of days) {
+      const cell = day.cells.find((c) => c.entryId === entryId)
+      if (cell) { priorParentId = cell.parentId; break }
+    }
+
     // Optimistic update
     setDays((prev) =>
       prev.map((day) => ({
@@ -106,13 +121,11 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
     try {
       await toggleCell(entryId, newParentId)
     } catch {
-      // Revert on failure
-      const revertParentId: ParentId = newParentId === "father" ? "mother" : "father"
       setDays((prev) =>
         prev.map((day) => ({
           ...day,
           cells: day.cells.map((cell) =>
-            cell.entryId === entryId ? { ...cell, parentId: revertParentId } : cell
+            cell.entryId === entryId ? { ...cell, parentId: priorParentId } : cell
           ),
         }))
       )
@@ -186,7 +199,11 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
       }
     }
 
-    const assignedParentId = currentParentId ?? parents[0]?.id ?? ("father" as ParentId)
+    const assignedParentId = currentParentId ?? parents[0]?.id
+    if (!assignedParentId) {
+      toast.error("Kirjaudu sisään merkintöjen lisäämiseksi.")
+      return
+    }
 
     setDays((prev) =>
       prev.map((d) => {
@@ -237,10 +254,12 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
     try {
       await saveNotes(entryId, notes)
     } catch {
-      // Revert on failure
+      // Only revert if the local state still matches what we optimistically set
       setDays((prev) =>
         prev.map((day) =>
-          day.notesEntryId === entryId ? { ...day, notes: priorNotes } : day
+          day.notesEntryId === entryId && day.notes === notes
+            ? { ...day, notes: priorNotes }
+            : day
         )
       )
       toast.error("Muistiinpanon tallennus epäonnistui.")
@@ -249,7 +268,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
 
   // Derive column headers from first day's cells
   const childNames = days[0]?.cells.map((c) => c.childName) ?? []
-  const colCount = childNames.length + 3 // Date + children + mobile-notes-btn + desktop-notes
+  const colCount = Math.max(childNames.length + 3, 1)
 
   return (
     <div>
