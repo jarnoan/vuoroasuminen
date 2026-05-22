@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState, useRef } from "react"
-import { PlusIcon } from "lucide-react"
+import { Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { getISOWeek } from "date-fns"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
@@ -307,7 +307,10 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                 <tr
                   data-date={day.date}
                   data-today={day.isToday ? "true" : undefined}
-                  className={day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20 scroll-mt-10" : "scroll-mt-10"}
+                  className={[
+                    day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20 scroll-mt-10" : "scroll-mt-10",
+                    (day.notes || notesOpenDates.has(day.date)) ? "max-sm:[&>td]:border-b-0" : "",
+                  ].filter(Boolean).join(" ")}
                 >
                   <td
                     className="px-3 py-2 text-sm whitespace-nowrap font-mono sticky left-0 bg-background data-[today=true]:bg-yellow-50 dark:data-[today=true]:bg-yellow-950/20"
@@ -349,7 +352,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                         className="text-muted-foreground hover:text-foreground"
                         style={{ touchAction: "manipulation" }}
                       >
-                        <PlusIcon className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                     ) : null}
                   </td>
@@ -363,7 +366,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                 </tr>
                 {(day.notes || notesOpenDates.has(day.date)) && (
                   <tr className="max-sm:table-row sm:hidden">
-                    <td colSpan={colCount} className="px-1 py-1 pb-1">
+                    <td colSpan={colCount} className="pt-0 pb-1 pl-8 pr-1">
                       <NotesCell
                         entryId={day.notesEntryId}
                         value={day.notes}
