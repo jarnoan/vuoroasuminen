@@ -140,7 +140,16 @@ Plans:
   2. The columns visually align when both elements are visible on screen
   3. The alignment holds across viewport widths (both mobile and desktop)
 
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+**Wave 1**
+
+- [ ] 19-01-PLAN.md — Apply table-layout:fixed + min-w-[72px] sm:min-w-[90px] + matching paddings to StatsPanel; remove wrapper horizontal padding (UI-06)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 19-02-PLAN.md — Human-verify checkpoint: SC-1..SC-3 at 360px and 1280px viewports
+
 **UI hint**: yes
 
 ### Phase 14: Realtime Reliability + Mobile Baseline
