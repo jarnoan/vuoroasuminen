@@ -309,7 +309,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   data-today={day.isToday ? "true" : undefined}
                   className={[
                     day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20 scroll-mt-10" : "scroll-mt-10",
-                    (day.notes || notesOpenDates.has(day.date)) ? "max-sm:[&>td]:border-b-0" : "",
+                    (day.notes || notesOpenDates.has(day.date)) ? "max-sm:[&>td]:border-b-0 max-sm:[&>td]:pb-0" : "",
                   ].filter(Boolean).join(" ")}
                 >
                   <td
@@ -366,7 +366,13 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                 </tr>
                 {(day.notes || notesOpenDates.has(day.date)) && (
                   <tr className="max-sm:table-row sm:hidden">
-                    <td colSpan={colCount} className="pt-0 pb-1 pl-8 pr-1">
+                    <td
+                      className={[
+                        "sticky left-0 pt-0 pb-1",
+                        day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20" : "bg-background",
+                      ].join(" ")}
+                    />
+                    <td colSpan={colCount - 1} className="pt-0 pb-1 pr-1">
                       <NotesCell
                         entryId={day.notesEntryId}
                         value={day.notes}

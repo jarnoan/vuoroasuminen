@@ -100,9 +100,9 @@ export function ScheduleCell({
         className={[
           "w-full h-full min-h-[40px] rounded-md font-medium text-sm",
           isArmed
-            ? `[@media(hover:none)]:bg-destructive [@media(hover:none)]:text-white ${colorClass}`
+            ? `[@media(pointer:coarse)]:bg-destructive [@media(pointer:coarse)]:text-white ${colorClass}`
             : isHolding
-              ? `${colorClass} [@media(hover:none)]:[transition:background-color_1s_linear] [@media(hover:none)]:bg-destructive`
+              ? `${colorClass} [@media(pointer:coarse)]:[transition:background-color_1s_linear] [@media(pointer:coarse)]:bg-destructive`
               : `transition-colors ${colorClass}`,
         ].join(" ")}
         onClick={
@@ -125,14 +125,14 @@ export function ScheduleCell({
         onPointerMove={handleCellPointerMove}
         style={{ touchAction: "manipulation" }}
       >
-        <span className="[@media(hover:hover)]:hidden">
+        <span className="[@media(pointer:fine)]:hidden">
           {isArmed ? "Tyhjennä" : displayName}
         </span>
-        <span className="[@media(hover:none)]:hidden">{displayName}</span>
+        <span className="[@media(pointer:coarse)]:hidden">{displayName}</span>
       </button>
       <button
         type="button"
-        className="[@media(hover:none)]:hidden absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded-sm text-xs leading-none bg-black/20 hover:bg-black/40 text-white transition-opacity focus:opacity-100 focus-visible:opacity-100 opacity-0 group-hover:opacity-100"
+        className="[@media(pointer:coarse)]:hidden absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded-sm text-xs leading-none bg-black/20 hover:bg-black/40 text-white transition-opacity focus:opacity-100 focus-visible:opacity-100 opacity-0 group-hover:opacity-100"
         onClick={(e) => {
           e.stopPropagation()
           onClear(entryId)
