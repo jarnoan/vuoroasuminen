@@ -100,9 +100,9 @@ export function ScheduleCell({
         className={[
           "w-full h-full min-h-[40px] rounded-md font-medium text-sm",
           isArmed
-            ? `[@media(pointer:coarse)]:bg-destructive [@media(pointer:coarse)]:text-white ${colorClass}`
+            ? `[@media(pointer:coarse)]:!bg-destructive [@media(pointer:coarse)]:text-white ${colorClass}`
             : isHolding
-              ? `${colorClass} [@media(pointer:coarse)]:[transition:background-color_1s_linear] [@media(pointer:coarse)]:bg-destructive`
+              ? `${colorClass} [@media(pointer:coarse)]:[transition:background-color_1s_linear] [@media(pointer:coarse)]:!bg-destructive`
               : `transition-colors ${colorClass}`,
         ].join(" ")}
         onClick={
