@@ -57,7 +57,8 @@ Source: existing `schedule-table.tsx` column classes.
 | Body | 14px (text-sm) | 400 (regular) | 1.5 |
 | Label | 14px (text-sm) | 500 (medium / font-medium) | 1.5 |
 | Secondary | 12px (text-xs) | 400 (regular) | 1.5 |
-| Heading | 14px (text-sm) | 600 (semibold / font-semibold) | 1.2 |
+
+Note: Heading uses Label weight (font-medium). Typography is fully inherited — zero new weight declarations in this phase.
 
 Stats-specific typography (unchanged from current StatsPanel):
 - Parent name labels: `text-sm font-medium` (same as existing)
