@@ -120,8 +120,8 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 18-01-PLAN.md — Extend ScheduleCell with isHolding state, 1s color fade, navigator.vibrate(100), full-cell Tyhjennä armed render, @media (hover) split (UI-04)
-- [ ] 18-02-PLAN.md — Swap PlusIcon -> Pencil on mobile note button + mobile note row attribution (pt-0 + pl-8, day-row border removal) (UI-03, UI-05)
+- [x] 18-01-PLAN.md — Extend ScheduleCell with isHolding state, 1s color fade, navigator.vibrate(100), full-cell Tyhjennä armed render, @media (hover) split (UI-04)
+- [x] 18-02-PLAN.md — Swap PlusIcon -> Pencil on mobile note button + mobile note row attribution (pt-0 + pl-8, day-row border removal) (UI-03, UI-05)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
