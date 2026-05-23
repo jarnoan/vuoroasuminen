@@ -144,7 +144,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 19-01-PLAN.md — Apply table-layout:fixed + min-w-[72px] sm:min-w-[90px] + matching paddings to StatsPanel; remove wrapper horizontal padding (UI-06)
+- [x] 19-01-PLAN.md — Apply table-layout:fixed + min-w-[72px] sm:min-w-[90px] + matching paddings to StatsPanel; remove wrapper horizontal padding (UI-06)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
