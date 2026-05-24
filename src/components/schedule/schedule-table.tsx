@@ -272,7 +272,13 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
 
   return (
     <div>
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: "104px" }} />
+            {childNames.map(name => <col key={name} />)}
+            <col className="max-sm:w-8 sm:w-40" />
+            <col className="max-sm:w-0" />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
               <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b sticky left-0 z-10 bg-background">

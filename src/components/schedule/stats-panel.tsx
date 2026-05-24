@@ -16,10 +16,12 @@ export function StatsPanel({ days, parents }: StatsPanelProps) {
     <div className="border rounded-lg py-3 mt-4 bg-muted/30 text-sm">
       <table className="w-full" style={{ tableLayout: "fixed" }}>
         <colgroup>
-          <col />
+          <col style={{ width: "104px" }} />
           {stats.childStats.map((child) => (
             <col key={child.childName} />
           ))}
+          <col className="max-sm:w-0 sm:w-40" />
+          <col className="max-sm:w-0" />
         </colgroup>
         <thead>
           <tr>
@@ -58,7 +60,7 @@ export function StatsPanel({ days, parents }: StatsPanelProps) {
           </tr>
           {/* Separator */}
           <tr>
-            <td colSpan={stats.childStats.length + 1} className="py-1">
+            <td colSpan={stats.childStats.length + 3} className="py-1">
               <div className="border-t" />
             </td>
           </tr>
@@ -66,7 +68,7 @@ export function StatsPanel({ days, parents }: StatsPanelProps) {
           {stats.parentFreeStats.map((ps) => (
             <tr key={ps.parentId}>
               <td
-                colSpan={stats.childStats.length + 1}
+                colSpan={stats.childStats.length + 3}
                 className={`py-0.5 ${ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}`}
               >
                 {ps.parentName} {ps.childFreeDays} pv ({ps.childFreeWeekends} vkl)
