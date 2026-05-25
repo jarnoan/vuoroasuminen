@@ -107,6 +107,7 @@ Key decisions and constraints for v1.4 work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260515-u3b | Move remaining hardcoded config values to env vars | 2026-05-15 | e19f43f | [260515-u3b-move-remaining-hardcoded-config-values-i](./quick/260515-u3b-move-remaining-hardcoded-config-values-i/) |
+| 260525-us9 | mobile cell clearing: fade to transparent on 2s hold, vibrate on clear, no text | 2026-05-25 | c24d02c | [260525-us9-mobile-cell-clearing-fade-to-transparent](./quick/260525-us9-mobile-cell-clearing-fade-to-transparent/) |
 
 ### Blockers/Concerns
 
@@ -145,7 +146,7 @@ Items acknowledged and deferred at milestone close on 2026-05-17 (v1.3):
 
 ## Session Continuity
 
-Last activity: 2026-05-17 — v1.4 roadmap created; Phase 14 is next
+Last activity: 2026-05-25 - Completed quick task 260525-us9: mobile cell clearing: fade to transparent on 2s hold, vibrate on clear, no text
 Stopped at: Phase 19 UI-SPEC approved
 
 ## Operator Next Steps
