@@ -14,7 +14,7 @@ Requirements for v1.5 UI Refinements. All changes are rendering-layer only — n
 - [ ] **UI-03**: On mobile, the note affordance button shows a pen icon instead of a plus icon
 - [ ] **UI-04**: On mobile, long-pressing a parent cell arms a "Tyhjennä" state: the cell transforms into a full-cell "Tyhjennä" button (replacing the corner-X behavior); the device vibrates via `navigator.vibrate()` when armed
 - [ ] **UI-05**: On mobile, the note row is visually connected to its day row — the design makes clear the note belongs to the day above it
-- [ ] **UI-06**: Stats panel child columns are aligned with the same child columns in the schedule table above (same widths)
+- [x] **UI-06**: Stats panel child columns are aligned with the same child columns in the schedule table above (same widths)
 
 ## Future Requirements
 
@@ -43,7 +43,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-03 | Phase 18 | Pending |
 | UI-04 | Phase 18 | Pending |
 | UI-05 | Phase 18 | Pending |
-| UI-06 | Phase 19 | Pending |
+| UI-06 | Phase 19 | Complete |
 
 **Coverage:**
 - v1.5 requirements: 6 total
