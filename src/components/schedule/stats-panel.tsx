@@ -20,7 +20,7 @@ export function StatsPanel({ days, parents }: StatsPanelProps) {
           {stats.childStats.map((child) => (
             <col key={child.childName} />
           ))}
-          <col className="max-sm:w-0 sm:w-40" />
+          <col className="max-sm:w-8 sm:w-40" />
           <col className="max-sm:w-0" />
         </colgroup>
         <thead>
