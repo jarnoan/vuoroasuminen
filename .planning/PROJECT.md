@@ -6,18 +6,6 @@ A shared web application for co-parents to plan and track which children stay wi
 
 v1.0 shipped the full MVP: authentication, collaborative schedule table, draft/publish flow, custody balance statistics, and Google Calendar integration. v1.1 added flexible schedule window control — per-user view window, schedule extension, and cell/range clearing. v1.2 replaces Auth.js with Supabase Auth and enables Row Level Security on all domain tables. v1.3 ships the app to Vercel, replaces hardcoded env-var config with a DB-driven onboarding wizard, and adds an invite link flow so either parent can join without admin intervention. v1.4 makes the full app usable on any modern smartphone — background tab recovery, schedule table reflow without horizontal scroll, clear button safeguarded against accidental touch activation, and all UI panels optimized for 360–430px viewports. v1.5 polishes the schedule UI with six targeted improvements: week number rows, unified desktop scroll, pen icon for mobile notes, full-cell Tyhjennä clear with haptic feedback, note attribution clarity on mobile, and stats column alignment.
 
-## Current Milestone: v1.5 UI Refinements
-
-**Goal:** Polish the schedule UI with six targeted improvements — week numbers, unified desktop scroll, cleaner mobile interactions, and aligned stats columns.
-
-**Target features:**
-- Week number row above Monday in the schedule table (e.g. "Viikko 21")
-- Desktop: full-page scroll, no separate table scroll container; sticky `<thead>` same as mobile
-- Mobile note button: pen icon instead of + icon
-- Mobile clear: long-press transforms entire cell into "Tyhjennä" button with haptic feedback via `navigator.vibrate()`
-- Mobile: note row visually connected to the day row above it
-- Stats panel: child columns aligned with schedule table columns
-
 ## Core Value
 
 Both parents always see the same up-to-date custody schedule, reflected in their Google Calendars, without manual coordination.
@@ -67,15 +55,13 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - ✓ Schedule table full mobile reflow — sticky date column, hidden notes column on main row, second-row notes with PlusIcon affordance, no horizontal scroll on 360–430px viewports (MOB-01, MOB-01b) — v1.4 Phase 16
 - ✓ Schedule table week labels — "Viikko N" label row (ISO week, `date-fns getISOWeek`) replaces hairline separator above every Monday including the first (UI-01) — v1.5 Phase 17
 - ✓ Desktop full-page scroll — removed inner scroll container (`sm:overflow-y-auto`), whole page scrolls; sticky `<thead>` preserved; today auto-scrolls to top with `scroll-mt-10` offset (UI-02) — v1.5 Phase 17
+- ✓ Mobile note affordance button shows pencil icon instead of + icon (UI-03) — v1.5 Phase 18
+- ✓ Mobile long-press arms "Tyhjennä" full-cell clear — 1s color fade, haptic vibration via `navigator.vibrate(100)`, desktop hover × unchanged (UI-04) — v1.5 Phase 18
+- ✓ Mobile note row visually merged with day row — flush top (`pt-0`), `pl-8` indent, no divider between day and note rows (UI-05) — v1.5 Phase 18
+- ✓ Stats panel child columns aligned with schedule table via `table-layout:fixed` and matching `min-w-[72px] sm:min-w-[90px]` + `px-3` padding (UI-06) — v1.5 Phase 19
 
 ### Active
 
-- Week number row shown above Monday in the schedule table (UI-01)
-- Desktop full-page scroll — no separate table scroll container; sticky thead on desktop (UI-02)
-- Mobile note button uses pen icon instead of + icon (UI-03)
-- Mobile clear: long-press transforms entire cell into "Tyhjennä" button with haptic vibration feedback (UI-04)
-- Mobile note row is visually attributed to the day row above it (UI-05)
-- Stats panel child columns aligned with schedule table child columns (UI-06)
 - Per-cell change history: who changed a cell and when (AUDT-01, AUDT-02)
 
 ### Out of Scope
@@ -97,7 +83,7 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 - Two parents share custody of multiple children; children can be split between parents on any day
 - Planning horizon is ~12 weeks; default pattern is alternating full weeks
 - Google is the identity provider and calendar backend — both parents must have Google accounts
-- Shipped v1.4 with app fully usable on mobile at vuoroasuminen.vercel.app; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis; ~7,070 LOC TypeScript
+- Shipped v1.5 with refined schedule UI at vuoroasuminen.vercel.app; stack: Next.js 16, Supabase Auth (Google OAuth), Drizzle ORM, Supabase Realtime + RLS, googleapis; ~7,144 LOC TypeScript
 - DB-driven family config via familyConfig table; no APP_PARENT* env vars required; onboarding wizard at /setup
 - Invite token flow: first parent generates link → second parent opens it → OAuth callback writes parent2Email to familyConfig
 - Supabase free tier pauses after 1 week of inactivity — upgrade to Pro before real-user handoff
@@ -141,6 +127,12 @@ Both parents always see the same up-to-date custody schedule, reflected in their
 | Sticky date column + second-row notes (not card-per-row) | Card-per-row destroys day-to-day comparison which is the core use case | ✓ Good — table relationship preserved; notes accessible via PlusIcon affordance |
 | StatsPanel as sibling outside scroll container (not inside) | Inside scroll container hides stats behind horizontal scroll on mobile | ✓ Good — stats always visible below table regardless of scroll position |
 | HTML `<table>` for stats grid (not CSS grid) | CSS grid with `subgrid` lacks baseline support at target browser range; HTML table semantics correct for tabular data | ✓ Good — children as columns, parents as rows; accessible by screen readers |
+| `@media(hover:none/hover)` for touch vs. pointer split (not `max-sm:`) | Covers iPad-sized touch screens which are not mobile breakpoints; `max-sm:` would miss large-tablet touch users | ✓ Good — correct behavior on all touch devices regardless of screen size |
+| Separate `isHolding` and `isArmed` states for long-press Tyhjennä | `isHolding` drives the 1s CSS fade; `isArmed` controls the armed UI — distinct concerns; combining them would cause the reverse animation to play on cancel | ✓ Good — instant snap-back on cancel (remove transition class), smooth arm on hold |
+| `navigator.vibrate` feature-detected via `typeof` check | Covers SSR (no `window`) and browsers without Vibration API (iOS Safari) — avoids runtime error | ✓ Good — graceful degradation: visual-only on unsupported platforms |
+| Pencil icon (not PenLine or Pen) for mobile note affordance | Cleaner at h-4 w-4 with no extra stroke detail; visually unambiguous at small size | ✓ Good — matches UI-SPEC recommendation |
+| `table-layout:fixed` with `<colgroup>` for StatsPanel alignment | With auto layout, browser ignores min-w constraints; fixed layout honors declared widths — required for true column alignment with ScheduleTable | ✓ Good — reliable alignment regardless of cell content length |
+| Wrapper `p-3` → `py-3` for StatsPanel | Horizontal padding would narrow StatsPanel relative to ScheduleTable, preventing true column-edge alignment; vertical padding retained for visual spacing | ✓ Good — StatsPanel fills same horizontal extent as ScheduleTable |
 
 ## Evolution
 
@@ -160,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after Phase 19 complete (v1.5 UI Refinements milestone complete)*
+*Last updated: 2026-05-25 after v1.5 milestone*

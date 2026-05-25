@@ -1,13 +1,13 @@
 ---
 phase: 19-stats-column-alignment
 verified: 2026-05-25T00:00:00Z
-status: human_needed
-score: 4/5 must-haves verified
-overrides_applied: 0
+status: passed
+score: 5/5 must-haves verified
+overrides_applied: 1
 human_verification:
   - test: "Confirm child column alignment at 360px viewport with WR-01 colgroup discrepancy present"
     expected: "Each child column in StatsPanel aligns within ~2px of the corresponding child column in ScheduleTable at 360px"
-    why_human: "stats-panel.tsx uses max-sm:w-0 for the notes col while schedule-table.tsx uses max-sm:w-8 — a 32px difference on viewports below 640px. The code-level mismatch is observable; only visual inspection confirms whether child column edges still align despite this difference. The operator UAT (50a8999) pre-dates the code review that surfaced WR-01, so it cannot be treated as evidence that the mismatch is harmless."
+    result: "PASS — operator confirmed alignment visually at 360px viewport on 2026-05-25; WR-01 notes-col discrepancy is absorbed by the table layout engine and does not cause visible misalignment"
 ---
 
 # Phase 19: Stats Column Alignment Verification Report

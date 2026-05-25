@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.5 UI Refinements (Shipped: 2026-05-25)
+
+**Phases completed:** 3 phases (17–19), 8 plans
+**Files changed:** 3 source files (+108 / -34 lines) | Codebase: ~7,144 LOC TypeScript
+**Timeline:** 5 days (2026-05-20 → 2026-05-25)
+
+**Key accomplishments:**
+
+- "Viikko N" ISO week label row above every Monday in ScheduleTable — replaces hairline separator; first week included (UI-01)
+- Desktop full-page scroll — inner `sm:overflow-y-auto` scroll container removed; whole page scrolls; sticky `<thead>` preserved; today auto-scrolls to `block:start` with `scroll-mt-10` offset (UI-02)
+- Mobile long-press Tyhjennä — `isHolding`-driven 1s color fade → `navigator.vibrate(100)` → full-cell red "Tyhjennä" armed render; desktop hover × behavior unchanged; `@media(hover:none/hover)` split covers iPad-sized touch screens (UI-04)
+- Mobile note affordance button replaced PlusIcon with Pencil; note row visually merged with day row — `pt-0 pb-1 pl-8`, `max-sm:[&>td]:border-b-0` day-row border removal (UI-03, UI-05)
+- StatsPanel child columns aligned with ScheduleTable via `table-layout:fixed`, `<colgroup>`, and matching `min-w-[72px] sm:min-w-[90px]` + `px-3` padding; wrapper `p-3` changed to `py-3` to fill same horizontal extent (UI-06)
+
+**Known deferred items at close: 1 (see STATE.md Deferred Items)**
+
+---
+
 ## v1.4 Mobile-First Polish (Shipped: 2026-05-20)
 
 **Phases completed:** 3 phases (14–16), 7 plans

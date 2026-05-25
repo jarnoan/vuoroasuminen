@@ -259,6 +259,54 @@
 
 ---
 
+## Milestone: v1.5 — UI Refinements
+
+**Shipped:** 2026-05-25
+**Phases:** 3 | **Plans:** 8 | **Timeline:** 5 days (2026-05-20 → 2026-05-25)
+
+### What Was Built
+
+- "Viikko N" ISO week label row above every Monday in ScheduleTable — `getISOWeek` from date-fns, renders for every week including the first (UI-01)
+- Desktop full-page scroll — removed `sm:overflow-y-auto` inner scroll container; sticky `<thead>` preserved; `scrollIntoView({block:"start"})` + `scroll-mt-10` for today row (UI-02)
+- Mobile long-press Tyhjennä — `isHolding`-driven 1s CSS fade → `navigator.vibrate(100)` → full-cell red "Tyhjennä" armed render; `@media(hover:none/hover)` Tailwind variants split touch vs. pointer; desktop hover × unchanged (UI-04)
+- Mobile note affordance: PlusIcon → Pencil; note row visually merged with day row via `pt-0 pb-1 pl-8` + `max-sm:[&>td]:border-b-0` on day rows that have notes (UI-03, UI-05)
+- StatsPanel column alignment via `table-layout:fixed`, `<colgroup>`, `min-w-[72px] sm:min-w-[90px]` on child columns, `px-3` on label columns, wrapper `p-3` → `py-3` (UI-06)
+
+### What Worked
+
+- **All six requirements delivered in three phases with zero scope creep.** The research-phase decision to constrain v1.5 to rendering-layer only (same as v1.4) held throughout. No schema changes, no new Server Actions.
+- **Phase 18 worktree isolation caught a pre-existing conflict.** The `@media(hover)` approach was discovered to be superior to `max-sm:` for touch/pointer split — this fix was caught during execution (D-04 in context), not in planning.
+- **Human verification gated on real operator interaction** — Phase 17 (SC-1..SC-4) and Phase 18 (SC-1..SC-5) both had explicit human-verify checkpoints. SC-2 (vibration) noted as "pending real-device confirmation" in 17-03, but the visual fade and armed snap were verified in DevTools.
+- **`table-layout:fixed` with colgroup** was the right call for StatsPanel — CSS grid with `subgrid` would have required cross-browser polyfills; the HTML table approach was both semantically correct and immediately browser-compatible.
+
+### What Was Inefficient
+
+- **Phase 18 ROADMAP.md checkbox stale at milestone close.** 18-03-SUMMARY.md was approved on 2026-05-22 but plan 18-03 was still marked `[ ]` in ROADMAP.md at milestone open. Sixth occurrence of update-at-phase-completion failure.
+- **REQUIREMENTS.md traceability checkboxes for UI-03/04/05 still unchecked.** Required manual correction at milestone close — same pattern as v1.4 RTLT-01 issue.
+- **19-VERIFICATION.md `human_needed` open at close.** A targeted 360px mobile re-check was flagged by the code review (WR-01) and left to the operator. Operator confirmed pass, but the open status added a step to milestone close.
+- **Accomplishment extraction from SUMMARY.md files failed.** The `gsd-sdk query milestone.complete` tool extracted meta-labels ("One-liner:", "APPROVED") instead of content. Required manual rewrite of MILESTONES.md entry.
+
+### Patterns Established
+
+- **`@media(hover:none/hover)` for touch vs. pointer split** — correct for any behavior that should apply to all touch devices (including large tablets), not just narrow viewports. `max-sm:` would miss iPad-class touch screens.
+- **Separate `isHolding` and `isArmed` states** — `isHolding` drives the CSS transition class (removed on cancel for instant snap-back); `isArmed` controls the UI render. Combining them would cause reverse animation on release.
+- **`navigator.vibrate` feature-detected via `typeof`** — covers SSR and browsers without Vibration API; no try/catch needed.
+- **`table-layout:fixed` required for column alignment with `min-w` classes** — browser ignores declared widths under auto layout; fixed layout is the switch that makes `<colgroup>` and `min-w` meaningful.
+
+### Key Lessons
+
+1. **Update REQUIREMENTS.md checkboxes and ROADMAP.md progress table at plan completion.** Sixth milestone. The pattern is fully established but the habit is not. Consider adding a post-plan checklist step.
+2. **Verification gaps opened by code review should be resolved before phase close, not deferred.** WR-01 in Phase 19 was flagged in the review, left for the operator, and surfaced again at milestone close. If the code review identifies a visual concern, the human-verify plan should explicitly address it.
+3. **Rendering-layer-only constraint (second milestone)** — zero DB migrations, fast execution, predictable scope. Confirmed as a go-to pattern for UI polish milestones.
+
+### Cost Observations
+
+- Model: Claude Sonnet 4.6 throughout
+- Sessions: ~6 across the milestone (5 days)
+- Notable: Small milestone — 3 source files changed (+74 net LOC). Phase 18 was the most complex (three interacting interaction states); Phase 19 was a single CSS fix with human verification.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -270,6 +318,7 @@
 | v1.2 | 3 | 16 | 0 new | GATE pattern enforced sequential verification; auth stack replaced cleanly |
 | v1.3 | 3 | 12 | 0 new | Fastest milestone (2 days); code review caught real security bugs pre-UAT |
 | v1.4 | 3 | 7 | 0 new | Rendering-layer constraint kept all 3 phases scoped and zero-migration |
+| v1.5 | 3 | 8 | 0 new | Second rendering-layer-only milestone; 3 source files, +74 net LOC |
 
 ### Cumulative Quality
 
@@ -280,6 +329,7 @@
 | v1.2 | 4,079 | 16/16 | Partial (RLS-03 impersonation deferred; human GCal approved) |
 | v1.3 | 6,784 | 10/10 | Partial (VERIFICATION.md human_needed; UAT 5/5 passed same-day) |
 | v1.4 | 7,070 | 8/8 | Passed (all UAT scenarios signed off at milestone close) |
+| v1.5 | 7,144 | 6/6 | Passed (Phase 17 + 18 operator-verified; Phase 19 operator confirmed at close) |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -289,4 +339,5 @@
 4. Explicit pattern cloning in plans ("model exactly on X") cuts execution time — proven in v1.1 Phase 7.
 5. Update traceability and roadmap status at phase completion, not at milestone close.
 6. Code review + security review before UAT catches real bugs — positive ROI even on small phases (v1.3: 2 security bugs found pre-UAT).
-7. Rendering-layer-only constraints eliminate whole categories of risk and rework — state it explicitly in research and hold it throughout execution (v1.4: zero DB migrations across 3 phases).
+7. Rendering-layer-only constraints eliminate whole categories of risk and rework — state it explicitly in research and hold it throughout execution (v1.4 + v1.5: zero DB migrations across 6 phases).
+8. Update REQUIREMENTS.md checkboxes and ROADMAP.md progress table at plan completion — recurring stale-state debt at every milestone close (six milestones, same pattern).
