@@ -56,13 +56,17 @@ export async function getScheduleWindow(startDate?: string): Promise<DateWindow>
     entryMap.get(entry.day)!.set(entry.childId, entry)
   }
 
-  // Build days array
+  // Build days array — skip dates with no DB rows (rolling window tail)
   const days: ScheduleDay[] = []
   let current = start
   for (let i = 0; i < 84; i++) {
     const dateStr = format(current, "yyyy-MM-dd")
     const dayEntries = entryMap.get(dateStr)
-    const firstEntry = dayEntries?.values().next().value
+    if (!dayEntries) {
+      current = addDays(current, 1)
+      continue
+    }
+    const firstEntry = dayEntries.values().next().value
 
     const cells: ScheduleCell[] = orderedChildren.map(child => {
       const entry = dayEntries?.get(child.id)
