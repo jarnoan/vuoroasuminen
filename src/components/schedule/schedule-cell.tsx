@@ -37,39 +37,32 @@ export function ScheduleCell({
   const newParentId: ParentId = parentId === "father" ? "mother" : "father"
   const colorClass = colorMap[parentId][status]
 
-  const [isArmed, setIsArmed] = useState(false)
   const [isHolding, setIsHolding] = useState(false)
   const armTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const disarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startXRef = useRef<number>(0)
   const startYRef = useRef<number>(0)
 
-  // Cleanup timers on unmount to prevent state updates on unmounted component
+  // Cleanup timer on unmount to prevent state updates on unmounted component
   useEffect(() => {
     return () => {
       if (armTimerRef.current !== null) clearTimeout(armTimerRef.current)
-      if (disarmTimerRef.current !== null) clearTimeout(disarmTimerRef.current)
     }
   }, [])
 
   function handleCellPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
     startXRef.current = e.clientX
     startYRef.current = e.clientY
+    setIsHolding(true)
     armTimerRef.current = setTimeout(() => {
-      setIsHolding(false)
-      setIsArmed(true)
+      onClear(entryId)
       if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
         navigator.vibrate(100)
       }
-      // Auto-disarm after 2000ms
-      disarmTimerRef.current = setTimeout(() => {
-        setIsArmed(false)
-      }, 2000)
-    }, 1000)
-    setIsHolding(true)
+      setIsHolding(false)
+    }, 2000)
   }
 
-  function cancelArm() {
+  function cancelHold() {
     if (armTimerRef.current !== null) {
       clearTimeout(armTimerRef.current)
       armTimerRef.current = null
@@ -78,18 +71,18 @@ export function ScheduleCell({
   }
 
   function handleCellPointerUp() {
-    cancelArm()
+    cancelHold()
   }
 
   function handleCellPointerCancel() {
-    cancelArm()
+    cancelHold()
   }
 
   function handleCellPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
     const dx = Math.abs(e.clientX - startXRef.current)
     const dy = Math.abs(e.clientY - startYRef.current)
     if (dx > 8 || dy > 8) {
-      cancelArm()
+      cancelHold()
     }
   }
 
@@ -99,35 +92,20 @@ export function ScheduleCell({
         type="button"
         className={[
           "w-full h-full min-h-[40px] rounded-md font-medium text-sm",
-          isArmed
-            ? `[@media(pointer:coarse)]:!bg-destructive [@media(pointer:coarse)]:text-white ${colorClass}`
-            : isHolding
-              ? `${colorClass} [@media(pointer:coarse)]:[transition:background-color_1s_linear] [@media(pointer:coarse)]:!bg-destructive`
-              : `transition-colors ${colorClass}`,
+          `transition-colors ${colorClass}`,
         ].join(" ")}
-        onClick={
-          isArmed
-            ? () => {
-                onClear(entryId)
-                setIsArmed(false)
-                setIsHolding(false)
-                if (disarmTimerRef.current !== null) {
-                  clearTimeout(disarmTimerRef.current)
-                  disarmTimerRef.current = null
-                }
-              }
-            : () => onToggle(entryId, newParentId)
-        }
+        onClick={() => onToggle(entryId, newParentId)}
         title={`${displayName} (${status}) — klikkaa vaihtaaksesi`}
         onPointerDown={handleCellPointerDown}
         onPointerUp={handleCellPointerUp}
         onPointerCancel={handleCellPointerCancel}
         onPointerMove={handleCellPointerMove}
-        style={{ touchAction: "manipulation" }}
+        style={{
+          touchAction: "manipulation",
+          ...(isHolding ? { opacity: 0, transition: "opacity 2s linear" } : { opacity: 1 }),
+        }}
       >
-        <span className="[@media(pointer:fine)]:hidden">
-          {isArmed ? "Tyhjennä" : displayName}
-        </span>
+        <span className="[@media(pointer:fine)]:hidden">{displayName}</span>
         <span className="[@media(pointer:coarse)]:hidden">{displayName}</span>
       </button>
       <button
@@ -136,11 +114,6 @@ export function ScheduleCell({
         onClick={(e) => {
           e.stopPropagation()
           onClear(entryId)
-          setIsArmed(false)
-          if (disarmTimerRef.current !== null) {
-            clearTimeout(disarmTimerRef.current)
-            disarmTimerRef.current = null
-          }
         }}
         title="Tyhjennä tämä päivä"
         aria-label="Tyhjennä"
