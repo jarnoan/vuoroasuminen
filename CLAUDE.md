@@ -1,4 +1,3 @@
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **Vuoroasuminen**
@@ -13,9 +12,7 @@ A shared web application for co-parents to plan and track which children stay wi
 - **Calendar**: Google Calendar API — integration is a hard requirement, not optional
 - **Collaboration**: Real-time shared data — both parents must see each other's changes promptly
 - **Conflict resolution**: Last-write-wins — no complex merge UI needed
-<!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
 ## Recommended Stack
@@ -105,38 +102,11 @@ A shared web application for co-parents to plan and track which children stay wi
 - Neon vs. Supabase comparison (Bytebase, 2025): https://www.bytebase.com/blog/neon-vs-supabase/
 - Railway vs. Vercel comparison (Ritza, 2025): https://ritza.co/articles/gen-articles/cloud-hosting-providers/railway-vs-vercel/
 - PkgPulse — Next.js Developer Ecosystem Guide 2026: https://www.pkgpulse.com/blog/nextjs-developer-ecosystem-guide-2026
-<!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 Conventions not yet established. Will populate as patterns emerge during development.
-<!-- GSD:conventions-end -->
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
 Architecture not yet mapped. Follow existing patterns found in the codebase.
-<!-- GSD:architecture-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->
