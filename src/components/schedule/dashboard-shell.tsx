@@ -62,7 +62,7 @@ export function DashboardShell({
       {showOwnerWarning && <OwnerWarningBanner />}
       <ViewToolbar initialViewStart={initialViewStart} />
       <div className="flex items-center justify-end px-4 py-2 border-b">
-        <PublishButton days={days} onPublished={handlePublished} />
+        <PublishButton days={days} viewStart={initialViewStart} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
         <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} currentParentId={currentParentId} />

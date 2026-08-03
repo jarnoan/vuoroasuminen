@@ -57,13 +57,13 @@ export async function saveNotes(entryId: string, notes: string) {
   return { success: true }
 }
 
-export async function publishSchedule(): Promise<
+export async function publishSchedule(viewStart?: string): Promise<
   | { success: true; count: number }
   | { success: false; error: string }
 > {
   await requireAuthorizedParent()
 
-  const { start, end } = getWindowBounds()
+  const { start, end } = getWindowBounds(viewStart)
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
 
@@ -81,11 +81,11 @@ export async function publishSchedule(): Promise<
   return { success: true, count: result.length }
 }
 
-export async function syncCalendars(): Promise<SyncResult> {
+export async function syncCalendars(viewStart?: string): Promise<SyncResult> {
   await requireAuthorizedParent()
   let syncResult: SyncResult
   try {
-    syncResult = await syncCalendarsAfterPublish()
+    syncResult = await syncCalendarsAfterPublish(viewStart)
   } catch (err) {
     // Log the error but still return a result object — sync is best-effort
     console.error("[syncCalendars] GCal sync threw unexpectedly:", err)
