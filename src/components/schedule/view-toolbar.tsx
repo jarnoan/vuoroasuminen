@@ -79,21 +79,22 @@ export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, r
   const selectedEndDate = parseISO(initialViewEnd ?? resolvedEnd)
 
   return (
-    <div className="@container flex flex-wrap items-center gap-2 px-4 py-2 border-b">
+    <div className="@container flex flex-wrap items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 border-b">
       <Button
         variant="outline"
         size="sm"
-        className="font-semibold"
+        className="font-semibold px-2 sm:px-3 shrink-0"
         onClick={handlePrevWeek}
         aria-label="Edellinen viikko"
       >
         <ChevronLeft className="h-4 w-4 @sm:hidden" aria-hidden="true" />
         <span className="hidden @sm:inline">‹ Prev week</span>
       </Button>
-      {/* Native date input — visible on mobile, hidden on desktop */}
+      {/* Native date input — visible on mobile, hidden on desktop. flex-1 min-w-0 lets it
+          shrink so "Tänään" stays on the same row instead of being forced to wrap. */}
       <input
         type="date"
-        className="sm:hidden border rounded-md px-2 py-1 text-sm"
+        className="sm:hidden border rounded-md px-1.5 py-1 text-xs min-w-0 flex-1 [&::-webkit-calendar-picker-indicator]:p-0 [&::-webkit-calendar-picker-indicator]:ml-0.5"
         value={format(selectedDate, "yyyy-MM-dd")}
         onChange={(e) => {
           if (!e.target.value) return
@@ -124,7 +125,7 @@ export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, r
       {/* Native date input — visible on mobile, hidden on desktop */}
       <input
         type="date"
-        className="sm:hidden border rounded-md px-2 py-1 text-sm"
+        className="sm:hidden border rounded-md px-1.5 py-1 text-xs min-w-0 flex-1 [&::-webkit-calendar-picker-indicator]:p-0 [&::-webkit-calendar-picker-indicator]:ml-0.5"
         value={format(selectedEndDate, "yyyy-MM-dd")}
         min={format(selectedDate, "yyyy-MM-dd")}
         onChange={(e) => {
@@ -155,7 +156,7 @@ export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, r
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
           onClick={handleClearEndDate}
           aria-label="Poista loppupäivän rajaus"
         >
@@ -165,7 +166,7 @@ export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, r
       <Button
         variant="default"
         size="sm"
-        className="font-semibold ml-auto"
+        className="font-semibold px-2 sm:px-3 shrink-0 ml-auto"
         onClick={handleToday}
       >
         Tänään
