@@ -14,6 +14,7 @@ interface DashboardShellProps {
   initialViewStart?: string
   initialViewEnd?: string
   scheduleEndDate: string
+  lastWeekStartParent?: ParentId | null
   header: React.ReactNode
   showOwnerWarning?: boolean
   parents: Array<{ id: ParentId; name: string }>
@@ -26,6 +27,7 @@ export function DashboardShell({
   initialViewStart,
   initialViewEnd,
   scheduleEndDate,
+  lastWeekStartParent,
   header,
   showOwnerWarning = false,
   parents,
@@ -73,7 +75,7 @@ export function DashboardShell({
       </div>
       <main className="flex-1 p-4">
         <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} viewEnd={initialViewEnd} currentParentId={currentParentId} />
-        <ExtendPanel scheduleEndDate={scheduleEndDate} />
+        <ExtendPanel scheduleEndDate={scheduleEndDate} lastWeekStartParent={lastWeekStartParent} parents={parents} />
         <ClearPanel childCount={childCount} />
       </main>
     </div>

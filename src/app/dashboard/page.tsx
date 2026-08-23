@@ -1,7 +1,7 @@
 import { parseISO, isValid, startOfWeek, endOfWeek, startOfToday, differenceInCalendarDays, format } from "date-fns"
 import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
-import { getScheduleWindow, getScheduleEndDate } from "@/lib/schedule/queries"
+import { getScheduleWindow, getScheduleEndDate, getLastWeekStartParent } from "@/lib/schedule/queries"
 import { DashboardShell } from "@/components/schedule/dashboard-shell"
 import { InviteSection } from "@/components/invite/invite-section"
 import Header from "@/components/layout/header"
@@ -68,10 +68,11 @@ export default async function Dashboard({
   // D-03: parent2Email used to detect whether Parent B has joined.
   const parent2Email = config.parents[1].email
 
-  const [schedule, scheduleEndDate, tokenRow, parent2TokenRow, activeInvite] =
+  const [schedule, scheduleEndDate, lastWeekStartParent, tokenRow, parent2TokenRow, activeInvite] =
     await Promise.all([
       getScheduleWindow(validatedStart, validatedEnd),
       getScheduleEndDate(),
+      getLastWeekStartParent(),
       db
         .select({ email: userGoogleTokens.email })
         .from(userGoogleTokens)
@@ -123,6 +124,7 @@ export default async function Dashboard({
         initialViewStart={validatedStart}
         initialViewEnd={validatedEnd}
         scheduleEndDate={scheduleEndDate ?? schedule.endDate}
+        lastWeekStartParent={lastWeekStartParent}
         header={<Header />}
         showOwnerWarning={showOwnerWarning}
         parents={parentsForUI}

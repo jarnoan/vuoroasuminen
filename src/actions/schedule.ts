@@ -105,6 +105,7 @@ export async function extendSchedule(input: {
   scheduleEndDate: string   // ISO YYYY-MM-DD — current schedule's last day (inclusive)
   weeks?: number            // EXTEND-01: number of weeks to add (default 12)
   endDate?: string          // EXTEND-03: explicit ISO end date (already snapped to Sunday by client)
+  firstParent?: ParentId    // which parent's week the new range starts with (defaults to the config pattern)
 }): Promise<
   | { success: true; newStartDate: string }
   | { success: false; error: string }
@@ -114,6 +115,10 @@ export async function extendSchedule(input: {
   // --- Input validation ---
   if (input.endDate !== undefined && input.weeks !== undefined) {
     return { success: false, error: "Anna joko viikot tai päättymispäivä, ei molempia" }
+  }
+
+  if (input.firstParent !== undefined && !VALID_PARENT_IDS.includes(input.firstParent)) {
+    return { success: false, error: "Virheellinen vanhempi" }
   }
 
   const endParsed = parseISO(input.scheduleEndDate)
@@ -169,7 +174,12 @@ export async function extendSchedule(input: {
   }
 
   // --- Generate alternating-default entries for the new range ---
-  const defaults = generateDefaultEntries(rangeStart, rangeEnd, config.children, config.startDate, config.firstParent)
+  // When an explicit firstParent is given, anchor the alternating pattern to rangeStart
+  // itself so the new range starts with exactly that parent, instead of continuing the
+  // config's original startDate-based formula.
+  const defaults = input.firstParent
+    ? generateDefaultEntries(rangeStart, rangeEnd, config.children, format(rangeStart, "yyyy-MM-dd"), input.firstParent)
+    : generateDefaultEntries(rangeStart, rangeEnd, config.children, config.startDate, config.firstParent)
   const insertValues = defaults.map(d => ({
     scheduleId: schedule.id,
     childId: childNameToId.get(d.childName)!,

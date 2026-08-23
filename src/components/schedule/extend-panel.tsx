@@ -10,22 +10,35 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { extendSchedule } from "@/actions/schedule"
+import type { ParentId } from "@/lib/schedule/types"
 
 interface ExtendPanelProps {
   scheduleEndDate: string  // ISO YYYY-MM-DD — current schedule's last day (Sunday)
+  lastWeekStartParent?: ParentId | null  // parent assigned on the last existing week's Monday
+  parents: Array<{ id: ParentId; name: string }>
 }
 
 type Mode = "weeks" | "date"
 
-export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
+function otherParent(parentId: ParentId): ParentId {
+  return parentId === "father" ? "mother" : "father"
+}
+
+export function ExtendPanel({ scheduleEndDate, lastWeekStartParent, parents }: ExtendPanelProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  // Default to continuing the alternating pattern: the opposite of whoever started last week.
+  const defaultFirstParent: ParentId = lastWeekStartParent
+    ? otherParent(lastWeekStartParent)
+    : (parents[0]?.id ?? "father")
 
   const [isOpen, setIsOpen] = useState(false)
   const [mode, setMode] = useState<Mode>("weeks")
   const [weeks, setWeeks] = useState<number>(12)
   const [pickedEnd, setPickedEnd] = useState<Date | undefined>(undefined)
+  const [firstParent, setFirstParent] = useState<ParentId>(defaultFirstParent)
   const [isPending, setIsPending] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -48,8 +61,9 @@ export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
     if (!rangeEnd) return null
     const startLabel = format(rangeStart, "EEEEEE d.M.", { locale: fiFormat })
     const endLabel = format(rangeEnd, "EEEEEE d.M.yyyy", { locale: fiFormat })
-    return `Ajanjakso: ${startLabel} – ${endLabel}`
-  }, [rangeStart, rangeEnd])
+    const firstParentName = parents.find(p => p.id === firstParent)?.name ?? firstParent
+    return `Ajanjakso: ${startLabel} – ${endLabel} (${firstParentName} aloittaa)`
+  }, [rangeStart, rangeEnd, firstParent, parents])
 
   const navigateTo = useCallback(
     (dateStr: string) => {
@@ -67,6 +81,7 @@ export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
     setMode("weeks")
     setWeeks(12)
     setPickedEnd(undefined)
+    setFirstParent(defaultFirstParent)
     setErrorMsg(null)
   }
 
@@ -75,8 +90,9 @@ export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
     setIsPending(true)
     setErrorMsg(null)
     try {
-      const input: { scheduleEndDate: string; weeks?: number; endDate?: string } = {
+      const input: { scheduleEndDate: string; weeks?: number; endDate?: string; firstParent?: ParentId } = {
         scheduleEndDate,
+        firstParent,
       }
       if (mode === "weeks") {
         input.weeks = weeks
@@ -194,6 +210,27 @@ export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
             </button>
           </div>
         )}
+
+        <div className="flex items-center gap-2">
+          <span>Aloittava vanhempi:</span>
+          <div className="flex gap-1" role="radiogroup" aria-label="Aloittava vanhempi">
+            {parents.map(p => (
+              <Button
+                key={p.id}
+                type="button"
+                variant={firstParent === p.id ? "default" : "outline"}
+                size="sm"
+                className="font-semibold"
+                onClick={() => setFirstParent(p.id)}
+                disabled={isPending}
+                role="radio"
+                aria-checked={firstParent === p.id}
+              >
+                {p.name}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         {previewLabel && (
           <p className="text-muted-foreground" aria-live="polite">
