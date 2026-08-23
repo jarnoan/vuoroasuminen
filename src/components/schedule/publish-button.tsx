@@ -20,6 +20,7 @@ import { format, parseISO } from "date-fns"
 interface PublishButtonProps {
   days: ScheduleDay[]
   viewStart?: string
+  viewEnd?: string
   onPublished?: () => void
 }
 
@@ -47,7 +48,7 @@ function ProgressBar({ durationMs }: { durationMs: number }) {
   )
 }
 
-export function PublishButton({ days, viewStart, onPublished }: PublishButtonProps) {
+export function PublishButton({ days, viewStart, viewEnd, onPublished }: PublishButtonProps) {
   const [open, setOpen] = useState(false)
   const [phase, setPhase] = useState<"idle" | "publishing" | "syncing">("idle")
 
@@ -74,7 +75,7 @@ export function PublishButton({ days, viewStart, onPublished }: PublishButtonPro
   async function handlePublish() {
     setPhase("publishing")
     try {
-      const publishResult = await publishSchedule(viewStart)
+      const publishResult = await publishSchedule(viewStart, viewEnd)
       if (!publishResult.success) {
         toast.error(publishResult.error)
         setPhase("idle")
@@ -83,7 +84,7 @@ export function PublishButton({ days, viewStart, onPublished }: PublishButtonPro
       const count = publishResult.count
 
       setPhase("syncing")
-      const syncResult = await syncCalendars(viewStart)
+      const syncResult = await syncCalendars(viewStart, viewEnd)
 
       toast.success(`Julkaistu ${count} merkintää`)
       if (!syncResult.success) {

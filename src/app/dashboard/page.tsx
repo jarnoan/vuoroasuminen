@@ -1,4 +1,4 @@
-import { parseISO, isValid, startOfWeek, format } from "date-fns"
+import { parseISO, isValid, startOfWeek, endOfWeek, startOfToday, differenceInCalendarDays, format } from "date-fns"
 import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { getScheduleWindow, getScheduleEndDate } from "@/lib/schedule/queries"
@@ -21,13 +21,33 @@ function validateViewStart(raw: string | undefined): string | undefined {
   return format(monday, "yyyy-MM-dd")
 }
 
+// EXTEND-03/D-07 convention: end dates snap to Sunday (weekStartsOn: 1 → end of week)
+function validateViewEnd(raw: string | undefined, validatedStart: string | undefined): string | undefined {
+  if (!raw) return undefined
+  const parsed = parseISO(raw)
+  if (!isValid(parsed)) return undefined
+  const sunday = endOfWeek(parsed, { weekStartsOn: 1 })
+
+  const start = validatedStart
+    ? parseISO(validatedStart)
+    : startOfWeek(startOfToday(), { weekStartsOn: 1 })
+
+  const daysDelta = differenceInCalendarDays(sunday, start)
+  // Ignore an end date that doesn't leave at least one day, or is unreasonably far out
+  // (same 2-year cap as extendSchedule/clearRange in actions/schedule.ts)
+  if (daysDelta < 1 || daysDelta > 730) return undefined
+
+  return format(sunday, "yyyy-MM-dd")
+}
+
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ viewStart?: string }>
+  searchParams: Promise<{ viewStart?: string; viewEnd?: string }>
 }) {
-  const { viewStart } = await searchParams
+  const { viewStart, viewEnd } = await searchParams
   const validatedStart = validateViewStart(viewStart)
+  const validatedEnd = validateViewEnd(viewEnd, validatedStart)
 
   // Phase 12 D-10: When no family_config row exists, redirect to /setup.
   // The wizard at /setup collects parent/children/calendar config and writes
@@ -50,7 +70,7 @@ export default async function Dashboard({
 
   const [schedule, scheduleEndDate, tokenRow, parent2TokenRow, activeInvite] =
     await Promise.all([
-      getScheduleWindow(validatedStart),
+      getScheduleWindow(validatedStart, validatedEnd),
       getScheduleEndDate(),
       db
         .select({ email: userGoogleTokens.email })
@@ -98,9 +118,10 @@ export default async function Dashboard({
         />
       )}
       <DashboardShell
-        key={validatedStart ?? "default"}
+        key={`${validatedStart ?? "default"}_${validatedEnd ?? "default"}`}
         initialData={schedule}
         initialViewStart={validatedStart}
+        initialViewEnd={validatedEnd}
         scheduleEndDate={scheduleEndDate ?? schedule.endDate}
         header={<Header />}
         showOwnerWarning={showOwnerWarning}

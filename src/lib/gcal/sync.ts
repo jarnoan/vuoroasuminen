@@ -61,9 +61,9 @@ export interface SyncResult {
  * A failure for one parent does not affect the other. (per D-05)
  * The database publish is NOT rolled back on sync failure. (per D-05)
  */
-export async function syncCalendarsAfterPublish(viewStart?: string): Promise<SyncResult> {
+export async function syncCalendarsAfterPublish(viewStart?: string, viewEnd?: string): Promise<SyncResult> {
   const config = await getAppConfig()
-  const { start, end } = getWindowBounds(viewStart)
+  const { start, end } = getWindowBounds(viewStart, viewEnd)
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
 

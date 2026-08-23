@@ -1,15 +1,15 @@
 import { db } from "@/db"
 import { scheduleEntries, children, schedules } from "@/db/schema/domain"
 import { and, gte, lte, max } from "drizzle-orm"
-import { format, addDays, isToday as isTodayFn } from "date-fns"
+import { format, addDays, differenceInCalendarDays, isToday as isTodayFn } from "date-fns"
 import { fi } from "date-fns/locale"
 import { getAppConfig } from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
 import type { ScheduleDay, DateWindow, ScheduleCell, ParentId } from "./types"
 
-export async function getScheduleWindow(startDate?: string): Promise<DateWindow> {
+export async function getScheduleWindow(startDate?: string, endDate?: string): Promise<DateWindow> {
   const config = await getAppConfig()
-  const { start, end } = getWindowBounds(startDate)
+  const { start, end } = getWindowBounds(startDate, endDate)
   const startStr = format(start, "yyyy-MM-dd")
   const endStr = format(end, "yyyy-MM-dd")
 
@@ -58,8 +58,9 @@ export async function getScheduleWindow(startDate?: string): Promise<DateWindow>
 
   // Build days array — skip dates with no DB rows (rolling window tail)
   const days: ScheduleDay[] = []
+  const dayCount = differenceInCalendarDays(end, start) + 1
   let current = start
-  for (let i = 0; i < 84; i++) {
+  for (let i = 0; i < dayCount; i++) {
     const dateStr = format(current, "yyyy-MM-dd")
     const dayEntries = entryMap.get(dateStr)
     if (!dayEntries) {

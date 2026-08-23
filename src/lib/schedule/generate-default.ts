@@ -41,11 +41,13 @@ export function generateDefaultEntries(
 }
 
 /**
- * Compute the 12-week rolling window.
+ * Compute the displayed schedule window.
  * - When startDate is provided (pre-validated ISO string from page.tsx), use it directly.
  * - When omitted, defaults to Monday of the current week.
+ * - When endDate is provided (pre-validated ISO string, already after start), use it directly.
+ * - When omitted, defaults to the 12-week (84-day) rolling window.
  */
-export function getWindowBounds(startDate?: string): { start: Date; end: Date } {
+export function getWindowBounds(startDate?: string, endDate?: string): { start: Date; end: Date } {
   let start: Date
   if (startDate) {
     // startDate already validated and snapped to Monday by page.tsx validateViewStart
@@ -54,6 +56,7 @@ export function getWindowBounds(startDate?: string): { start: Date; end: Date } 
     const today = startOfToday()
     start = startOfWeek(today, { weekStartsOn: 1 }) // Monday
   }
-  const end = addDays(start, 12 * 7 - 1) // 84 days, inclusive
+  // endDate already validated and snapped to Sunday by page.tsx validateViewEnd
+  const end = endDate ? parseISO(endDate) : addDays(start, 12 * 7 - 1) // default: 84 days, inclusive
   return { start, end }
 }

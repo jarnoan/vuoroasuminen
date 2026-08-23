@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { format, parseISO } from "date-fns"
 import { computeStats } from "@/lib/schedule/stats"
 import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
 
@@ -12,8 +13,16 @@ interface StatsPanelProps {
 export function StatsPanel({ days, parents }: StatsPanelProps) {
   const stats = useMemo(() => computeStats(days, parents), [days, parents])
 
+  // Counts above are scoped to exactly the currently displayed date range
+  const rangeLabel = days.length > 0
+    ? `${format(parseISO(days[0].date), "d.M.")} – ${format(parseISO(days[days.length - 1].date), "d.M.yyyy")}`
+    : ""
+
   return (
     <div className="border rounded-lg py-3 mt-4 bg-muted/30 text-sm">
+      {rangeLabel && (
+        <p className="text-muted-foreground text-xs px-3 pb-2">Yhteenveto: {rangeLabel}</p>
+      )}
       <table className="w-full" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col style={{ width: "104px" }} />

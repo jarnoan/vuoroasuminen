@@ -2,57 +2,81 @@
 
 import { useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { parseISO, startOfWeek, subDays, format } from "date-fns"
+import { parseISO, startOfWeek, endOfWeek, subDays, format } from "date-fns"
 import { fi } from "react-day-picker/locale"
-import { CalendarIcon, ChevronLeft } from "lucide-react"
+import { CalendarIcon, ChevronLeft, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface ViewToolbarProps {
   initialViewStart?: string
+  initialViewEnd?: string
+  // Actual resolved window bounds from the server (DateWindow.startDate/endDate) — always
+  // defined, even when viewStart/viewEnd aren't in the URL, so the pickers can show the
+  // real default range instead of appearing empty.
+  resolvedStart: string
+  resolvedEnd: string
 }
 
-export function ViewToolbar({ initialViewStart }: ViewToolbarProps) {
+export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, resolvedEnd }: ViewToolbarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const navigateTo = useCallback(
-    (dateStr: string | null) => {
+    (updates: { viewStart?: string | null; viewEnd?: string | null }) => {
       const params = new URLSearchParams(searchParams.toString())
-      if (dateStr) {
-        params.set("viewStart", dateStr)
-        router.replace(pathname + "?" + params.toString())
-      } else {
-        params.delete("viewStart")
-        router.replace(pathname + (params.size > 0 ? "?" + params.toString() : ""))
+      if (updates.viewStart !== undefined) {
+        if (updates.viewStart) params.set("viewStart", updates.viewStart)
+        else params.delete("viewStart")
       }
+      if (updates.viewEnd !== undefined) {
+        if (updates.viewEnd) params.set("viewEnd", updates.viewEnd)
+        else params.delete("viewEnd")
+      }
+      router.replace(pathname + (params.size > 0 ? "?" + params.toString() : ""))
     },
     [router, pathname, searchParams],
   )
 
   function handlePrevWeek() {
-    const currentStart = parseISO(
-      initialViewStart ??
-        format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd"),
-    )
+    const currentStart = parseISO(initialViewStart ?? resolvedStart)
     const prevMonday = startOfWeek(subDays(currentStart, 7), { weekStartsOn: 1 })
-    navigateTo(format(prevMonday, "yyyy-MM-dd"))
+    // Quick navigation resets to the default 12-week window
+    navigateTo({ viewStart: format(prevMonday, "yyyy-MM-dd"), viewEnd: null })
   }
 
   function handleToday() {
-    // Only clears viewStart — ScheduleTable's mount useEffect handles scroll after RSC re-render
-    navigateTo(null)
+    // Clears viewStart/viewEnd — ScheduleTable's mount useEffect handles scroll after RSC re-render
+    navigateTo({ viewStart: null, viewEnd: null })
   }
 
   function handleDateSelect(date: Date | undefined) {
     if (!date) return
     const monday = startOfWeek(date, { weekStartsOn: 1 })
-    navigateTo(format(monday, "yyyy-MM-dd"))
+    const updates: { viewStart: string; viewEnd?: null } = {
+      viewStart: format(monday, "yyyy-MM-dd"),
+    }
+    // An explicitly chosen end date that would now precede the new start is no longer valid
+    if (initialViewEnd && parseISO(initialViewEnd) <= monday) {
+      updates.viewEnd = null
+    }
+    navigateTo(updates)
   }
 
-  const selectedDate = initialViewStart ? parseISO(initialViewStart) : undefined
+  function handleEndDateSelect(date: Date | undefined) {
+    if (!date) return
+    const sunday = endOfWeek(date, { weekStartsOn: 1 })
+    navigateTo({ viewEnd: format(sunday, "yyyy-MM-dd") })
+  }
+
+  function handleClearEndDate() {
+    navigateTo({ viewEnd: null })
+  }
+
+  const selectedDate = parseISO(initialViewStart ?? resolvedStart)
+  const selectedEndDate = parseISO(initialViewEnd ?? resolvedEnd)
 
   return (
     <div className="@container flex flex-wrap items-center gap-2 px-4 py-2 border-b">
@@ -70,7 +94,7 @@ export function ViewToolbar({ initialViewStart }: ViewToolbarProps) {
       <input
         type="date"
         className="sm:hidden border rounded-md px-2 py-1 text-sm"
-        value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+        value={format(selectedDate, "yyyy-MM-dd")}
         onChange={(e) => {
           if (!e.target.value) return
           handleDateSelect(parseISO(e.target.value))
@@ -83,7 +107,7 @@ export function ViewToolbar({ initialViewStart }: ViewToolbarProps) {
           render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" />}
         >
           <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-          Valitse päivä
+          {format(selectedDate, "d.M.yyyy")}
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
           <Calendar
@@ -94,6 +118,50 @@ export function ViewToolbar({ initialViewStart }: ViewToolbarProps) {
           />
         </PopoverContent>
       </Popover>
+      <span className="text-muted-foreground text-sm hidden @sm:inline" aria-hidden="true">
+        &ndash;
+      </span>
+      {/* Native date input — visible on mobile, hidden on desktop */}
+      <input
+        type="date"
+        className="sm:hidden border rounded-md px-2 py-1 text-sm"
+        value={format(selectedEndDate, "yyyy-MM-dd")}
+        min={format(selectedDate, "yyyy-MM-dd")}
+        onChange={(e) => {
+          if (!e.target.value) return
+          handleEndDateSelect(parseISO(e.target.value))
+        }}
+        aria-label="Valitse loppupäivä"
+      />
+      {/* Calendar Popover — hidden on mobile, visible on desktop */}
+      <Popover>
+        <PopoverTrigger
+          render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" />}
+        >
+          <CalendarIcon className="mr-1 h-3.5 w-3.5" />
+          {format(selectedEndDate, "d.M.yyyy")}
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={selectedEndDate}
+            onSelect={handleEndDateSelect}
+            disabled={{ before: selectedDate }}
+            locale={fi}
+          />
+        </PopoverContent>
+      </Popover>
+      {initialViewEnd && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleClearEndDate}
+          aria-label="Poista loppupäivän rajaus"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
       <Button
         variant="default"
         size="sm"

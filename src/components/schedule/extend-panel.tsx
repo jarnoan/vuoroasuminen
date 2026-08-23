@@ -55,6 +55,8 @@ export function ExtendPanel({ scheduleEndDate }: ExtendPanelProps) {
     (dateStr: string) => {
       const params = new URLSearchParams(searchParams.toString())
       params.set("viewStart", dateStr)
+      // A viewEnd from before extending would describe a now-stale range
+      params.delete("viewEnd")
       router.replace(pathname + "?" + params.toString())
     },
     [router, pathname, searchParams],

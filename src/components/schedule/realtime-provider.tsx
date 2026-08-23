@@ -31,9 +31,10 @@ interface RealtimeProviderProps {
   }) => void
   onRefresh?: (days: ScheduleDay[]) => void
   viewStart?: string
+  viewEnd?: string
 }
 
-export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart }: RealtimeProviderProps) {
+export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart, viewEnd }: RealtimeProviderProps) {
   const onEntryChangeRef = useRef(onEntryChange)
   onEntryChangeRef.current = onEntryChange
 
@@ -92,7 +93,7 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
       if (cancelled) return
 
       // Step 2: re-fetch full schedule via Server Action
-      const freshDays = await getScheduleDays(viewStart)
+      const freshDays = await getScheduleDays(viewStart, viewEnd)
       if (cancelled) return
       onRefreshRef.current?.(freshDays)  // silent update — no toast/spinner (D-05)
 

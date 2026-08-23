@@ -12,6 +12,7 @@ import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
 interface DashboardShellProps {
   initialData: DateWindow
   initialViewStart?: string
+  initialViewEnd?: string
   scheduleEndDate: string
   header: React.ReactNode
   showOwnerWarning?: boolean
@@ -23,6 +24,7 @@ interface DashboardShellProps {
 export function DashboardShell({
   initialData,
   initialViewStart,
+  initialViewEnd,
   scheduleEndDate,
   header,
   showOwnerWarning = false,
@@ -60,12 +62,17 @@ export function DashboardShell({
     <div className="min-h-screen flex flex-col">
       {header}
       {showOwnerWarning && <OwnerWarningBanner />}
-      <ViewToolbar initialViewStart={initialViewStart} />
+      <ViewToolbar
+        initialViewStart={initialViewStart}
+        initialViewEnd={initialViewEnd}
+        resolvedStart={initialData.startDate}
+        resolvedEnd={initialData.endDate}
+      />
       <div className="flex items-center justify-end px-4 py-2 border-b">
-        <PublishButton days={days} viewStart={initialViewStart} onPublished={handlePublished} />
+        <PublishButton days={days} viewStart={initialViewStart} viewEnd={initialViewEnd} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} currentParentId={currentParentId} />
+        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} viewEnd={initialViewEnd} currentParentId={currentParentId} />
         <ExtendPanel scheduleEndDate={scheduleEndDate} />
         <ClearPanel childCount={childCount} />
       </main>

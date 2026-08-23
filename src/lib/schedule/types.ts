@@ -23,5 +23,5 @@ export interface ScheduleDay {
 export interface DateWindow {
   startDate: string           // ISO date
   endDate: string             // ISO date
-  days: ScheduleDay[]         // 84 days
+  days: ScheduleDay[]         // one entry per day in [startDate, endDate]; 84 days by default
 }
