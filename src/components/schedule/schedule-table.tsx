@@ -108,12 +108,20 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
       if (cell) { priorParentId = cell.parentId; break }
     }
 
-    // Optimistic update
+    // Capture prior status too, for rollback on failure
+    let priorStatus: "draft" | "published" = "draft"
+    for (const day of days) {
+      const cell = day.cells.find((c) => c.entryId === entryId)
+      if (cell) { priorStatus = cell.status; break }
+    }
+
+    // Optimistic update — toggleCell always sets status to draft, so mirror that here
+    // to avoid a flash of the old (possibly published) color before the server confirms.
     setDays((prev) =>
       prev.map((day) => ({
         ...day,
         cells: day.cells.map((cell) =>
-          cell.entryId === entryId ? { ...cell, parentId: newParentId } : cell
+          cell.entryId === entryId ? { ...cell, parentId: newParentId, status: "draft" as const } : cell
         ),
       }))
     )
@@ -125,7 +133,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
         prev.map((day) => ({
           ...day,
           cells: day.cells.map((cell) =>
-            cell.entryId === entryId ? { ...cell, parentId: priorParentId } : cell
+            cell.entryId === entryId ? { ...cell, parentId: priorParentId, status: priorStatus } : cell
           ),
         }))
       )
