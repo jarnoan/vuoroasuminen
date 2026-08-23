@@ -18,7 +18,7 @@ export default async function Header({ children }: { children?: React.ReactNode 
   return (
     <header className="flex items-center justify-between px-3 py-3 sm:px-6 sm:py-4 border-b">
       <div className="flex items-center gap-2">
-        <span className="text-xl font-semibold hidden sm:block">Vuoroasuminen</span>
+        <span className="text-lg sm:text-xl font-semibold">Vuoroasuminen</span>
       </div>
       <div className="flex items-center gap-4">
         {children}
