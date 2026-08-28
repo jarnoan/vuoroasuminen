@@ -5,7 +5,6 @@ import { ScheduleTable } from "./schedule-table"
 import { StatsPanel } from "./stats-panel"
 import { RealtimeProvider } from "./realtime-provider"
 import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
-import type { Density } from "./density"
 
 type EntryUpdate = {
   id: string
@@ -24,10 +23,10 @@ interface ScheduleWithRealtimeProps {
   viewStart?: string
   viewEnd?: string
   currentParentId?: ParentId
-  density?: Density
+  zoom?: number
 }
 
-export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, viewEnd, currentParentId, density }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, viewEnd, currentParentId, zoom }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -47,7 +46,7 @@ export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewS
         publishRef={publishRef}
         parents={parents}
         currentParentId={currentParentId}
-        density={density}
+        zoom={zoom}
       />
       <StatsPanel days={days} parents={parents} />
     </RealtimeProvider>

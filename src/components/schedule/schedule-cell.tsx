@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 
 import type { ParentId } from "@/lib/schedule/types"
-import { CELL_BUTTON_CLASS, type Density } from "./density"
 
 interface ScheduleCellProps {
   entryId: string
@@ -13,7 +12,6 @@ interface ScheduleCellProps {
   onToggle: (entryId: string, newParentId: ParentId) => void
   onClear: (entryId: string) => void
   parents: Array<{ id: ParentId; name: string }>
-  density?: Density
 }
 
 const colorMap: Record<ParentId, Record<"draft" | "published", string>> = {
@@ -34,7 +32,6 @@ export function ScheduleCell({
   onToggle,
   onClear,
   parents,
-  density = 0,
 }: ScheduleCellProps) {
   const displayName = parents.find((p) => p.id === parentId)?.name ?? parentId
   const newParentId: ParentId = parentId === "father" ? "mother" : "father"
@@ -95,7 +92,6 @@ export function ScheduleCell({
         type="button"
         className={[
           "w-full h-full rounded-md font-medium",
-          CELL_BUTTON_CLASS[density],
           `transition-colors ${colorClass}`,
         ].join(" ")}
         onClick={() => onToggle(entryId, newParentId)}
@@ -106,6 +102,8 @@ export function ScheduleCell({
         onPointerMove={handleCellPointerMove}
         style={{
           touchAction: "manipulation",
+          minHeight: "var(--cell-min-h)",
+          fontSize: "var(--cell-font)",
           ...(isHolding ? { opacity: 0, transition: "opacity 2s linear" } : { opacity: 1 }),
         }}
       >
