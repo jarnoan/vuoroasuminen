@@ -8,6 +8,7 @@ import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
 import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
 import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
+import { CELL_BUTTON_CLASS, DATE_CELL_PADDING_CLASS, DATA_CELL_PADDING_CLASS, HEADER_PADDING_CLASS, WEEK_SEPARATOR_PADDING_CLASS, type Density } from "./density"
 
 type RealtimeEntry = {
   id: string
@@ -25,9 +26,10 @@ interface ScheduleTableProps {
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
   currentParentId?: ParentId
+  density?: Density
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId, density = 0 }: ScheduleTableProps) {
 
   // Expose a callback for realtime updates
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
@@ -289,18 +291,18 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
           </colgroup>
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
-              <th className="px-3 py-2 text-left text-sm font-semibold whitespace-nowrap border-b sticky left-0 z-10 bg-background">
+              <th className={`px-3 text-left text-sm font-semibold whitespace-nowrap border-b sticky left-0 z-10 bg-background ${HEADER_PADDING_CLASS[density]}`}>
                 Päivä
               </th>
               {childNames.map((name) => (
                 <th
                   key={name}
-                  className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[72px] sm:min-w-[90px]"
+                  className={`px-1 text-left text-sm font-semibold border-b min-w-[72px] sm:min-w-[90px] ${HEADER_PADDING_CLASS[density]}`}
                 >
                   {name}
                 </th>
               ))}
-              <th className="px-1 py-2 text-left text-sm font-semibold border-b min-w-[160px] max-sm:hidden">
+              <th className={`px-1 text-left text-sm font-semibold border-b min-w-[160px] max-sm:hidden ${HEADER_PADDING_CLASS[density]}`}>
                 Muistiinpanot
               </th>
             </tr>
@@ -312,7 +314,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   <tr>
                     <td
                       colSpan={colCount}
-                      className="px-3 pt-3 pb-1 text-xs text-muted-foreground"
+                      className={`px-3 text-xs text-muted-foreground ${WEEK_SEPARATOR_PADDING_CLASS[density]}`}
                     >
                       Viikko {getISOWeek(new Date(day.date))}
                     </td>
@@ -327,13 +329,13 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   ].filter(Boolean).join(" ")}
                 >
                   <td
-                    className="px-3 py-2 text-sm whitespace-nowrap font-mono sticky left-0 bg-background data-[today=true]:bg-yellow-50 dark:data-[today=true]:bg-yellow-950/20"
+                    className={`px-3 text-sm whitespace-nowrap font-mono sticky left-0 bg-background data-[today=true]:bg-yellow-50 dark:data-[today=true]:bg-yellow-950/20 ${DATE_CELL_PADDING_CLASS[density]}`}
                     data-today={day.isToday ? "true" : undefined}
                   >
                     {day.dayLabel}
                   </td>
                   {day.cells.map((cell) => (
-                    <td key={cell.childId} className="px-1 py-1">
+                    <td key={cell.childId} className={DATA_CELL_PADDING_CLASS[density]}>
                       {cell.entryId && cell.parentId ? (
                         <ScheduleCell
                           entryId={cell.entryId}
@@ -343,11 +345,15 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                           onToggle={handleToggle}
                           onClear={handleClear}
                           parents={parents}
+                          density={density}
                         />
                       ) : (
                         <button
                           type="button"
-                          className="w-full h-full min-h-[40px] rounded-md text-sm text-muted-foreground bg-muted/30 hover:bg-muted transition-colors"
+                          className={[
+                            "w-full h-full rounded-md text-muted-foreground bg-muted/30 hover:bg-muted transition-colors",
+                            CELL_BUTTON_CLASS[density],
+                          ].join(" ")}
                           onClick={() => handleAssignEmpty(cell.entryId, cell.childId, day.date)}
                           title="Lisää merkintä"
                           aria-label={`Lisää merkintä — ${cell.childName} ${day.dayLabel}`}
@@ -357,7 +363,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                       )}
                     </td>
                   ))}
-                  <td className="px-1 py-1 max-sm:table-cell sm:hidden">
+                  <td className={`max-sm:table-cell sm:hidden ${DATA_CELL_PADDING_CLASS[density]}`}>
                     {!day.notes && !notesOpenDates.has(day.date) ? (
                       <button
                         type="button"
