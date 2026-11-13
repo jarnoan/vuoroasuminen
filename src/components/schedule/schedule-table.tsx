@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState, useRef } from "react"
-import { Pencil } from "lucide-react"
+import { ChevronDown, Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { getISOWeek } from "date-fns"
 import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
@@ -10,6 +10,7 @@ import { ScheduleCell } from "./schedule-cell"
 import { NotesCell } from "./notes-cell"
 import { computeZoomVars } from "./row-zoom"
 import { usePinchZoom } from "./use-pinch-zoom"
+import { MobileSummaryPanel, SplitBar, parentName, useScheduleStats } from "./stats-panel"
 
 type RealtimeEntry = {
   id: string
@@ -28,9 +29,12 @@ interface ScheduleTableProps {
   parents: Array<{ id: ParentId; name: string }>
   currentParentId?: ParentId
   zoom?: number
+  onAddWeeks?: () => void  // phones: end-of-schedule "Lisää viikkoja" button
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId, zoom = 1 }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks }: ScheduleTableProps) {
+  const stats = useScheduleStats(days, parents)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
   usePinchZoom(wrapperRef)
 
@@ -282,52 +286,108 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
   // Derive column headers from first day's cells
   const childNames = days[0]?.cells.map((c) => c.childName) ?? []
   const colCount = Math.max(childNames.length + 3, 1)
+  const isiName = parentName(parents, "father")
+  const aitiName = parentName(parents, "mother")
+  const freeFor = (id: ParentId) => stats.parentFreeStats.find((p) => p.parentId === id)
+  const headerPad = { paddingTop: "var(--header-py)", paddingBottom: "var(--header-py)" }
 
   return (
-    <div ref={wrapperRef} style={{ ...computeZoomVars(zoom), touchAction: "pan-y" }}>
+    <div className="bg-background border rounded-2xl overflow-clip">
+      {/* Legend (+ free days on phones, where the sidebar is hidden) */}
+      <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap px-3 sm:px-4 py-3 border-b text-xs font-medium text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-3 rounded-[4px] bg-isi" aria-hidden="true" />
+          {isiName}
+          <span className="sm:hidden tabular-nums">
+            · vapaat {freeFor("father")?.childFreeDays ?? 0} pv, {freeFor("father")?.childFreeWeekends ?? 0} vkl
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-3 rounded-[4px] bg-aiti" aria-hidden="true" />
+          {aitiName}
+          <span className="sm:hidden tabular-nums">
+            · {freeFor("mother")?.childFreeDays ?? 0} pv, {freeFor("mother")?.childFreeWeekends ?? 0} vkl
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-3 rounded-[4px] border-[1.5px] border-dashed border-muted-foreground/60" aria-hidden="true" />
+          Luonnos
+        </span>
+        <span className="max-sm:hidden ml-auto font-normal">Napauta solua vaihtaaksesi vanhempaa</span>
+      </div>
+
+      <div ref={wrapperRef} style={{ ...computeZoomVars(zoom), touchAction: "pan-y" }}>
         <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
-            <col style={{ width: "104px" }} />
+            <col className="max-sm:w-[84px] sm:w-[150px]" />
             {/* Mobile: child columns share the width. Desktop: fixed child columns,
                 and the notes column (3rd col on desktop, since the mobile pencil
                 cell is display:none) takes all remaining space. */}
-            {childNames.map(name => <col key={name} className="sm:w-32" />)}
-            <col className="max-sm:w-8" />
+            {childNames.map(name => <col key={name} className="sm:w-36" />)}
+            <col className="max-sm:w-9" />
             <col className="w-0" />
           </colgroup>
-          <thead className="sticky top-0 z-10 bg-background">
+          <thead className="sticky top-0 z-10 bg-background shadow-[0_1px_0_var(--color-border)]">
             <tr>
-              <th
-                className="px-3 text-left text-sm font-semibold whitespace-nowrap border-b sticky left-0 z-10 bg-background"
-                style={{ paddingTop: "var(--header-py)", paddingBottom: "var(--header-py)" }}
-              >
-                Päivä
-              </th>
-              {childNames.map((name) => (
-                <th
-                  key={name}
-                  className="px-1 text-left text-sm font-semibold border-b min-w-[72px] sm:min-w-[90px]"
-                  style={{ paddingTop: "var(--header-py)", paddingBottom: "var(--header-py)" }}
+              <th className="pl-4 pr-2 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap sticky left-0 z-10 bg-background" style={headerPad}>
+                <span className="max-sm:hidden">Päivä</span>
+                {/* Phones: the header doubles as the summary toggle */}
+                <button
+                  type="button"
+                  onClick={() => setSummaryOpen(o => !o)}
+                  aria-expanded={summaryOpen}
+                  aria-controls="mobile-summary"
+                  aria-label={summaryOpen ? "Sulje yhteenveto" : "Näytä yhteenveto"}
+                  className="sm:hidden size-8 -ml-1 rounded-lg border bg-background inline-flex items-center justify-center text-foreground aria-expanded:bg-muted"
                 >
-                  {name}
+                  <ChevronDown className={`size-4 transition-transform ${summaryOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                </button>
+              </th>
+              {stats.childStats.map((child) => (
+                <th key={child.childName} className="px-1 text-left font-semibold min-w-[64px] sm:min-w-[90px]" style={headerPad}>
+                  <span className="max-sm:hidden text-sm">{child.childName}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryOpen(o => !o)}
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    className="sm:hidden w-full flex flex-col gap-1 text-left"
+                  >
+                    <span className="text-sm truncate">{child.childName}</span>
+                    <SplitBar father={child.father} mother={child.mother} />
+                    <span className="text-[11px] tabular-nums leading-none">
+                      <span className="text-isi">{child.father}</span>
+                      <span className="text-muted-foreground"> · </span>
+                      <span className="text-aiti-ink">{child.mother}</span>
+                    </span>
+                  </button>
                 </th>
               ))}
-              <th
-                className="px-1 text-left text-sm font-semibold border-b min-w-[160px] max-sm:hidden"
-                style={{ paddingTop: "var(--header-py)", paddingBottom: "var(--header-py)" }}
-              >
+              <th className="max-sm:hidden px-3 text-left text-xs font-semibold text-muted-foreground min-w-[160px]" style={headerPad}>
                 Muistiinpanot
               </th>
+              <th className="sm:hidden" />
             </tr>
+            {summaryOpen && (
+              <tr className="sm:hidden">
+                <td colSpan={colCount} className="border-t bg-background">
+                  <MobileSummaryPanel days={days} parents={parents} stats={stats} onClose={() => setSummaryOpen(false)} />
+                </td>
+              </tr>
+            )}
           </thead>
           <tbody>
-            {days.map((day) => (
+            {days.map((day) => {
+              const [weekday, date] = splitDayLabel(day.dayLabel)
+              const hasNoteRow = Boolean(day.notes) || notesOpenDates.has(day.date)
+              const rowBg = day.isToday ? "bg-today" : "bg-background"
+              return (
               <React.Fragment key={day.date}>
                 {day.isWeekStart && (
                   <tr>
                     <td
                       colSpan={colCount}
-                      className="px-3 pb-1 text-xs text-muted-foreground"
+                      className="pl-4 pb-1.5 font-heading text-sm font-bold"
                       style={{ paddingTop: "var(--week-pt)" }}
                     >
                       Viikko {getISOWeek(new Date(day.date))}
@@ -338,16 +398,24 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   data-date={day.date}
                   data-today={day.isToday ? "true" : undefined}
                   className={[
-                    day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20 scroll-mt-10" : "scroll-mt-10",
-                    (day.notes || notesOpenDates.has(day.date)) ? "max-sm:[&>td]:border-b-0 max-sm:[&>td]:pb-0" : "",
+                    "scroll-mt-14",
+                    day.isToday ? "bg-today" : "",
+                    hasNoteRow ? "max-sm:[&>td]:pb-0" : "",
                   ].filter(Boolean).join(" ")}
                 >
                   <td
-                    className="px-3 text-sm whitespace-nowrap font-mono sticky left-0 bg-background data-[today=true]:bg-yellow-50 dark:data-[today=true]:bg-yellow-950/20"
+                    className={`pl-3 pr-1 sm:pl-4 sm:pr-2 text-sm whitespace-nowrap sticky left-0 ${rowBg}`}
                     style={{ paddingTop: "var(--date-py)", paddingBottom: "var(--date-py)" }}
-                    data-today={day.isToday ? "true" : undefined}
                   >
-                    {day.dayLabel}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`w-[1.6em] ${day.isToday ? "font-semibold" : "text-muted-foreground"}`}>{weekday}</span>
+                      <span className="font-semibold tabular-nums">{date}</span>
+                      {day.isToday && (
+                        <span className="max-sm:hidden rounded-full bg-today-badge text-today-badge-fg px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                          Tänään
+                        </span>
+                      )}
+                    </span>
                   </td>
                   {day.cells.map((cell) => (
                     <td key={cell.childId} className="px-1" style={{ paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
@@ -364,31 +432,31 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                       ) : (
                         <button
                           type="button"
-                          className="w-full h-full rounded-md text-muted-foreground bg-muted/30 hover:bg-muted transition-colors"
+                          className="w-full h-full rounded-[10px] border-[1.5px] border-dashed border-border text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors"
                           style={{ minHeight: "var(--cell-min-h)", fontSize: "var(--cell-font)" }}
                           onClick={() => handleAssignEmpty(cell.entryId, cell.childId, day.date)}
                           title="Lisää merkintä"
                           aria-label={`Lisää merkintä — ${cell.childName} ${day.dayLabel}`}
                         >
-                          —
+                          +
                         </button>
                       )}
                     </td>
                   ))}
-                  <td className="px-1 max-sm:table-cell sm:hidden" style={{ paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
-                    {!day.notes && !notesOpenDates.has(day.date) ? (
+                  <td className="px-1 max-sm:table-cell sm:hidden text-center" style={{ paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
+                    {!hasNoteRow ? (
                       <button
                         type="button"
                         onClick={() => setNotesOpenDates(prev => new Set(prev).add(day.date))}
                         aria-label={`Lisää muistiinpano — ${day.dayLabel}`}
-                        className="text-muted-foreground hover:text-foreground"
+                        className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted"
                         style={{ touchAction: "manipulation" }}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="size-3.5" />
                       </button>
                     ) : null}
                   </td>
-                  <td className="px-1 py-1 max-sm:hidden">
+                  <td className="px-2 py-1 max-sm:hidden">
                     <NotesCell
                       entryId={day.notesEntryId}
                       value={day.notes}
@@ -396,15 +464,10 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                     />
                   </td>
                 </tr>
-                {(day.notes || notesOpenDates.has(day.date)) && (
-                  <tr className="max-sm:table-row sm:hidden">
-                    <td
-                      className={[
-                        "sticky left-0 pt-0 pb-1",
-                        day.isToday ? "bg-yellow-50 dark:bg-yellow-950/20" : "bg-background",
-                      ].join(" ")}
-                    />
-                    <td colSpan={colCount - 1} className="pt-0 pb-1 pr-1">
+                {hasNoteRow && (
+                  <tr className={`max-sm:table-row sm:hidden ${day.isToday ? "bg-today" : ""}`}>
+                    <td className={`sticky left-0 pt-0 pb-1.5 ${rowBg}`} />
+                    <td colSpan={colCount - 1} className="pt-0.5 pb-1.5 pr-2">
                       <NotesCell
                         entryId={day.notesEntryId}
                         value={day.notes}
@@ -423,9 +486,30 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   </tr>
                 )}
               </React.Fragment>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
+
+      {onAddWeeks && (
+        <div className="sm:hidden p-3 border-t">
+          <button
+            type="button"
+            onClick={onAddWeeks}
+            className="w-full h-12 rounded-xl border-[1.5px] border-dashed text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 hover:bg-muted hover:text-foreground"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            Lisää viikkoja
+          </button>
+        </div>
+      )}
+    </div>
   )
+}
+
+// "ma 9.11." → ["ma", "9.11."]
+function splitDayLabel(label: string): [string, string] {
+  const i = label.indexOf(" ")
+  return i < 0 ? ["", label] : [label.slice(0, i), label.slice(i + 1)]
 }

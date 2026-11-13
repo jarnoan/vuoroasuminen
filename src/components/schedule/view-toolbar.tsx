@@ -2,8 +2,7 @@
 
 import { parseISO, startOfWeek, endOfWeek, subDays, format } from "date-fns"
 import { fi } from "react-day-picker/locale"
-import { CalendarIcon, ChevronLeft, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { CalendarIcon, ChevronLeft, RotateCcw, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
@@ -18,6 +17,9 @@ interface ViewToolbarProps {
   resolvedEnd: string
   onChange: (next: { viewStart?: string; viewEnd?: string }) => void
 }
+
+const groupClass = "inline-flex items-center bg-background border rounded-xl p-1 gap-1"
+const ghostBtn = "h-9 rounded-lg hover:bg-muted aria-expanded:bg-muted transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 inline-flex items-center justify-center"
 
 export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewEnd, resolvedStart, resolvedEnd, onChange }: ViewToolbarProps) {
   // updates: undefined = keep the current bound, null = reset it to the default
@@ -37,7 +39,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
     navigateTo({ viewStart: format(prevMonday, "yyyy-MM-dd"), viewEnd: null })
   }
 
-  function handleToday() {
+  function handleReset() {
     // Back to the default window — if the range changes, ScheduleTable remounts and its
     // mount effect scrolls to today; if it is already shown, just scroll there now.
     document.querySelector('[data-today="true"]')?.scrollIntoView({ behavior: "instant", block: "start" })
@@ -69,100 +71,106 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
 
   const selectedDate = parseISO(initialViewStart ?? resolvedStart)
   const selectedEndDate = parseISO(initialViewEnd ?? resolvedEnd)
+  const isDefault = !initialViewStart && !initialViewEnd
+
+  const resetButton = (
+    <button
+      type="button"
+      onClick={handleReset}
+      disabled={isDefault}
+      className="h-10 w-full rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-muted disabled:opacity-50 disabled:pointer-events-none"
+    >
+      <RotateCcw className="size-4" aria-hidden="true" />
+      Palaa tähän viikkoon
+    </button>
+  )
 
   return (
-    <div className="@container flex flex-wrap items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 border-b">
-      <Button
-        variant="outline"
-        size="sm"
-        className="font-semibold px-2 sm:px-3 shrink-0"
+    <div className="flex items-center gap-2 min-w-0 max-sm:flex-1">
+      <button
+        type="button"
         onClick={handlePrevWeek}
         aria-label="Edellinen viikko"
+        className="size-11 shrink-0 rounded-xl border bg-background hover:bg-muted inline-flex items-center justify-center sm:hidden"
       >
-        <ChevronLeft className="h-4 w-4 @sm:hidden" aria-hidden="true" />
-        <span className="hidden @sm:inline">‹ Prev week</span>
-      </Button>
-      {/* Native date input — visible on mobile, hidden on desktop. flex-1 min-w-0 lets it
-          shrink so "Tänään" stays on the same row instead of being forced to wrap. */}
-      <input
-        type="date"
-        className="sm:hidden border rounded-md px-1.5 py-1 text-xs min-w-0 flex-1 [&::-webkit-calendar-picker-indicator]:p-0 [&::-webkit-calendar-picker-indicator]:ml-0.5"
-        value={format(selectedDate, "yyyy-MM-dd")}
-        onChange={(e) => {
-          if (!e.target.value) return
-          handleDateSelect(parseISO(e.target.value))
-        }}
-        aria-label="Valitse aloituspäivä"
-      />
-      {/* Calendar Popover — hidden on mobile, visible on desktop */}
+        <ChevronLeft className="size-[18px]" aria-hidden="true" />
+      </button>
+
+      {/* Mobile: one range button; both dates (and the reset) live in its popover */}
       <Popover>
         <PopoverTrigger
-          render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" />}
+          aria-label="Valitse näytettävä ajanjakso"
+          className="sm:hidden flex-1 min-w-0 h-11 rounded-xl border bg-background px-3 inline-flex items-center gap-2 text-sm font-semibold whitespace-nowrap hover:bg-muted aria-expanded:bg-muted"
         >
-          <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-          {format(selectedDate, "d.M.yyyy")}
+          <CalendarIcon className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          <span className="truncate">{format(selectedDate, "d.M.")} – {format(selectedEndDate, "d.M.yyyy")}</span>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            locale={fi}
-          />
+        <PopoverContent align="start" className="w-[min(20rem,calc(100vw-2rem))] p-3 gap-3 rounded-xl">
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+            Alkaen (maanantai)
+            <input
+              type="date"
+              className="h-11 border rounded-lg px-3 text-sm text-foreground bg-background"
+              value={format(selectedDate, "yyyy-MM-dd")}
+              onChange={(e) => {
+                if (!e.target.value) return
+                handleDateSelect(parseISO(e.target.value))
+              }}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+            Päättyen (sunnuntai)
+            <input
+              type="date"
+              className="h-11 border rounded-lg px-3 text-sm text-foreground bg-background"
+              value={format(selectedEndDate, "yyyy-MM-dd")}
+              min={format(selectedDate, "yyyy-MM-dd")}
+              onChange={(e) => {
+                if (!e.target.value) return
+                handleEndDateSelect(parseISO(e.target.value))
+              }}
+            />
+          </label>
+          {resetButton}
         </PopoverContent>
       </Popover>
-      <span className="text-muted-foreground text-sm hidden @sm:inline" aria-hidden="true">
-        &ndash;
-      </span>
-      {/* Native date input — visible on mobile, hidden on desktop */}
-      <input
-        type="date"
-        className="sm:hidden border rounded-md px-1.5 py-1 text-xs min-w-0 flex-1 [&::-webkit-calendar-picker-indicator]:p-0 [&::-webkit-calendar-picker-indicator]:ml-0.5"
-        value={format(selectedEndDate, "yyyy-MM-dd")}
-        min={format(selectedDate, "yyyy-MM-dd")}
-        onChange={(e) => {
-          if (!e.target.value) return
-          handleEndDateSelect(parseISO(e.target.value))
-        }}
-        aria-label="Valitse loppupäivä"
-      />
-      {/* Calendar Popover — hidden on mobile, visible on desktop */}
-      <Popover>
-        <PopoverTrigger
-          render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" />}
-        >
-          <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-          {format(selectedEndDate, "d.M.yyyy")}
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
-          <Calendar
-            mode="single"
-            selected={selectedEndDate}
-            onSelect={handleEndDateSelect}
-            disabled={{ before: selectedDate }}
-            locale={fi}
-          />
-        </PopoverContent>
-      </Popover>
-      {initialViewEnd && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
-          onClick={handleClearEndDate}
-          aria-label="Poista loppupäivän rajaus"
-        >
-          <X className="h-3.5 w-3.5" />
-        </Button>
-      )}
-      <Button
-        variant="default"
-        size="sm"
-        className="font-semibold px-2 sm:px-3 shrink-0 ml-auto"
-        onClick={handleToday}
-      >
-        Tänään
-      </Button>
+
+      {/* Desktop: ‹ start – end ✕ in one group */}
+      <div className={`${groupClass} max-sm:hidden`}>
+        <button type="button" onClick={handlePrevWeek} aria-label="Edellinen viikko" className={`${ghostBtn} w-9`}>
+          <ChevronLeft className="size-[18px]" aria-hidden="true" />
+        </button>
+        <Popover>
+          <PopoverTrigger aria-label="Valitse aloituspäivä" className={`${ghostBtn} px-3 gap-2 text-sm font-semibold`}>
+            <CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+            {format(selectedDate, "d.M.yyyy")}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 gap-0">
+            <Calendar mode="single" selected={selectedDate} onSelect={handleDateSelect} locale={fi} />
+            <div className="border-t p-1.5">{resetButton}</div>
+          </PopoverContent>
+        </Popover>
+        <span className="text-muted-foreground" aria-hidden="true">–</span>
+        <Popover>
+          <PopoverTrigger aria-label="Valitse loppupäivä" className={`${ghostBtn} px-3 text-sm font-semibold`}>
+            {format(selectedEndDate, "d.M.yyyy")}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedEndDate}
+              onSelect={handleEndDateSelect}
+              disabled={{ before: selectedDate }}
+              locale={fi}
+            />
+          </PopoverContent>
+        </Popover>
+        {initialViewEnd && (
+          <button type="button" onClick={handleClearEndDate} aria-label="Poista loppupäivän rajaus" className={`${ghostBtn} w-8 h-8 text-muted-foreground`}>
+            <X className="size-3.5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

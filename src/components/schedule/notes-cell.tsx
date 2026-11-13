@@ -38,9 +38,9 @@ export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
       onChange={(e) => setLocalValue(e.target.value)}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      placeholder="Lisää muistiinpano..."
+      placeholder="Lisää muistiinpano…"
       disabled={entryId === null}
-      className="w-full border-0 bg-transparent text-sm px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring rounded disabled:cursor-not-allowed disabled:opacity-50"
+      className="w-full h-8 rounded-lg border border-transparent bg-transparent px-2.5 text-sm placeholder:text-muted-foreground/60 hover:bg-muted/60 focus:bg-background focus:border-input focus:outline-none focus:ring-3 focus:ring-ring/30 max-sm:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
     />
   )
 }

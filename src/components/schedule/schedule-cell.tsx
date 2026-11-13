@@ -14,14 +14,16 @@ interface ScheduleCellProps {
   parents: Array<{ id: ParentId; name: string }>
 }
 
+// Published = solid parent colour; draft = light tint with a dashed outline, so
+// unpublished changes stand out at a glance (and differ by more than hue alone).
 const colorMap: Record<ParentId, Record<"draft" | "published", string>> = {
   father: {
-    published: "bg-blue-500 text-white hover:bg-blue-600",
-    draft: "bg-blue-200 text-blue-800 hover:bg-blue-300",
+    published: "bg-isi text-isi-fg border-transparent hover:brightness-95",
+    draft: "bg-isi-tint text-isi border-isi border-dashed hover:brightness-97",
   },
   mother: {
-    published: "bg-rose-500 text-white hover:bg-rose-600",
-    draft: "bg-rose-200 text-rose-800 hover:bg-rose-300",
+    published: "bg-aiti text-aiti-fg border-transparent hover:brightness-95",
+    draft: "bg-aiti-tint text-aiti-ink border-aiti-line border-dashed hover:brightness-97",
   },
 }
 
@@ -91,7 +93,7 @@ export function ScheduleCell({
       <button
         type="button"
         className={[
-          "w-full h-full rounded-md font-medium",
+          "w-full h-full rounded-[10px] border-[1.5px] font-semibold",
           `transition-colors ${colorClass}`,
         ].join(" ")}
         onClick={() => onToggle(entryId, newParentId)}

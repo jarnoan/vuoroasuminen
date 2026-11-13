@@ -2,7 +2,6 @@
 
 import React, { useRef, useCallback } from "react"
 import { ScheduleTable } from "./schedule-table"
-import { StatsPanel } from "./stats-panel"
 import { RealtimeProvider } from "./realtime-provider"
 import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
 
@@ -24,9 +23,10 @@ interface ScheduleWithRealtimeProps {
   viewEnd?: string
   currentParentId?: ParentId
   zoom?: number
+  onAddWeeks?: () => void
 }
 
-export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, viewEnd, currentParentId, zoom }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -47,8 +47,8 @@ export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewS
         parents={parents}
         currentParentId={currentParentId}
         zoom={zoom}
+        onAddWeeks={onAddWeeks}
       />
-      <StatsPanel days={days} parents={parents} />
     </RealtimeProvider>
   )
 }

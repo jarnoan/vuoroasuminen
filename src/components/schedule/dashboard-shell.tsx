@@ -1,14 +1,15 @@
 "use client"
 
 import React, { useCallback, useRef, useState, useSyncExternalStore } from "react"
-import { ZoomIn, ZoomOut } from "lucide-react"
+import { Minus, Plus } from "lucide-react"
 import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
 import { ViewToolbar } from "./view-toolbar"
-import { ExtendPanel } from "./extend-panel"
-import { ClearPanel } from "./clear-panel"
+import { ExtendCard, ExtendSheet } from "./extend-panel"
+import { ClearCard, ClearDialog } from "./clear-panel"
+import { StatsCard } from "./stats-panel"
+import { MobileActionsMenu } from "./mobile-actions-menu"
 import { OwnerWarningBanner } from "@/components/owner-warning-banner"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { getScheduleView } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -49,6 +50,8 @@ export function DashboardShell({
   const [bounds, setBounds] = useState({ startDate: initialData.startDate, endDate: initialData.endDate })
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const [loading, setLoading] = useState(false)
+  const [extendOpen, setExtendOpen] = useState(false)
+  const [clearOpen, setClearOpen] = useState(false)
   const publishRef = useRef<(() => void) | null>(null)
   const loadSeqRef = useRef(0)
 
@@ -90,56 +93,76 @@ export function DashboardShell({
     })))
   }, [])
 
+  const extendProps = {
+    scheduleEndDate,
+    lastWeekStartParent,
+    parents,
+    onExtended: (newStartDate: string) => loadView({ viewStart: newStartDate }),
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {header}
       {showOwnerWarning && <OwnerWarningBanner />}
-      <ViewToolbar
-        viewStart={view.viewStart}
-        viewEnd={view.viewEnd}
-        resolvedStart={bounds.startDate}
-        resolvedEnd={bounds.endDate}
-        onChange={loadView}
-      />
-      <div className="flex items-center justify-between px-4 py-2 border-b">
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => stepZoom(-ZOOM_STEP)}
-            disabled={zoom <= MIN_ZOOM}
-            aria-label="Loitonna (pienemmät rivit)"
-            title="Loitonna (pienemmät rivit) — tai nipistä kosketusnäytöllä"
-          >
-            <ZoomOut className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => stepZoom(ZOOM_STEP)}
-            disabled={zoom >= MAX_ZOOM}
-            aria-label="Lähennä (suuremmat rivit)"
-            title="Lähennä (suuremmat rivit) — tai levitä sormia kosketusnäytöllä"
-          >
-            <ZoomIn className="h-4 w-4" aria-hidden="true" />
-          </Button>
+      <main className="flex-1 w-full max-w-[1360px] mx-auto px-3 pt-3 pb-24 sm:px-8 sm:pt-6 sm:pb-10">
+        {/* Toolbar: range (+ ⋯ on phones) left; zoom + publish right on desktop */}
+        <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-5">
+          <h1 className="max-sm:hidden font-heading text-2xl font-bold tracking-tight">Aikataulu</h1>
+          <ViewToolbar
+            viewStart={view.viewStart}
+            viewEnd={view.viewEnd}
+            resolvedStart={bounds.startDate}
+            resolvedEnd={bounds.endDate}
+            onChange={loadView}
+          />
+          <MobileActionsMenu onExtend={() => setExtendOpen(true)} onClear={() => setClearOpen(true)} />
+          <div className="sm:ml-auto flex items-center gap-2">
+            <div className="max-sm:hidden inline-flex items-center bg-background border rounded-xl p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => stepZoom(-ZOOM_STEP)}
+                disabled={zoom <= MIN_ZOOM}
+                aria-label="Loitonna (pienemmät rivit)"
+                title="Loitonna (pienemmät rivit)"
+                className="size-9 rounded-lg inline-flex items-center justify-center hover:bg-muted disabled:opacity-40"
+              >
+                <Minus className="size-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => stepZoom(ZOOM_STEP)}
+                disabled={zoom >= MAX_ZOOM}
+                aria-label="Lähennä (suuremmat rivit)"
+                title="Lähennä (suuremmat rivit)"
+                className="size-9 rounded-lg inline-flex items-center justify-center hover:bg-muted disabled:opacity-40"
+              >
+                <Plus className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+            {/* Toolbar button on desktop; a floating pill on phones */}
+            <PublishButton days={days} viewStart={view.viewStart} viewEnd={view.viewEnd} onPublished={handlePublished} />
+          </div>
         </div>
-        <PublishButton days={days} viewStart={view.viewStart} viewEnd={view.viewEnd} onPublished={handlePublished} />
-      </div>
-      <main className="flex-1 p-4">
-        <div className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"} aria-busy={loading}>
-          {/* Keyed by the loaded window: remounts on range change so the realtime
-              subscription uses the new range and the table re-scrolls to today. */}
-          <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} />
+
+        <div className="flex flex-wrap items-start gap-6">
+          <div
+            className={`min-w-0 ${loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}`}
+            style={{ flex: "999 1 640px" }}
+            aria-busy={loading}
+          >
+            {/* Keyed by the loaded window: remounts on range change so the realtime
+                subscription uses the new range and the table re-scrolls to today. */}
+            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} />
+          </div>
+          <aside className="max-sm:hidden min-w-0 flex flex-col gap-4" style={{ flex: "1 1 320px" }}>
+            <StatsCard days={days} parents={parents} />
+            <ExtendCard {...extendProps} />
+            <ClearCard onOpen={() => setClearOpen(true)} />
+          </aside>
         </div>
-        <ExtendPanel
-          scheduleEndDate={scheduleEndDate}
-          lastWeekStartParent={lastWeekStartParent}
-          parents={parents}
-          onExtended={newStartDate => loadView({ viewStart: newStartDate })}
-        />
-        <ClearPanel childCount={childCount} onCleared={reloadView} />
       </main>
+      <ExtendSheet open={extendOpen} onOpenChange={setExtendOpen} {...extendProps} />
+      <ClearDialog open={clearOpen} onOpenChange={setClearOpen} childCount={childCount} onCleared={reloadView} />
     </div>
   )
 }

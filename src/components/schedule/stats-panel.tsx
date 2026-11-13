@@ -2,90 +2,124 @@
 
 import { useMemo } from "react"
 import { format, parseISO } from "date-fns"
-import { computeStats } from "@/lib/schedule/stats"
+import { computeStats, type ScheduleStats } from "@/lib/schedule/stats"
 import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
 
-interface StatsPanelProps {
+export function useScheduleStats(days: ScheduleDay[], parents: Array<{ id: ParentId; name: string }>) {
+  return useMemo(() => computeStats(days, parents), [days, parents])
+}
+
+export function parentName(parents: Array<{ id: ParentId; name: string }>, id: ParentId) {
+  return parents.find((p) => p.id === id)?.name ?? (id === "father" ? "Isi" : "Äiti")
+}
+
+// Isi/Äiti split bar. Empty (grey) when neither parent has days yet.
+export function SplitBar({ father, mother, className = "h-1" }: { father: number; mother: number; className?: string }) {
+  const total = father + mother
+  return (
+    <div className={`flex w-full overflow-hidden rounded-full bg-muted ${className}`} aria-hidden="true">
+      {total > 0 && (
+        <>
+          <div className="bg-isi" style={{ width: `${(father / total) * 100}%` }} />
+          <div className="bg-aiti-bar" style={{ width: `${(mother / total) * 100}%` }} />
+        </>
+      )}
+    </div>
+  )
+}
+
+function FreeDayCards({ stats }: { stats: ScheduleStats }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {stats.parentFreeStats.map((ps) => (
+        <div
+          key={ps.parentId}
+          className={`rounded-xl px-3 py-2.5 ${ps.parentId === "father" ? "bg-isi-tint text-isi" : "bg-aiti-tint text-aiti-ink"}`}
+        >
+          <div className="text-xs font-semibold">{ps.parentName} · vapaat</div>
+          <div className="font-heading text-lg font-bold leading-tight tabular-nums">
+            {ps.childFreeDays} pv
+            <span className="text-sm font-semibold opacity-80"> · {ps.childFreeWeekends} vkl</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ChildRows({ stats, parents }: { stats: ScheduleStats; parents: Array<{ id: ParentId; name: string }> }) {
+  const isi = parentName(parents, "father")
+  const aiti = parentName(parents, "mother")
+  return (
+    <ul className="flex flex-col gap-3.5">
+      {stats.childStats.map((child) => (
+        <li key={child.childName} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="font-semibold">{child.childName}</span>
+            <span className="text-xs tabular-nums">
+              <span className="text-isi font-semibold">{isi} {child.father} pv</span>
+              <span className="text-muted-foreground"> · </span>
+              <span className="text-aiti-ink font-semibold">{aiti} {child.mother} pv</span>
+            </span>
+          </div>
+          <SplitBar father={child.father} mother={child.mother} className="h-2" />
+          <div className="text-xs text-muted-foreground tabular-nums">
+            Ainoana lapsena: {isi} {child.soloFather} pv · {aiti} {child.soloMother} pv
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function rangeLabel(days: ScheduleDay[]) {
+  return days.length > 0
+    ? `${format(parseISO(days[0].date), "d.M.")} – ${format(parseISO(days[days.length - 1].date), "d.M.yyyy")}`
+    : ""
+}
+
+interface StatsProps {
   days: ScheduleDay[]
   parents: Array<{ id: ParentId; name: string }>
 }
 
-export function StatsPanel({ days, parents }: StatsPanelProps) {
-  const stats = useMemo(() => computeStats(days, parents), [days, parents])
-
-  // Counts above are scoped to exactly the currently displayed date range
-  const rangeLabel = days.length > 0
-    ? `${format(parseISO(days[0].date), "d.M.")} – ${format(parseISO(days[days.length - 1].date), "d.M.yyyy")}`
-    : ""
-
+// Desktop sidebar card. Counts are scoped to exactly the displayed date range.
+export function StatsCard({ days, parents }: StatsProps) {
+  const stats = useScheduleStats(days, parents)
   return (
-    <div className="border rounded-lg py-3 mt-4 bg-muted/30 text-sm">
-      {rangeLabel && (
-        <p className="text-muted-foreground text-xs px-3 pb-2">Yhteenveto: {rangeLabel}</p>
-      )}
-      <table className="w-full" style={{ tableLayout: "fixed" }}>
-        <colgroup>
-          <col style={{ width: "104px" }} />
-          {stats.childStats.map((child) => (
-            <col key={child.childName} />
-          ))}
-          <col className="max-sm:w-8 sm:w-40" />
-          <col className="max-sm:w-0" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th className="text-left font-medium px-3 pb-1" />
-            {stats.childStats.map((child) => (
-              <th key={child.childName} className="text-left font-medium px-1 pb-1 min-w-[72px] sm:min-w-[90px]">
-                {child.childName}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* Father row */}
-          <tr>
-            <td className="text-blue-700 font-medium px-3 py-1 align-top">
-              {stats.parentFreeStats.find((p) => p.parentId === "father")?.parentName ?? "Isä"}
-            </td>
-            {stats.childStats.map((child) => (
-              <td key={child.childName} className="px-1 py-1 align-top min-w-[72px] sm:min-w-[90px]">
-                <div>{child.father} pv</div>
-                <div className="text-xs text-muted-foreground">yksin {child.soloFather}</div>
-              </td>
-            ))}
-          </tr>
-          {/* Mother row */}
-          <tr>
-            <td className="text-rose-700 font-medium px-3 py-1 align-top">
-              {stats.parentFreeStats.find((p) => p.parentId === "mother")?.parentName ?? "Äiti"}
-            </td>
-            {stats.childStats.map((child) => (
-              <td key={child.childName} className="px-1 py-1 align-top min-w-[72px] sm:min-w-[90px]">
-                <div>{child.mother} pv</div>
-                <div className="text-xs text-muted-foreground">yksin {child.soloMother}</div>
-              </td>
-            ))}
-          </tr>
-          {/* Separator */}
-          <tr>
-            <td colSpan={stats.childStats.length + 3} className="py-1">
-              <div className="border-t" />
-            </td>
-          </tr>
-          {/* Vapaa rows */}
-          {stats.parentFreeStats.map((ps) => (
-            <tr key={ps.parentId}>
-              <td
-                colSpan={stats.childStats.length + 3}
-                className={`py-0.5 ${ps.parentId === "father" ? "text-blue-700" : "text-rose-700"}`}
-              >
-                {ps.parentName} {ps.childFreeDays} pv ({ps.childFreeWeekends} vkl)
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <section className="bg-background border rounded-2xl p-5 flex flex-col gap-4" aria-labelledby="stats-card-title">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 id="stats-card-title" className="font-heading text-base font-bold">Yhteenveto</h2>
+        <span className="text-xs text-muted-foreground tabular-nums">{rangeLabel(days)}</span>
+      </div>
+      <ChildRows stats={stats} parents={parents} />
+      <FreeDayCards stats={stats} />
+    </section>
+  )
+}
+
+// Mobile: panel that expands down from the sticky column header.
+export function MobileSummaryPanel({
+  days,
+  parents,
+  stats,
+  onClose,
+}: StatsProps & { stats: ScheduleStats; onClose: () => void }) {
+  return (
+    <div id="mobile-summary" className="flex flex-col gap-4 px-4 pt-3 pb-4 text-left font-normal">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-heading text-base font-bold">Yhteenveto</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{rangeLabel(days)}</span>
+      </div>
+      <ChildRows stats={stats} parents={parents} />
+      <FreeDayCards stats={stats} />
+      <button
+        type="button"
+        onClick={onClose}
+        className="h-11 rounded-xl border bg-background text-sm font-semibold hover:bg-muted"
+      >
+        Sulje
+      </button>
     </div>
   )
 }

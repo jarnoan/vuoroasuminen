@@ -1,17 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
+import { Check, Loader2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  mobileSheetClassName,
 } from "@/components/ui/dialog"
 import { publishSchedule, syncCalendars } from "@/actions/schedule"
 import type { ScheduleDay } from "@/lib/schedule/types"
@@ -39,13 +38,38 @@ function ProgressBar({ durationMs }: { durationMs: number }) {
   return (
     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
       <div
-        className="h-full bg-primary rounded-full"
+        className="h-full bg-isi rounded-full"
         style={{
           width,
           transition: `width ${durationMs}ms ease-out`,
         }}
       />
     </div>
+  )
+}
+
+function Step({ state, children }: { state: "done" | "active" | "pending"; children: ReactNode }) {
+  return (
+    <li className={`flex items-center gap-2.5 text-sm ${state === "pending" ? "text-muted-foreground" : ""}`}>
+      <span
+        className={`size-5 shrink-0 rounded-full inline-flex items-center justify-center ${
+          state === "done" ? "bg-isi text-isi-fg" : state === "active" ? "text-isi" : "border-2 border-border"
+        }`}
+        aria-hidden="true"
+      >
+        {state === "done" && <Check className="size-3" strokeWidth={3} />}
+        {state === "active" && <Loader2 className="size-4 animate-spin" />}
+      </span>
+      {children}
+    </li>
+  )
+}
+
+function CountBadge({ count, className = "" }: { count: number; className?: string }) {
+  return (
+    <span className={`min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center tabular-nums ${className}`}>
+      {count}
+    </span>
   )
 }
 
@@ -67,7 +91,7 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
   const lastDraftDate = draftDays[draftDays.length - 1]?.date
 
   const dateRangeLabel = firstDraftDate && lastDraftDate
-    ? `${format(parseISO(firstDraftDate), "d.M.")} \u2013 ${format(parseISO(lastDraftDate), "d.M.yyyy")}`
+    ? `${format(parseISO(firstDraftDate), "d.M.")} – ${format(parseISO(lastDraftDate), "d.M.yyyy")}`
     : ""
 
   // Snapshot taken when publishing starts. Once publishSchedule commits, realtime
@@ -122,50 +146,80 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
     }
   }
 
-  // Disabled when no draft entries exist (but never while a publish is in flight)
-  if (draftCount === 0 && !busy && !open) {
-    return (
-      <Button variant="outline" size="sm" disabled>
-        Julkaise
-      </Button>
-    )
-  }
+  const hasDrafts = draftCount > 0 || busy
 
   return (
-    <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next) }}>
-      <DialogTrigger render={<Button variant="default" size="sm" />}>
+    <>
+      {/* Desktop: toolbar button, greyed out without drafts */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={!hasDrafts}
+        className="max-sm:hidden h-11 rounded-xl px-4 inline-flex items-center gap-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:border disabled:cursor-not-allowed transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <Upload className="size-4" aria-hidden="true" />
         Julkaise
-      </DialogTrigger>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>Julkaise aikataulu</DialogTitle>
-          <DialogDescription>
-            Julkaise {shownCount} luonnosta ({shownLabel})?
-            Tämä lukitsee aikataulun ja synkronoi Google Kalenteriin.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
+        {draftCount > 0 && <CountBadge count={draftCount} className="bg-isi text-isi-fg" />}
+      </button>
+
+      {/* Mobile: small floating pill, only when there is something to publish */}
+      {hasDrafts && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={`Julkaise ${draftCount} luonnosta`}
+          className="sm:hidden fixed z-40 right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] h-12 rounded-full pl-4 pr-3 inline-flex items-center gap-2 text-sm font-semibold bg-primary text-primary-foreground shadow-lg shadow-black/20 active:scale-95 transition-transform"
+        >
+          <Upload className="size-4" aria-hidden="true" />
+          Julkaise
+          <CountBadge count={shownCount} className="bg-isi text-isi-fg" />
+        </button>
+      )}
+
+      <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next) }}>
+        <DialogContent showCloseButton={false} className={`gap-4 ${mobileSheetClassName}`}>
+          <div className="sm:hidden mx-auto -mt-2 mb-1 h-1 w-10 rounded-full bg-border" aria-hidden="true" />
+          <div className="flex flex-col gap-1.5">
+            <DialogTitle className="font-heading text-lg font-bold">
+              {busy ? "Julkaistaan…" : "Julkaise aikataulu"}
+            </DialogTitle>
+            <DialogDescription>
+              {shownCount} luonnosta · {shownLabel}
+            </DialogDescription>
+          </div>
+
           {busy ? (
-            <div className="w-full" role="status" aria-live="polite">
-              <p className="text-sm text-muted-foreground mb-2">
-                {phase === "publishing"
-                  ? "Julkaistaan…"
-                  : `Synkronoidaan ${shownCount} tapahtumaa Google Kalenteriin…`}
-              </p>
+            <div className="flex flex-col gap-4" role="status" aria-live="polite">
               <ProgressBar durationMs={estimatedSyncMs} />
+              <ol className="flex flex-col gap-2.5">
+                <Step state={phase === "publishing" ? "active" : "done"}>
+                  {phase === "publishing" ? "Julkaistaan merkintöjä…" : "Merkinnät julkaistu"}
+                </Step>
+                <Step state={phase === "syncing" ? "active" : "pending"}>
+                  Synkronoidaan {shownCount} tapahtumaa Google Kalenteriin…
+                </Step>
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                Jos synkronointi epäonnistuu, kalenterista puuttuvat merkinnät palautetaan luonnoksiksi, ja voit julkaista ne uudelleen.
+              </p>
             </div>
           ) : (
             <>
-              <DialogClose render={<Button variant="outline" />}>
-                Peruuta
-              </DialogClose>
-              <Button onClick={handlePublish}>
-                Vahvista
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Luonnokset lukitaan ja synkronoidaan molempien vanhempien Google Kalentereihin.
+              </p>
+              <div className="flex gap-2 sm:justify-end">
+                <DialogClose render={<Button variant="outline" className="h-11 rounded-xl px-4 max-sm:flex-1" />}>
+                  Peruuta
+                </DialogClose>
+                <Button onClick={handlePublish} className="h-11 rounded-xl px-4 max-sm:flex-1">
+                  Julkaise {shownCount}
+                </Button>
+              </div>
             </>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

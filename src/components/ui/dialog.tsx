@@ -146,7 +146,12 @@ function DialogDescription({
   )
 }
 
+// className for DialogContent: a centered dialog on desktop, a bottom sheet on phones.
+const mobileSheetClassName =
+  "max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:rounded-none max-sm:rounded-t-3xl max-sm:p-5 max-sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:max-h-[90dvh] max-sm:overflow-y-auto max-sm:data-open:slide-in-from-bottom max-sm:data-open:zoom-in-100 max-sm:data-closed:slide-out-to-bottom max-sm:data-closed:zoom-out-100 max-sm:duration-200 sm:max-w-md sm:rounded-2xl sm:p-6"
+
 export {
+  mobileSheetClassName,
   Dialog,
   DialogClose,
   DialogContent,

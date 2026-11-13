@@ -1,48 +1,100 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { fi as fiFormat } from "date-fns/locale"
 import { fi as fiPicker } from "react-day-picker/locale"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Dialog, DialogContent, DialogDescription, DialogTitle, mobileSheetClassName } from "@/components/ui/dialog"
 import { clearRange } from "@/actions/schedule"
 
-interface ClearPanelProps {
+function DateField({
+  label,
+  value,
+  onChange,
+  disabled,
+  min,
+}: {
+  label: string
+  value: Date | undefined
+  onChange: (d: Date) => void
+  disabled: boolean
+  min?: Date
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      {/* Native date input on phones, calendar popover on desktop */}
+      <input
+        type="date"
+        aria-label={label}
+        className="sm:hidden h-11 border rounded-xl px-3 text-sm bg-background"
+        min={min ? format(min, "yyyy-MM-dd") : undefined}
+        value={value ? format(value, "yyyy-MM-dd") : ""}
+        onChange={(e) => {
+          if (!e.target.value) return
+          onChange(parseISO(e.target.value))
+        }}
+        disabled={disabled}
+      />
+      <Popover>
+        <PopoverTrigger
+          aria-label={label}
+          disabled={disabled}
+          className="max-sm:hidden h-11 border rounded-xl px-3 bg-background inline-flex items-center gap-2 font-semibold hover:bg-muted aria-expanded:bg-muted"
+        >
+          <CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+          {value ? format(value, "EEEEEE d.M.yyyy", { locale: fiFormat }) : "Valitse päivä"}
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={value}
+            defaultMonth={value ?? min}
+            disabled={min ? { before: min } : undefined}
+            onSelect={(d) => {
+              if (!d) return
+              onChange(d)
+            }}
+            locale={fiPicker}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+interface ClearDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   childCount: number
   onCleared: () => void  // reload the currently displayed range
 }
 
-export function ClearPanel({ childCount, onCleared }: ClearPanelProps) {
-  const [isOpen, setIsOpen] = useState(false)
+// Dialog on desktop, bottom sheet on phones.
+export function ClearDialog({ open, onOpenChange, childCount, onCleared }: ClearDialogProps) {
   const [pickedStart, setPickedStart] = useState<Date | undefined>(undefined)
   const [pickedEnd, setPickedEnd] = useState<Date | undefined>(undefined)
   const [isPending, setIsPending] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Ref to the trigger button so we can return focus after collapse (UI-SPEC accessibility)
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const dayCount = useMemo(() => {
+    if (!pickedStart || !pickedEnd) return 0
+    return Math.max(differenceInCalendarDays(pickedEnd, pickedStart) + 1, 0)
+  }, [pickedStart, pickedEnd])
 
-  const previewLabel = useMemo(() => {
-    if (!pickedStart || !pickedEnd) return null
-    const days = differenceInCalendarDays(pickedEnd, pickedStart) + 1
-    if (days <= 0) return null
-    return `Tyhjennetään: ${days} päivää (${childCount} lasta)`
-  }, [pickedStart, pickedEnd, childCount])
-
-  function resetPanel() {
-    setIsOpen(false)
+  function close() {
+    onOpenChange(false)
     setPickedStart(undefined)
     setPickedEnd(undefined)
     setErrorMsg(null)
-    // Restore focus to the trigger button after collapse
-    queueMicrotask(() => triggerRef.current?.focus())
   }
 
   async function handleConfirm() {
-    if (!pickedStart || !pickedEnd) return
+    if (!pickedStart || !pickedEnd || dayCount === 0) return
     setIsPending(true)
     setErrorMsg(null)
     try {
@@ -55,7 +107,7 @@ export function ClearPanel({ childCount, onCleared }: ClearPanelProps) {
         return
       }
       // D-09: no navigation; reload the displayed range so cleared cells update immediately
-      resetPanel()
+      close()
       onCleared()
     } catch {
       setErrorMsg("Tyhjentäminen epäonnistui. Yritä uudelleen.")
@@ -64,141 +116,73 @@ export function ClearPanel({ childCount, onCleared }: ClearPanelProps) {
     }
   }
 
-  function handleCancel() {
-    if (isPending) return
-    resetPanel()
-  }
-
-  // ----- Collapsed state: trigger only -----
-  if (!isOpen) {
-    return (
-      <div className="px-4 pb-4">
-        <Button
-          ref={triggerRef}
-          variant="outline"
-          size="sm"
-          className="font-semibold"
-          onClick={() => setIsOpen(true)}
-        >
-          × Tyhjennä päiväväli
-        </Button>
-      </div>
-    )
-  }
-
-  // ----- Expanded state: inline panel -----
   return (
-    <div className="px-4 pb-4">
-      <div className="border rounded-lg p-3 bg-muted/30 text-sm space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-sm" htmlFor="clear-start-date">Alkaen:</label>
-          {/* Native date input — mobile only */}
-          <input
-            id="clear-start-date"
-            type="date"
-            className="sm:hidden border rounded-md px-2 py-1 text-sm"
-            value={pickedStart ? format(pickedStart, "yyyy-MM-dd") : ""}
-            onChange={(e) => {
-              if (!e.target.value) return
-              setPickedStart(parseISO(e.target.value))
+    <Dialog open={open} onOpenChange={(next) => { if (isPending) return; if (next) onOpenChange(true); else close() }}>
+      <DialogContent showCloseButton={false} className={`text-sm ${mobileSheetClassName}`}>
+        <div className="sm:hidden mx-auto -mt-2 h-1 w-10 rounded-full bg-border" aria-hidden="true" />
+        <div className="flex flex-col gap-1.5">
+          <DialogTitle className="font-heading text-lg font-bold">Tyhjennä päiväväli</DialogTitle>
+          <DialogDescription>
+            Poistaa valittujen päivien vanhempimerkinnät kaikilta lapsilta. Muutos on luonnos, kunnes julkaiset sen kalentereihin.
+          </DialogDescription>
+        </div>
+        <div className="flex gap-2">
+          <DateField
+            label="Alkaen"
+            value={pickedStart}
+            onChange={(d) => {
+              setPickedStart(d)
+              if (pickedEnd && pickedEnd < d) setPickedEnd(undefined)
             }}
             disabled={isPending}
           />
-          {/* Calendar Popover — desktop only */}
-          <Popover>
-            <PopoverTrigger
-              render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" disabled={isPending} />}
-            >
-              <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-              {pickedStart
-                ? format(pickedStart, "EEEEEE d.M.yyyy", { locale: fiFormat })
-                : "Valitse päivä"}
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={pickedStart}
-                onSelect={(d) => {
-                  if (!d) return
-                  setPickedStart(d)
-                }}
-                locale={fiPicker}
-              />
-            </PopoverContent>
-          </Popover>
+          <DateField label="Päättyen" value={pickedEnd} onChange={setPickedEnd} disabled={isPending} min={pickedStart} />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <label className="text-sm" htmlFor="clear-end-date">Päättyy:</label>
-          {/* Native date input — mobile only */}
-          <input
-            id="clear-end-date"
-            type="date"
-            className="sm:hidden border rounded-md px-2 py-1 text-sm"
-            value={pickedEnd ? format(pickedEnd, "yyyy-MM-dd") : ""}
-            onChange={(e) => {
-              if (!e.target.value) return
-              setPickedEnd(parseISO(e.target.value))
-            }}
-            disabled={isPending}
-          />
-          {/* Calendar Popover — desktop only */}
-          <Popover>
-            <PopoverTrigger
-              render={<Button variant="outline" size="sm" className="font-semibold hidden sm:flex" disabled={isPending} />}
-            >
-              <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-              {pickedEnd
-                ? format(pickedEnd, "EEEEEE d.M.yyyy", { locale: fiFormat })
-                : "Valitse päivä"}
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={pickedEnd}
-                onSelect={(d) => {
-                  if (!d) return
-                  setPickedEnd(d)
-                }}
-                locale={fiPicker}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {previewLabel && (
-          <p className="text-muted-foreground" aria-live="polite">
-            {previewLabel}
+        {dayCount > 0 && (
+          <p className="rounded-xl bg-destructive/10 text-destructive px-3 py-2.5 font-medium" aria-live="polite">
+            Tyhjennetään {dayCount} {dayCount === 1 ? "päivä" : "päivää"} ({childCount} lasta)
           </p>
         )}
 
-        <div className="flex gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="font-semibold"
-            onClick={handleConfirm}
-            disabled={isPending || !previewLabel}
-          >
-            {isPending ? "Tyhjennetään..." : "Vahvista"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-semibold"
-            onClick={handleCancel}
-            disabled={isPending}
-          >
-            Peruuta
-          </Button>
-        </div>
-
         {errorMsg && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-destructive" role="alert">
             {errorMsg}
           </p>
         )}
-      </div>
-    </div>
+
+        <div className="flex gap-2 sm:justify-end">
+          <Button variant="outline" className="h-11 rounded-xl px-4 max-sm:flex-1" onClick={close} disabled={isPending}>
+            Peruuta
+          </Button>
+          <Button
+            variant="destructive"
+            className="h-11 rounded-xl px-4 max-sm:flex-1 font-semibold"
+            onClick={handleConfirm}
+            disabled={isPending || dayCount === 0}
+          >
+            {isPending ? "Tyhjennetään…" : "Tyhjennä"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Desktop sidebar card.
+export function ClearCard({ onOpen }: { onOpen: () => void }) {
+  return (
+    <section className="bg-background border rounded-2xl p-5 flex flex-col gap-3 text-sm" aria-labelledby="clear-card-title">
+      <h2 id="clear-card-title" className="font-heading text-base font-bold">Tyhjennä päiväväli</h2>
+      <p className="text-muted-foreground">Poista kaikkien lasten merkinnät valitulta ajalta, esimerkiksi suunnitelman muuttuessa.</p>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="h-11 rounded-xl border-[1.5px] border-destructive/40 text-destructive font-semibold inline-flex items-center justify-center gap-2 hover:bg-destructive/5"
+      >
+        <Trash2 className="size-4" aria-hidden="true" />
+        Valitse päivät…
+      </button>
+    </section>
   )
 }
