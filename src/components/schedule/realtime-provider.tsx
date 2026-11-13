@@ -52,6 +52,22 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
 
     let channel: ReturnType<typeof supabase.channel> | null = null
     let cancelled = false
+    // Bumped on every (re)subscribe attempt; a stale async attempt bails out instead
+    // of racing a newer one (e.g. two quick hidden→visible transitions).
+    let generation = 0
+
+    // The browser Supabase client is shared, and supabase.channel(topic) returns an
+    // EXISTING channel for the same topic. A fixed topic therefore collides with a
+    // channel that is still subscribed (overlapping recovery, or a remounted provider
+    // whose old channel is still being removed) and .on() throws. Use a unique topic
+    // per subscription — postgres_changes filtering doesn't depend on the topic name.
+    const subscribe = () => {
+      if (channel) supabase.removeChannel(channel)
+      channel = supabase
+        .channel(`schedule-changes-${crypto.randomUUID()}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "schedule_entries" }, handlePayload)
+        .subscribe()
+    }
 
     // Named handler — used for both initial subscribe and recovery re-subscribe
     const handlePayload = (payload: { new: Record<string, unknown> }) => {
@@ -71,51 +87,38 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
     }
 
     // Initial subscribe
+    const initialGen = ++generation
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled) return
+      if (cancelled || initialGen !== generation) return
       if (!session?.access_token) return
       supabase.realtime.setAuth(session.access_token)
-      channel = supabase
-        .channel("schedule-changes")
-        .on("postgres_changes", { event: "*", schema: "public", table: "schedule_entries" }, handlePayload)
-        .subscribe()
+      subscribe()
     })
 
     // Recovery: on every hidden→visible transition, re-fetch + re-subscribe
     const handleVisibilityChange = async () => {
       if (document.hidden || cancelled) return  // only act on visible transition
+      const gen = ++generation
+      const isStale = () => cancelled || gen !== generation
 
       // Step 1: tear down dead/paused channel (await so old channel is gone before re-subscribing)
       if (channel) {
-        await supabase.removeChannel(channel)
+        const old = channel
         channel = null
+        await supabase.removeChannel(old)
       }
-      if (cancelled) return
+      if (isStale()) return
 
       // Step 2: re-fetch full schedule via Server Action
       const freshDays = await getScheduleDays(viewStart, viewEnd)
-      if (cancelled) return
+      if (isStale()) return
       onRefreshRef.current?.(freshDays)  // silent update — no toast/spinner (D-05)
 
       // Step 3: get fresh session token and re-subscribe
       const { data: { session } } = await supabase.auth.getSession()
-      if (cancelled || !session?.access_token) return
+      if (isStale() || !session?.access_token) return
       supabase.realtime.setAuth(session.access_token)
-
-      // Guard: check cancelled again right before creating the channel so we can
-      // clean up immediately if the component unmounted while we were awaiting.
-      if (cancelled) return
-      const newChannel = supabase
-        .channel("schedule-changes")
-        .on("postgres_changes", { event: "*", schema: "public", table: "schedule_entries" }, handlePayload)
-        .subscribe()
-
-      if (cancelled) {
-        // Component unmounted between the last await and here — clean up immediately
-        supabase.removeChannel(newChannel)
-        return
-      }
-      channel = newChannel
+      subscribe()
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange)
