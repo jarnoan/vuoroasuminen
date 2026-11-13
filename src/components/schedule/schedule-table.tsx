@@ -288,9 +288,12 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
         <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: "104px" }} />
-            {childNames.map(name => <col key={name} />)}
-            <col className="max-sm:w-8 sm:w-40" />
-            <col className="max-sm:w-0" />
+            {/* Mobile: child columns share the width. Desktop: fixed child columns,
+                and the notes column (3rd col on desktop, since the mobile pencil
+                cell is display:none) takes all remaining space. */}
+            {childNames.map(name => <col key={name} className="sm:w-32" />)}
+            <col className="max-sm:w-8" />
+            <col className="w-0" />
           </colgroup>
           <thead className="sticky top-0 z-10 bg-background">
             <tr>
