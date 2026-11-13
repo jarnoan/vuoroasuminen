@@ -1,7 +1,7 @@
 import { db } from "@/db"
 import { scheduleEntries, children, schedules, dayNotes } from "@/db/schema/domain"
-import { and, asc, eq, gte, lte, max } from "drizzle-orm"
-import { format, addDays, parseISO, startOfWeek, differenceInCalendarDays, isToday as isTodayFn } from "date-fns"
+import { and, asc, gte, isNotNull, lte, max, min } from "drizzle-orm"
+import { format, addDays, parseISO, startOfWeek, endOfWeek, differenceInCalendarDays, isToday as isTodayFn } from "date-fns"
 import { fi } from "date-fns/locale"
 import { getAppConfig } from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
@@ -109,23 +109,41 @@ export async function getNotesOverlapping(startStr: string, endStr: string): Pro
 
 // Returns the actual last day that has schedule entries in the DB.
 // Used by ExtendPanel so the extend base is the real data end, not the view window end.
+// Last assigned day of the schedule, snapped forward to that week's Sunday, so "add weeks"
+// always starts on a Monday. Cleared (blank) days at the tail don't count: extending
+// re-fills them. With nothing assigned at all, it's the day before the first stored day.
 export async function getScheduleEndDate(): Promise<string | null> {
-  const [row] = await db.select({ maxDay: max(scheduleEntries.day) }).from(scheduleEntries)
+  const lastAssigned = await getLastAssignedDay()
+  if (lastAssigned) return format(endOfWeek(parseISO(lastAssigned), { weekStartsOn: 1 }), "yyyy-MM-dd")
+  const [row] = await db.select({ minDay: min(scheduleEntries.day) }).from(scheduleEntries)
+  if (!row?.minDay) return null
+  return format(addDays(startOfWeek(parseISO(row.minDay), { weekStartsOn: 1 }), -1), "yyyy-MM-dd")
+}
+
+async function getLastAssignedDay(): Promise<string | null> {
+  const [row] = await db.select({ maxDay: max(scheduleEntries.day) })
+    .from(scheduleEntries)
+    .where(isNotNull(scheduleEntries.parentId))
   return row?.maxDay ?? null
 }
 
-// Returns the parent assigned on the Monday of the most recent existing week — used by
+// Returns the parent of the most recent assigned week (its first assigned day) — used by
 // ExtendPanel to default the new range's starting parent to the opposite one, continuing
 // the alternating pattern from whatever actually ended up in the DB (not the config formula,
 // since past weeks may have been edited manually and no longer strictly alternate).
 export async function getLastWeekStartParent(): Promise<ParentId | null> {
-  const [row] = await db.select({ maxDay: max(scheduleEntries.day) }).from(scheduleEntries)
-  if (!row?.maxDay) return null
+  const lastAssigned = await getLastAssignedDay()
+  if (!lastAssigned) return null
 
-  const monday = format(startOfWeek(parseISO(row.maxDay), { weekStartsOn: 1 }), "yyyy-MM-dd")
+  const monday = format(startOfWeek(parseISO(lastAssigned), { weekStartsOn: 1 }), "yyyy-MM-dd")
   const [entry] = await db.select({ parentId: scheduleEntries.parentId })
     .from(scheduleEntries)
-    .where(eq(scheduleEntries.day, monday))
+    .where(and(
+      gte(scheduleEntries.day, monday),
+      lte(scheduleEntries.day, lastAssigned),
+      isNotNull(scheduleEntries.parentId),
+    ))
+    .orderBy(asc(scheduleEntries.day))
     .limit(1)
 
   return (entry?.parentId as ParentId | null) ?? null

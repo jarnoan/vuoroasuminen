@@ -2,7 +2,7 @@
 
 import { db } from "@/db"
 import { scheduleEntries, schedules, children, dayNotes } from "@/db/schema/domain"
-import { and, eq, gte, lte } from "drizzle-orm"
+import { and, eq, gte, isNull, lte, sql } from "drizzle-orm"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { ParentId } from "@/config/app"
 import { getAppConfig } from "@/config/app"
@@ -225,8 +225,14 @@ export async function extendSchedule(input: {
     status: "draft" as const,
   }))
 
-  // --- Batch insert; unique index (childId, day) makes this idempotent ---
-  await db.insert(scheduleEntries).values(insertValues).onConflictDoNothing()
+  // --- Batch upsert on the unique index (childId, day) ---
+  // Days that already exist are only filled in when blank (cleared); assigned days are kept,
+  // so re-running the same extend is still idempotent.
+  await db.insert(scheduleEntries).values(insertValues).onConflictDoUpdate({
+    target: [scheduleEntries.childId, scheduleEntries.day],
+    set: { parentId: sql`excluded.parent_id`, status: "draft" },
+    setWhere: isNull(scheduleEntries.parentId),
+  })
 
   return { success: true, newStartDate }
 }

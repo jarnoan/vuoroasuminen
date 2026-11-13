@@ -93,7 +93,7 @@ function setUnauthorizedSession() {
 //
 // db.insert(schedules).values({}).returning() → [{ id: "fake-schedule-id" }]
 //
-// db.insert(scheduleEntries).values([...]).onConflictDoNothing() → undefined
+// db.insert(scheduleEntries).values([...]).onConflictDoUpdate() → undefined
 //
 // We capture the array passed to scheduleEntries.values() for boundary assertions.
 
@@ -115,7 +115,7 @@ function setupDbMocks() {
 
   // db.insert() is called twice:
   //   1st call: schedules — returns { returning: () => [{ id }] }
-  //   2nd call: scheduleEntries — captures values, returns { onConflictDoNothing: () => undefined }
+  //   2nd call: scheduleEntries — captures values, returns { onConflictDoUpdate: () => undefined }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockDb.insert.mockImplementation((): any => {
     insertCallCount++
@@ -132,7 +132,7 @@ function setupDbMocks() {
         values: vi.fn((vals: typeof capturedEntryValues) => {
           capturedEntryValues = vals
           return {
-            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+            onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
           }
         }),
       }
@@ -186,8 +186,8 @@ describe("extendSchedule", () => {
     expect(days[days.length - 1]).toBe("2026-08-30")
   })
 
-  // Test 3: overlapping range (onConflictDoNothing — no error, no exception)
-  it("Test 3 — calling again with same range returns success (onConflictDoNothing idempotency)", async () => {
+  // Test 3: overlapping range (upsert — no error, no exception)
+  it("Test 3 — calling again with same range returns success (upsert idempotency)", async () => {
     setAuthorizedSession()
 
     const r1 = await extendSchedule({ scheduleEndDate: "2026-06-07", weeks: 12 })
