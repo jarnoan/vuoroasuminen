@@ -28,9 +28,10 @@ function ProgressBar({ durationMs }: { durationMs: number }) {
   const [width, setWidth] = useState("0%")
 
   useEffect(() => {
-    // Trigger the CSS transition on next frame so it animates from 0 to 100
+    // Trigger the CSS transition on next frame. Stop short of 100% so the bar
+    // never looks finished while the sync (e.g. rate-limit retries) is still running.
     const raf = requestAnimationFrame(() => {
-      setWidth("100%")
+      setWidth("95%")
     })
     return () => cancelAnimationFrame(raf)
   }, [])
@@ -41,7 +42,7 @@ function ProgressBar({ durationMs }: { durationMs: number }) {
         className="h-full bg-primary rounded-full"
         style={{
           width,
-          transition: `width ${durationMs}ms linear`,
+          transition: `width ${durationMs}ms ease-out`,
         }}
       />
     </div>
@@ -69,10 +70,19 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
     ? `${format(parseISO(firstDraftDate), "d.M.")} \u2013 ${format(parseISO(lastDraftDate), "d.M.yyyy")}`
     : ""
 
+  // Snapshot taken when publishing starts. Once publishSchedule commits, realtime
+  // flips the cells to 'published' and the live draftCount drops to 0 — the dialog
+  // must keep showing the original numbers (and stay mounted) until sync finishes.
+  const [snapshot, setSnapshot] = useState<{ count: number; label: string } | null>(null)
+  const shownCount = snapshot?.count ?? draftCount
+  const shownLabel = snapshot?.label ?? dateRangeLabel
+  const busy = phase !== "idle"
+
   // estimate: inserts are paced at ~125ms combined across parents, plus 3s overhead, capped at 60s
-  const estimatedSyncMs = Math.min(draftCount * 125 + 3000, 60000)
+  const estimatedSyncMs = Math.min(shownCount * 125 + 3000, 60000)
 
   async function handlePublish() {
+    setSnapshot({ count: draftCount, label: dateRangeLabel })
     setPhase("publishing")
     try {
       const publishResult = await publishSchedule(viewStart, viewEnd)
@@ -108,11 +118,12 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
       toast.error("Julkaisu epäonnistui. Yritä uudelleen.")
     } finally {
       setPhase("idle")
+      setSnapshot(null)
     }
   }
 
-  // Disabled when no draft entries exist
-  if (draftCount === 0) {
+  // Disabled when no draft entries exist (but never while a publish is in flight)
+  if (draftCount === 0 && !busy && !open) {
     return (
       <Button variant="outline" size="sm" disabled>
         Julkaise
@@ -121,7 +132,7 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next) }}>
       <DialogTrigger render={<Button variant="default" size="sm" />}>
         Julkaise
       </DialogTrigger>
@@ -129,25 +140,27 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
         <DialogHeader>
           <DialogTitle>Julkaise aikataulu</DialogTitle>
           <DialogDescription>
-            Julkaise {draftCount} luonnosta ({dateRangeLabel})?
+            Julkaise {shownCount} luonnosta ({shownLabel})?
             Tämä lukitsee aikataulun ja synkronoi Google Kalenteriin.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          {phase === "syncing" ? (
-            <div className="w-full">
+          {busy ? (
+            <div className="w-full" role="status" aria-live="polite">
               <p className="text-sm text-muted-foreground mb-2">
-                Synkronoidaan {draftCount} tapahtumaa Google Kalenteriin…
+                {phase === "publishing"
+                  ? "Julkaistaan…"
+                  : `Synkronoidaan ${shownCount} tapahtumaa Google Kalenteriin…`}
               </p>
               <ProgressBar durationMs={estimatedSyncMs} />
             </div>
           ) : (
             <>
-              <DialogClose render={<Button variant="outline" disabled={phase === "publishing"} />}>
+              <DialogClose render={<Button variant="outline" />}>
                 Peruuta
               </DialogClose>
-              <Button onClick={handlePublish} disabled={phase !== "idle"}>
-                {phase === "publishing" ? "Julkaistaan..." : "Vahvista"}
+              <Button onClick={handlePublish}>
+                Vahvista
               </Button>
             </>
           )}
