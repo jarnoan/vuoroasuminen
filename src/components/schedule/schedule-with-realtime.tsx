@@ -2,8 +2,8 @@
 
 import React, { useRef, useCallback } from "react"
 import { ScheduleTable } from "./schedule-table"
-import { RealtimeProvider } from "./realtime-provider"
-import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
+import { RealtimeProvider, type NoteChange } from "./realtime-provider"
+import type { DateWindow, DayNote, ParentId, ScheduleDay } from "@/lib/schedule/types"
 
 type EntryUpdate = {
   id: string
@@ -11,12 +11,13 @@ type EntryUpdate = {
   day: string
   parentId: ParentId | null
   status: "draft" | "published"
-  notes: string | null
 }
 
 interface ScheduleWithRealtimeProps {
   days: ScheduleDay[]
   setDays: React.Dispatch<React.SetStateAction<ScheduleDay[]>>
+  notes: DayNote[]
+  setNotes: React.Dispatch<React.SetStateAction<DayNote[]>>
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
   viewStart?: string
@@ -26,22 +27,33 @@ interface ScheduleWithRealtimeProps {
   onAddWeeks?: () => void
 }
 
-export function ScheduleWithRealtime({ days, setDays, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
     realtimeRef.current?.(entry)
   }, [])
 
-  const handleRefresh = useCallback((days: ScheduleDay[]) => {
-    setDays(days)
-  }, [setDays])
+  const handleRefresh = useCallback((data: DateWindow) => {
+    setDays(data.days)
+    setNotes(data.notes)
+  }, [setDays, setNotes])
+
+  const handleNoteChange = useCallback((change: NoteChange) => {
+    if (change.type === "delete") {
+      setNotes(prev => prev.filter(n => n.id !== change.id))
+    } else {
+      setNotes(prev => [...prev.filter(n => n.id !== change.note.id), change.note])
+    }
+  }, [setNotes])
 
   return (
-    <RealtimeProvider onEntryChange={handleEntryChange} onRefresh={handleRefresh} viewStart={viewStart} viewEnd={viewEnd}>
+    <RealtimeProvider onEntryChange={handleEntryChange} onNoteChange={handleNoteChange} onRefresh={handleRefresh} viewStart={viewStart} viewEnd={viewEnd}>
       <ScheduleTable
         days={days}
         setDays={setDays}
+        notes={notes}
+        setNotes={setNotes}
         realtimeRef={realtimeRef}
         publishRef={publishRef}
         parents={parents}

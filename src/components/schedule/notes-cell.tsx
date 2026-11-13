@@ -3,14 +3,19 @@
 import { useState, useEffect, useRef } from "react"
 
 interface NotesCellProps {
-  entryId: string | null
   value: string
-  onSave: (entryId: string, notes: string) => void
+  // Called on blur when the text changed (trimmed; "" means the note was cleared)
+  onCommit: (text: string) => void
+  placeholder?: string
+  ariaLabel?: string
+  className?: string
 }
 
-export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
+// Inline single-day note input (desktop notes column)
+export function NotesCell({ value, onCommit, placeholder = "Lisää muistiinpano…", ariaLabel, className = "" }: NotesCellProps) {
   const [localValue, setLocalValue] = useState(value)
   const isFocusedRef = useRef(false)
+  const cancelRef = useRef(false)
 
   // Sync localValue when value changes from realtime updates,
   // but only when the input is not focused (to avoid overwriting active edits)
@@ -20,27 +25,33 @@ export function NotesCell({ entryId, value, onSave }: NotesCellProps) {
     }
   }, [value])
 
-  function handleFocus() {
-    isFocusedRef.current = true
-  }
-
   function handleBlur() {
     isFocusedRef.current = false
-    if (entryId && localValue !== value) {
-      onSave(entryId, localValue)
+    if (cancelRef.current) {
+      cancelRef.current = false
+      setLocalValue(value)
+      return
     }
+    const next = localValue.trim()
+    if (next !== value.trim()) onCommit(next)
+    else if (localValue !== value) setLocalValue(value)
   }
 
   return (
     <input
       type="text"
       value={localValue}
+      maxLength={500}
       onChange={(e) => setLocalValue(e.target.value)}
-      onFocus={handleFocus}
+      onFocus={() => { isFocusedRef.current = true }}
       onBlur={handleBlur}
-      placeholder="Lisää muistiinpano…"
-      disabled={entryId === null}
-      className="w-full h-8 rounded-lg border border-transparent bg-transparent px-2.5 text-sm placeholder:text-muted-foreground/60 hover:bg-muted/60 focus:bg-background focus:border-input focus:outline-none focus:ring-3 focus:ring-ring/30 max-sm:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur()
+        if (e.key === "Escape") { cancelRef.current = true; e.currentTarget.blur() }
+      }}
+      placeholder={placeholder}
+      aria-label={ariaLabel ?? placeholder}
+      className={`w-full h-8 rounded-lg border border-transparent bg-transparent px-2.5 text-sm placeholder:text-muted-foreground/60 hover:bg-muted/60 focus:bg-background focus:border-input focus:outline-none focus:ring-3 focus:ring-ring/30 ${className}`}
     />
   )
 }

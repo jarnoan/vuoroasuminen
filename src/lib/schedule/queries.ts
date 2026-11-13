@@ -1,11 +1,11 @@
 import { db } from "@/db"
-import { scheduleEntries, children, schedules } from "@/db/schema/domain"
-import { and, eq, gte, lte, max } from "drizzle-orm"
+import { scheduleEntries, children, schedules, dayNotes } from "@/db/schema/domain"
+import { and, asc, eq, gte, lte, max } from "drizzle-orm"
 import { format, addDays, parseISO, startOfWeek, differenceInCalendarDays, isToday as isTodayFn } from "date-fns"
 import { fi } from "date-fns/locale"
 import { getAppConfig } from "@/config/app"
 import { generateDefaultEntries, getWindowBounds } from "./generate-default"
-import type { ScheduleDay, DateWindow, ScheduleCell, ParentId } from "./types"
+import type { ScheduleDay, DateWindow, ScheduleCell, ParentId, DayNote } from "./types"
 
 export async function getScheduleWindow(startDate?: string, endDate?: string): Promise<DateWindow> {
   const config = await getAppConfig()
@@ -67,7 +67,6 @@ export async function getScheduleWindow(startDate?: string, endDate?: string): P
       current = addDays(current, 1)
       continue
     }
-    const firstEntry = dayEntries.values().next().value
 
     const cells: ScheduleCell[] = orderedChildren.map(child => {
       const entry = dayEntries?.get(child.id)
@@ -86,14 +85,26 @@ export async function getScheduleWindow(startDate?: string, endDate?: string): P
       isToday: isTodayFn(current),
       isWeekStart: current.getDay() === 1,  // Monday
       cells,
-      notes: firstEntry?.notes ?? "",
-      notesEntryId: firstEntry?.id ?? null,
     })
 
     current = addDays(current, 1)
   }
 
-  return { startDate: startStr, endDate: endStr, days }
+  const notes = await getNotesOverlapping(startStr, endStr)
+  return { startDate: startStr, endDate: endStr, days, notes }
+}
+
+// Notes whose range overlaps [startStr, endStr] (both inclusive ISO dates)
+export async function getNotesOverlapping(startStr: string, endStr: string): Promise<DayNote[]> {
+  const rows = await db.select({
+    id: dayNotes.id,
+    startDay: dayNotes.startDay,
+    endDay: dayNotes.endDay,
+    text: dayNotes.text,
+  }).from(dayNotes)
+    .where(and(lte(dayNotes.startDay, endStr), gte(dayNotes.endDay, startStr)))
+    .orderBy(asc(dayNotes.startDay), asc(dayNotes.createdAt))
+  return rows
 }
 
 // Returns the actual last day that has schedule entries in the DB.

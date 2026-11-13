@@ -25,6 +25,16 @@
   --color-today-badge: var(--today-badge);
   --color-today-badge-fg: var(--today-badge-fg);
   --color-page: var(--page);
+  /* Multi-day note tints, one per lane; the rail/block and the chip share the tint */
+  --color-note-1: var(--note-1);
+  --color-note-1-ink: var(--note-1-ink);
+  --color-note-1-meta: var(--note-1-meta);
+  --color-note-2: var(--note-2);
+  --color-note-2-ink: var(--note-2-ink);
+  --color-note-2-meta: var(--note-2-meta);
+  --color-note-3: var(--note-3);
+  --color-note-3-ink: var(--note-3-ink);
+  --color-note-3-meta: var(--note-3-meta);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -79,6 +89,15 @@
   --today: #fff8e1;
   --today-badge: #ffe7a3;
   --today-badge-fg: #6b4e00;
+  --note-1: #dcd2fa;
+  --note-1-ink: #2e1f6b;
+  --note-1-meta: #5232b8;
+  --note-2: #c9ece5;
+  --note-2-ink: #0e4a43;
+  --note-2-meta: #11665c;
+  --note-3: #fbe3b5;
+  --note-3-ink: #5a3a00;
+  --note-3-meta: #7a5200;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);

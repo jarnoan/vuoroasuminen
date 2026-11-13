@@ -1,13 +1,19 @@
 "use client"
 
-import React, { useEffect, useCallback, useState, useRef } from "react"
+import React, { useEffect, useCallback, useMemo, useState, useRef } from "react"
 import { ChevronDown, Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { getISOWeek } from "date-fns"
-import { toggleCell, saveNotes, clearCell } from "@/actions/schedule"
-import type { ScheduleDay, ParentId } from "@/lib/schedule/types"
+import { toggleCell, clearCell } from "@/actions/schedule"
+import type { DayNote, ScheduleDay, ParentId } from "@/lib/schedule/types"
+import { layoutNotes } from "@/lib/schedule/notes"
 import { ScheduleCell } from "./schedule-cell"
-import { NotesCell } from "./notes-cell"
+import { useNoteActions, type SetNotes } from "./use-note-actions"
+import { NoteEditor, type NoteEditorTarget } from "./note-editor"
+import {
+  DesktopDayNotes, DesktopNotesContinuation, MobileNoteChips, MobileRails,
+  chipSlotsFor, continuesFromPrevDay, useNoteDrag, type NoteHandlers,
+} from "./day-notes"
 import { computeZoomVars } from "./row-zoom"
 import { usePinchZoom } from "./use-pinch-zoom"
 import { MobileSummaryPanel, SplitBar, parentName, useScheduleStats } from "./stats-panel"
@@ -18,12 +24,13 @@ type RealtimeEntry = {
   day: string
   parentId: ParentId | null
   status: "draft" | "published"
-  notes: string | null
 }
 
 interface ScheduleTableProps {
   days: ScheduleDay[]
   setDays: React.Dispatch<React.SetStateAction<ScheduleDay[]>>
+  notes: DayNote[]
+  setNotes: SetNotes
   realtimeRef?: React.RefObject<((entry: RealtimeEntry) => void) | null>
   publishRef?: React.RefObject<(() => void) | null>
   parents: Array<{ id: ParentId; name: string }>
@@ -32,7 +39,7 @@ interface ScheduleTableProps {
   onAddWeeks?: () => void  // phones: end-of-schedule "Lisää viikkoja" button
 }
 
-export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks }: ScheduleTableProps) {
   const stats = useScheduleStats(days, parents)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -42,7 +49,6 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
   const handleRealtimeEntry = useCallback((entry: RealtimeEntry) => {
     setDays(prev => prev.map(day => {
       if (day.date !== entry.day) return day
-      const isNotesEntry = day.notesEntryId === entry.id
       return {
         ...day,
         cells: day.cells.map(cell =>
@@ -51,9 +57,6 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
             ? { ...cell, entryId: entry.id, parentId: entry.parentId, status: entry.status }
             : cell
         ),
-        // Only update notes when this realtime event is for the notes-bearing entry
-        notes: isNotesEntry ? (entry.notes ?? "") : day.notes,
-        notesEntryId: isNotesEntry ? entry.id : day.notesEntryId,
       }
     }))
   }, [])
@@ -100,14 +103,21 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
     }
   }, [])
 
-  const [notesOpenDates, setNotesOpenDates] = useState<Set<string>>(new Set())
-  const prevDaysLengthRef = useRef(days.length)
-  useEffect(() => {
-    if (days.length !== prevDaysLengthRef.current) {
-      setNotesOpenDates(new Set())
-      prevDaysLengthRef.current = days.length
-    }
-  }, [days.length])
+  // Multi-day notes: optimistic actions, drag-to-extend and lane layout
+  const noteActions = useNoteActions(setNotes)
+  const { displayNotes, startDrag, nudge, draggingId } = useNoteDrag(notes, noteActions.update)
+  const layout = useMemo(() => layoutNotes(displayNotes, days.map(d => d.date)), [displayNotes, days])
+  const [editor, setEditor] = useState<NoteEditorTarget | null>(null)
+  const noteHandlers: NoteHandlers = {
+    open: (note) => setEditor({ note }),
+    add: (date) => setEditor({ newOn: date }),
+    create: noteActions.create,
+    update: noteActions.update,
+    remove: noteActions.remove,
+    startDrag,
+    nudge,
+    draggingId,
+  }
 
   async function handleToggle(entryId: string, newParentId: ParentId) {
     // Capture prior state before optimistic update
@@ -256,33 +266,6 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
     }
   }
 
-  async function handleNoteSave(entryId: string, notes: string) {
-    // Capture prior value before optimistic update
-    let priorNotes = ""
-    for (const day of days) {
-      if (day.notesEntryId === entryId) { priorNotes = day.notes; break }
-    }
-
-    setDays((prev) =>
-      prev.map((day) =>
-        day.notesEntryId === entryId ? { ...day, notes } : day
-      )
-    )
-    try {
-      await saveNotes(entryId, notes)
-    } catch {
-      // Only revert if the local state still matches what we optimistically set
-      setDays((prev) =>
-        prev.map((day) =>
-          day.notesEntryId === entryId && day.notes === notes
-            ? { ...day, notes: priorNotes }
-            : day
-        )
-      )
-      toast.error("Muistiinpanon tallennus epäonnistui.")
-    }
-  }
-
   // Derive column headers from first day's cells
   const childNames = days[0]?.cells.map((c) => c.childName) ?? []
   const colCount = Math.max(childNames.length + 3, 1)
@@ -319,7 +302,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
       <div ref={wrapperRef} style={{ ...computeZoomVars(zoom), touchAction: "pan-y" }}>
         <table className="w-full border-collapse" style={{ tableLayout: "fixed" }}>
           <colgroup>
-            <col className="max-sm:w-[84px] sm:w-[150px]" />
+            <col className="max-sm:w-[92px] sm:w-[150px]" />
             {/* Mobile: child columns share the width. Desktop: fixed child columns,
                 and the notes column (3rd col on desktop, since the mobile pencil
                 cell is display:none) takes all remaining space. */}
@@ -377,20 +360,30 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
             )}
           </thead>
           <tbody>
-            {days.map((day) => {
+            {days.map((day, dayIndex) => {
               const [weekday, date] = splitDayLabel(day.dayLabel)
-              const hasNoteRow = Boolean(day.notes) || notesOpenDates.has(day.date)
+              const isWindowStart = dayIndex === 0
+              const slots = layout.byDate.get(day.date) ?? []
+              const laneCount = layout.laneCount.get(day.date) ?? 0
+              const chips = chipSlotsFor(slots, isWindowStart)
+              const hasNoteRow = chips.length > 0
               const rowBg = day.isToday ? "bg-today" : "bg-background"
+              const rowPad = { paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }
               return (
               <React.Fragment key={day.date}>
                 {day.isWeekStart && (
                   <tr>
                     <td
-                      colSpan={colCount}
-                      className="pl-4 pb-1.5 font-heading text-sm font-bold"
+                      colSpan={childNames.length + 1}
+                      className="relative pl-4 pb-1.5 font-heading text-sm font-bold"
                       style={{ paddingTop: "var(--week-pt)" }}
                     >
-                      Viikko {getISOWeek(new Date(day.date))}
+                      {!isWindowStart && <MobileRails slots={slots.filter(continuesFromPrevDay)} left={92} />}
+                      <span className="relative bg-background pr-1">Viikko {getISOWeek(new Date(day.date))}</span>
+                    </td>
+                    <td className="sm:hidden" />
+                    <td className="max-sm:hidden p-0 h-px">
+                      {!isWindowStart && <DesktopNotesContinuation slots={slots} laneCount={laneCount} />}
                     </td>
                   </tr>
                 )}
@@ -398,17 +391,24 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                   data-date={day.date}
                   data-today={day.isToday ? "true" : undefined}
                   className={[
-                    "scroll-mt-14",
+                    "scroll-mt-14 group/row",
                     day.isToday ? "bg-today" : "",
                     hasNoteRow ? "max-sm:[&>td]:pb-0" : "",
                   ].filter(Boolean).join(" ")}
                 >
                   <td
-                    className={`pl-3 pr-1 sm:pl-4 sm:pr-2 text-sm whitespace-nowrap sticky left-0 ${rowBg}`}
+                    className={`pl-2 pr-1 sm:pl-4 sm:pr-2 text-sm whitespace-nowrap sticky left-0 ${rowBg}`}
                     style={{ paddingTop: "var(--date-py)", paddingBottom: "var(--date-py)" }}
                   >
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className={`w-[1.6em] ${day.isToday ? "font-semibold" : "text-muted-foreground"}`}>{weekday}</span>
+                    <MobileRails
+                      slots={slots}
+                      edges={(slot) => ({
+                        top: slot.part === "start" ? "var(--row-py)" : 0,
+                        bottom: slot.part === "end" && !hasNoteRow ? "var(--row-py)" : 0,
+                      })}
+                    />
+                    <span className="inline-flex items-center gap-1 sm:gap-1.5">
+                      <span className={`w-[1.4em] sm:w-[1.6em] ${day.isToday ? "font-semibold" : "text-muted-foreground"}`}>{weekday}</span>
                       <span className="font-semibold tabular-nums">{date}</span>
                       {day.isToday && (
                         <span className="max-sm:hidden rounded-full bg-today-badge text-today-badge-fg px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
@@ -418,7 +418,7 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                     </span>
                   </td>
                   {day.cells.map((cell) => (
-                    <td key={cell.childId} className="px-1" style={{ paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
+                    <td key={cell.childId} className="px-1" style={rowPad}>
                       {cell.entryId && cell.parentId ? (
                         <ScheduleCell
                           entryId={cell.entryId}
@@ -443,45 +443,35 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
                       )}
                     </td>
                   ))}
-                  <td className="px-1 max-sm:table-cell sm:hidden text-center" style={{ paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
-                    {!hasNoteRow ? (
-                      <button
-                        type="button"
-                        onClick={() => setNotesOpenDates(prev => new Set(prev).add(day.date))}
-                        aria-label={`Lisää muistiinpano — ${day.dayLabel}`}
-                        className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted"
-                        style={{ touchAction: "manipulation" }}
-                      >
-                        <Pencil className="size-3.5" />
-                      </button>
-                    ) : null}
+                  <td className="px-1 max-sm:table-cell sm:hidden text-center" style={rowPad}>
+                    <button
+                      type="button"
+                      onClick={() => setEditor({ newOn: day.date })}
+                      aria-label={`Lisää muistiinpano — ${day.dayLabel}`}
+                      className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted"
+                      style={{ touchAction: "manipulation" }}
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
                   </td>
-                  <td className="px-2 py-1 max-sm:hidden">
-                    <NotesCell
-                      entryId={day.notesEntryId}
-                      value={day.notes}
-                      onSave={handleNoteSave}
+                  <td className="max-sm:hidden p-0 h-px">
+                    <DesktopDayNotes
+                      date={day.date}
+                      dayLabel={day.dayLabel}
+                      slots={slots}
+                      laneCount={laneCount}
+                      isWindowStart={isWindowStart}
+                      handlers={noteHandlers}
                     />
                   </td>
                 </tr>
                 {hasNoteRow && (
                   <tr className={`max-sm:table-row sm:hidden ${day.isToday ? "bg-today" : ""}`}>
-                    <td className={`sticky left-0 pt-0 pb-1.5 ${rowBg}`} />
-                    <td colSpan={colCount - 1} className="pt-0.5 pb-1.5 pr-2">
-                      <NotesCell
-                        entryId={day.notesEntryId}
-                        value={day.notes}
-                        onSave={(entryId, notes) => {
-                          handleNoteSave(entryId, notes)
-                          if (!notes) {
-                            setNotesOpenDates(prev => {
-                              const next = new Set(prev)
-                              next.delete(day.date)
-                              return next
-                            })
-                          }
-                        }}
-                      />
+                    <td className={`sticky left-0 p-0 ${rowBg}`}>
+                      <MobileRails slots={slots.filter(s => s.part === "start" || s.part === "mid")} />
+                    </td>
+                    <td colSpan={colCount - 1} className="pt-0.5 pb-3 pr-2 pl-1">
+                      <MobileNoteChips slots={chips} onOpen={(note) => setEditor({ note })} />
                     </td>
                   </tr>
                 )}
@@ -504,6 +494,13 @@ export function ScheduleTable({ days, setDays, realtimeRef, publishRef, parents,
           </button>
         </div>
       )}
+
+      <NoteEditor
+        target={editor}
+        onClose={() => setEditor(null)}
+        onSave={(input, existing) => existing ? noteActions.update(existing.id, input) : noteActions.create(input)}
+        onDelete={(note) => noteActions.remove(note.id)}
+      />
     </div>
   )
 }

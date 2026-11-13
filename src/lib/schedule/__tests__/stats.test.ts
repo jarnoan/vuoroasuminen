@@ -24,8 +24,6 @@ function makeDay(date: string, assignments: Record<string, ParentId>): ScheduleD
     isToday: false,
     isWeekStart: false,
     cells,
-    notes: "",
-    notesEntryId: null,
   }
 }
 
@@ -121,8 +119,6 @@ describe("computeStats", () => {
         dayLabel: "Mon 6 Apr",
         isToday: false,
         isWeekStart: true,
-        notes: "",
-        notesEntryId: null,
         cells: [
           { entryId: "1", childId: "emma", childName: "Emma", parentId: "father", status: "draft" },
           { entryId: "2", childId: "olivia", childName: "Olivia", parentId: "mother", status: "published" },

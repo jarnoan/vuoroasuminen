@@ -12,7 +12,7 @@ import { MobileActionsMenu } from "./mobile-actions-menu"
 import { OwnerWarningBanner } from "@/components/owner-warning-banner"
 import { toast } from "sonner"
 import { getScheduleView } from "@/actions/schedule"
-import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
+import type { DateWindow, DayNote, ScheduleDay, ParentId } from "@/lib/schedule/types"
 import {
   MIN_ZOOM,
   MAX_ZOOM,
@@ -49,6 +49,7 @@ export function DashboardShell({
   const [view, setView] = useState<{ viewStart?: string; viewEnd?: string }>({})
   const [bounds, setBounds] = useState({ startDate: initialData.startDate, endDate: initialData.endDate })
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
+  const [notes, setNotes] = useState<DayNote[]>(initialData.notes)
   const [loading, setLoading] = useState(false)
   const [extendOpen, setExtendOpen] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
@@ -64,6 +65,7 @@ export function DashboardShell({
       setView({ viewStart: result.viewStart, viewEnd: result.viewEnd })
       setBounds({ startDate: result.window.startDate, endDate: result.window.endDate })
       setDays(result.window.days)
+      setNotes(result.window.notes)
     } catch {
       if (seq === loadSeqRef.current) toast.error("Aikataulun lataaminen epäonnistui. Yritä uudelleen.")
     } finally {
@@ -152,7 +154,7 @@ export function DashboardShell({
           >
             {/* Keyed by the loaded window: remounts on range change so the realtime
                 subscription uses the new range and the table re-scrolls to today. */}
-            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} />
+            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} notes={notes} setNotes={setNotes} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} />
           </div>
           <aside className="max-sm:hidden min-w-0 flex flex-col gap-4" style={{ flex: "1 1 320px" }}>
             <StatsCard days={days} parents={parents} />

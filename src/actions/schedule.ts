@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db"
-import { scheduleEntries, schedules, children } from "@/db/schema/domain"
+import { scheduleEntries, schedules, children, dayNotes } from "@/db/schema/domain"
 import { and, eq, gte, lte } from "drizzle-orm"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { ParentId } from "@/config/app"
@@ -11,7 +11,8 @@ import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCa
 import { syncCalendarsAfterPublish, revertUnsyncedEntriesToDraft } from "@/lib/gcal/sync"
 import type { SyncResult } from "@/lib/gcal/sync"
 import { getScheduleWindow } from "@/lib/schedule/queries"
-import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
+import type { DateWindow, DayNote } from "@/lib/schedule/types"
+import { validateNoteInput, type NoteInput } from "@/lib/schedule/notes"
 import { validateViewStart, validateViewEnd } from "@/lib/schedule/view-range"
 
 const VALID_PARENT_IDS: ParentId[] = ["father", "mother"]
@@ -45,16 +46,35 @@ export async function toggleCell(entryId: string, newParentId: ParentId) {
   return { success: true }
 }
 
-export async function saveNotes(entryId: string, notes: string) {
+type NoteResult = { success: true; note: DayNote } | { success: false; error: string }
+
+export async function createNote(input: NoteInput): Promise<NoteResult> {
   await requireAuthorizedParent()
+  const checked = validateNoteInput(input)
+  if (!checked.ok) return { success: false, error: checked.error }
+  const [row] = await db.insert(dayNotes).values(checked.value).returning({
+    id: dayNotes.id, startDay: dayNotes.startDay, endDay: dayNotes.endDay, text: dayNotes.text,
+  })
+  return { success: true, note: row }
+}
 
-  if (typeof notes !== "string") throw new Error("Invalid notes")
-  if (notes.length > 500) throw new Error("Notes too long (max 500 characters)")
+export async function updateNote(id: string, input: NoteInput): Promise<NoteResult> {
+  await requireAuthorizedParent()
+  if (!id || typeof id !== "string") return { success: false, error: "Muistiinpanoa ei löydy" }
+  const checked = validateNoteInput(input)
+  if (!checked.ok) return { success: false, error: checked.error }
+  const [row] = await db.update(dayNotes)
+    .set({ ...checked.value, updatedAt: new Date() })
+    .where(eq(dayNotes.id, id))
+    .returning({ id: dayNotes.id, startDay: dayNotes.startDay, endDay: dayNotes.endDay, text: dayNotes.text })
+  if (!row) return { success: false, error: "Muistiinpanoa ei löydy — se on ehkä poistettu" }
+  return { success: true, note: row }
+}
 
-  await db.update(scheduleEntries)
-    .set({ notes })
-    .where(eq(scheduleEntries.id, entryId))
-
+export async function deleteNote(id: string): Promise<{ success: true } | { success: false; error: string }> {
+  await requireAuthorizedParent()
+  if (!id || typeof id !== "string") return { success: false, error: "Muistiinpanoa ei löydy" }
+  await db.delete(dayNotes).where(eq(dayNotes.id, id))
   return { success: true }
 }
 
@@ -263,10 +283,10 @@ export async function clearRange(input: {
   return { success: true, clearedCount: result.length }
 }
 
-export async function getScheduleDays(viewStart?: string, viewEnd?: string): Promise<ScheduleDay[]> {
+// Full refresh of the displayed window (days and notes) — used by realtime recovery
+export async function getScheduleData(viewStart?: string, viewEnd?: string): Promise<DateWindow> {
   await requireAuthorizedParent()
-  const result = await getScheduleWindow(viewStart, viewEnd)
-  return result.days
+  return getScheduleWindow(viewStart, viewEnd)
 }
 
 /**

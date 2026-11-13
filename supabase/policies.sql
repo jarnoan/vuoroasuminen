@@ -186,3 +186,9 @@ ALTER TABLE public.invite_tokens ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "user can select own invite tokens"
   ON public.invite_tokens FOR SELECT TO authenticated
   USING ((auth.jwt() ->> 'email') = created_by);
+
+-- =====================================================================
+-- Multi-day notes: day_notes (run after `npm run db:push` creates the table)
+-- =====================================================================
+
+I 

@@ -1,6 +1,6 @@
 import "../env" // must be first — loads .env.local before db pool initializes
 import { db } from "./index"
-import { gcalEvents, scheduleEntries, schedules, children } from "./schema/domain"
+import { gcalEvents, scheduleEntries, schedules, children, dayNotes } from "./schema/domain"
 import { getAppConfig } from "../config/app"
 
 /**
@@ -22,6 +22,9 @@ async function reset() {
 
   await db.delete(scheduleEntries)
   console.log("  ✓ schedule_entries cleared")
+
+  await db.delete(dayNotes)
+  console.log("  ✓ day_notes cleared")
 
   await db.delete(schedules)
   console.log("  ✓ schedules cleared")

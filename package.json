@@ -11,7 +11,8 @@
     "db:generate": "npx drizzle-kit generate",
     "db:studio": "npx drizzle-kit studio",
     "db:seed": "npx tsx src/db/seed.ts",
-    "db:reset": "npx tsx src/db/reset.ts"
+    "db:reset": "npx tsx src/db/reset.ts",
+    "db:migrate-notes": "npx tsx src/db/migrate-day-notes.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

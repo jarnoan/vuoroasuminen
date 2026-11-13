@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react"
 import { createBrowserClient } from "@/lib/supabase/client"
-import { getScheduleDays } from "@/actions/schedule"
-import type { ParentId, ScheduleDay } from "@/lib/schedule/types"
+import { getScheduleData } from "@/actions/schedule"
+import type { DateWindow, DayNote, ParentId } from "@/lib/schedule/types"
 
 const VALID_PARENT_IDS = ["father", "mother"] as const
 const VALID_STATUSES = ["draft", "published"] as const
@@ -15,9 +15,10 @@ interface RealtimePayload {
     day: string
     parent_id: string | null   // null when cell is cleared
     status: string
-    notes: string | null
   }
 }
+
+export type NoteChange = { type: "upsert"; note: DayNote } | { type: "delete"; id: string }
 
 interface RealtimeProviderProps {
   children: React.ReactNode
@@ -27,16 +28,19 @@ interface RealtimeProviderProps {
     day: string
     parentId: ParentId | null
     status: "draft" | "published"
-    notes: string | null
   }) => void
-  onRefresh?: (days: ScheduleDay[]) => void
+  onNoteChange: (change: NoteChange) => void
+  onRefresh?: (data: DateWindow) => void
   viewStart?: string
   viewEnd?: string
 }
 
-export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart, viewEnd }: RealtimeProviderProps) {
+export function RealtimeProvider({ children, onEntryChange, onNoteChange, onRefresh, viewStart, viewEnd }: RealtimeProviderProps) {
   const onEntryChangeRef = useRef(onEntryChange)
   onEntryChangeRef.current = onEntryChange
+
+  const onNoteChangeRef = useRef(onNoteChange)
+  onNoteChangeRef.current = onNoteChange
 
   const onRefreshRef = useRef(onRefresh)
   onRefreshRef.current = onRefresh
@@ -66,6 +70,7 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
       channel = supabase
         .channel(`schedule-changes-${crypto.randomUUID()}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "schedule_entries" }, handlePayload)
+        .on("postgres_changes", { event: "*", schema: "public", table: "day_notes" }, handleNotePayload)
         .subscribe()
     }
 
@@ -82,7 +87,21 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
         day: row.day,
         parentId: row.parent_id as ParentId | null,
         status: row.status as "draft" | "published",
-        notes: row.notes,
+      })
+    }
+
+    const handleNotePayload = (payload: { eventType: string; new: Record<string, unknown>; old: Record<string, unknown> }) => {
+      if (payload.eventType === "DELETE") {
+        const id = payload.old?.id
+        if (typeof id === "string") onNoteChangeRef.current({ type: "delete", id })
+        return
+      }
+      const row = payload.new
+      if (!row || typeof row.id !== "string" || typeof row.start_day !== "string"
+        || typeof row.end_day !== "string" || typeof row.text !== "string") return
+      onNoteChangeRef.current({
+        type: "upsert",
+        note: { id: row.id, startDay: row.start_day, endDay: row.end_day, text: row.text },
       })
     }
 
@@ -110,9 +129,9 @@ export function RealtimeProvider({ children, onEntryChange, onRefresh, viewStart
       if (isStale()) return
 
       // Step 2: re-fetch full schedule via Server Action
-      const freshDays = await getScheduleDays(viewStart, viewEnd)
+      const fresh = await getScheduleData(viewStart, viewEnd)
       if (isStale()) return
-      onRefreshRef.current?.(freshDays)  // silent update — no toast/spinner (D-05)
+      onRefreshRef.current?.(fresh)  // silent update — no toast/spinner (D-05)
 
       // Step 3: get fresh session token and re-subscribe
       const { data: { session } } = await supabase.auth.getSession()

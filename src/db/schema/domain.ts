@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, date, timestamp, uniqueIndex, integer } from "drizzle-orm/pg-core"
+import { pgTable, pgEnum, text, date, timestamp, uniqueIndex, index, integer } from "drizzle-orm/pg-core"
 
 // CRITICAL: Export the enum — drizzle-kit generate silently omits unexported enums
 export const scheduleStatusEnum = pgEnum("schedule_status", [
@@ -33,9 +33,28 @@ export const scheduleEntries = pgTable("schedule_entries", {
   day: date("day", { mode: "string" }).notNull(), // DATE not TIMESTAMP — timezone-safe
   parentId: text("parent_id"), // 'father' | 'mother' | null (null = cleared / unassigned)
   status: scheduleStatusEnum("status").notNull().default("draft"),
+  // Legacy per-day note (stored on one of the day's entries). Superseded by day_notes;
+  // kept so existing data is not lost — see src/db/migrate-day-notes.ts.
   notes: text("notes"),
 }, (table) => [
   uniqueIndex("schedule_entries_child_day_unique").on(table.childId, table.day),
+])
+
+// day_notes: free-text notes shared by both parents. A note covers the inclusive range
+// [start_day, end_day]; a single-day note has start_day = end_day. Notes are not part of
+// the draft/publish flow and are not synced to Google Calendar.
+// CHECK (end_day >= start_day) is added manually in supabase/policies.sql.
+export const dayNotes = pgTable("day_notes", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  startDay: date("start_day", { mode: "string" }).notNull(),
+  endDay: date("end_day", { mode: "string" }).notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+}, (table) => [
+  index("day_notes_range_idx").on(table.startDay, table.endDay),
 ])
 
 export const gcalEvents = pgTable("gcal_events", {

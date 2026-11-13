@@ -16,12 +16,19 @@ export interface ScheduleDay {
   isToday: boolean
   isWeekStart: boolean        // true for Mondays — used by week separator (D-02)
   cells: ScheduleCell[]       // one per child, ordered by config.children
-  notes: string               // shared notes for the day (from first entry's notes or "")
-  notesEntryId: string | null // the entry ID that holds the notes (first child's entry)
+}
+
+// A note covering the inclusive date range [startDay, endDay] (start = end for one day)
+export interface DayNote {
+  id: string
+  startDay: string            // ISO date
+  endDay: string              // ISO date
+  text: string
 }
 
 export interface DateWindow {
   startDate: string           // ISO date
   endDate: string             // ISO date
   days: ScheduleDay[]         // one entry per day in [startDate, endDate]; 84 days by default
+  notes: DayNote[]            // notes overlapping [startDate, endDate]
 }
