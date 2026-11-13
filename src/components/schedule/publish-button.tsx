@@ -21,7 +21,7 @@ interface PublishButtonProps {
   days: ScheduleDay[]
   viewStart?: string
   viewEnd?: string
-  onPublished?: () => void
+  onPublished?: (revertedEntryIds: string[]) => void
 }
 
 function ProgressBar({ durationMs }: { durationMs: number }) {
@@ -69,8 +69,8 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
     ? `${format(parseISO(firstDraftDate), "d.M.")} \u2013 ${format(parseISO(lastDraftDate), "d.M.yyyy")}`
     : ""
 
-  // estimate: each entry needs ~110ms throttle delay × 2 parents, plus 3s overhead, capped at 60s
-  const estimatedSyncMs = Math.min(draftCount * 2 * 110 + 3000, 60000)
+  // estimate: inserts are paced at ~125ms combined across parents, plus 3s overhead, capped at 60s
+  const estimatedSyncMs = Math.min(draftCount * 125 + 3000, 60000)
 
   async function handlePublish() {
     setPhase("publishing")
@@ -86,16 +86,23 @@ export function PublishButton({ days, viewStart, viewEnd, onPublished }: Publish
       setPhase("syncing")
       const syncResult = await syncCalendars(viewStart, viewEnd)
 
-      toast.success(`Julkaistu ${count} merkintää`)
-      if (!syncResult.success) {
+      const reverted = syncResult.revertedEntryIds.length
+      if (syncResult.success) {
+        toast.success(`Julkaistu ${count} merkintää`)
+      } else {
         const failedParents = syncResult.parentResults
           .filter(pr => pr.error)
           .map(pr => `${pr.parentId}: ${pr.error}`)
-        if (failedParents.length > 0) {
-          toast.warning(`Kalenterin synkronointi epäonnistui: ${failedParents.join("; ")}`, { duration: 10000 })
-        }
+        const published = Math.max(count - reverted, 0)
+        toast.error(
+          `Kalenterin synkronointi epäonnistui${failedParents.length > 0 ? `: ${failedParents.join("; ")}` : ""}. ` +
+          (reverted > 0
+            ? `${reverted} merkintää jäi luonnokseksi${published > 0 ? `, ${published} julkaistiin` : ""}. Yritä julkaista uudelleen.`
+            : "Yritä julkaista uudelleen."),
+          { duration: 10000 },
+        )
       }
-      onPublished?.()
+      onPublished?.(syncResult.revertedEntryIds)
       setOpen(false)
     } catch {
       toast.error("Julkaisu epäonnistui. Yritä uudelleen.")

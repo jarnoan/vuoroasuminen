@@ -6,27 +6,45 @@ import { getWindowBounds } from "@/lib/schedule/generate-default"
 import { getAppConfig } from "@/config/app"
 import { buildGCalClient } from "@/lib/gcal/client"
 
+// Combined insert pacing across all parents: one request per 125ms ≈ 8 QPS.
+const INSERT_INTERVAL_MS = 125
+
+// Google Calendar signals short-term rate limiting with these reasons, usually on
+// an HTTP 403 (sometimes 429). 'quotaExceeded' (daily calendar usage limit) is
+// deliberately NOT retried — waiting seconds won't help.
+const RETRYABLE_REASONS = new Set(["rateLimitExceeded", "userRateLimitExceeded"])
+
 /**
- * Retries an async operation on 429 / 503 rate-limit errors.
+ * True for errors worth retrying with backoff: HTTP 429 / 503, or a 403 whose
+ * reason is a rate limit. googleapis (gaxios 7) exposes the HTTP status on
+ * `err.status` and the reasons only in `err.response.data.error.errors`.
+ */
+export function isRetryableGCalError(err: unknown): boolean {
+  const e = err as {
+    code?: number | string
+    status?: number
+    errors?: Array<{ reason?: string }>
+    response?: { status?: number; data?: { error?: { errors?: Array<{ reason?: string }> } } }
+  } | null
+  const status = e?.status ?? e?.response?.status ?? (typeof e?.code === "number" ? e.code : Number(e?.code))
+  if (status === 429 || status === 503) return true
+  const reasons = [
+    ...(e?.errors ?? []),
+    ...(e?.response?.data?.error?.errors ?? []),
+  ].map(x => x?.reason)
+  return reasons.some(r => r !== undefined && RETRYABLE_REASONS.has(r))
+}
+
+/**
+ * Retries an async operation on rate-limit errors (see isRetryableGCalError).
  * Backoff: 2^attempt * 1000ms + random jitter up to 1000ms, max 5 retries.
- * googleapis surfaces rate-limit errors as objects where:
- *   (err as any).code === 429
- *   OR (err as any).status === 429 / 503
- *   OR (err as any).errors?.[0]?.domain === 'usageLimits'
  */
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn()
     } catch (err: unknown) {
-      const e = err as { code?: number; status?: number; errors?: Array<{ domain?: string }> }
-      const isRateLimit =
-        e?.code === 429 ||
-        e?.status === 429 ||
-        e?.status === 503 ||
-        e?.errors?.[0]?.domain === 'usageLimits'
-
-      if (!isRateLimit || attempt === maxRetries) throw err
+      if (!isRetryableGCalError(err) || attempt === maxRetries) throw err
 
       const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000
       console.log(`[GCal sync] Rate limit hit — retry ${attempt + 1}/${maxRetries} in ${Math.round(delay)}ms`)
@@ -113,9 +131,13 @@ export async function syncCalendarsAfterPublish(viewStart?: string, viewEnd?: st
   const childNameMap = new Map(childRows.map(c => [c.id, c.name]))
 
   // Run both parents concurrently; isolate failures per parent
+  // Both calendars are typically written with the same owner's token, so the
+  // Google per-user limit (~10 QPS) is shared: split the budget across parents.
+  const throttleMs = INSERT_INTERVAL_MS * Math.max(config.parents.length, 1)
+
   const settledResults = await Promise.allSettled(
     config.parents.map(parent =>
-      syncParentCalendar(parent, publishedEntries, existingGcalRows, childNameMap)
+      syncParentCalendar(parent, publishedEntries, existingGcalRows, childNameMap, throttleMs)
     )
   )
 
@@ -156,7 +178,8 @@ async function syncParentCalendar(
   parent: { id: string; name: string; email: string; calendarId: string; ownerEmail: string },
   publishedEntries: PublishedEntry[],
   existingGcalRows: GcalRow[],
-  childNameMap: Map<string, string>
+  childNameMap: Map<string, string>,
+  throttleMs: number,
 ): Promise<ParentSyncResult> {
   const calendar = await buildGCalClient(parent.ownerEmail)
   let created = 0
@@ -241,10 +264,84 @@ async function syncParentCalendar(
     })
 
     created++
-    // Throttle to ~9 QPS (below the 10 QPS per-user limit) even with 2 parents concurrent
-    await new Promise(resolve => setTimeout(resolve, 110))
+    // Throttle so all parents combined stay at ~8 QPS (below the 10 QPS per-user limit)
+    await new Promise(resolve => setTimeout(resolve, throttleMs))
   }
 
   console.log(`[GCal sync] ${parent.name}: created ${created} new events`)
   return { parentId: parent.id, created, deleted }
+}
+
+/**
+ * Decides which published entries are NOT correctly mirrored in Google Calendar.
+ *
+ * An entry is in sync when:
+ *   - assigned to a parent: it has a gcal_events row for that parent's calendar,
+ *     and no row for any other configured parent's calendar (no orphan left behind)
+ *   - cleared (parentId null): it has no row in any configured parent's calendar
+ */
+export function findUnsyncedEntryIds(
+  entries: Array<{ id: string; parentId: string | null }>,
+  gcalRows: Array<{ scheduleEntryId: string; calendarId: string }>,
+  parents: Array<{ id: string; calendarId: string }>,
+): string[] {
+  const parentCalendarIds = new Set(parents.map(p => p.calendarId))
+  const calendarByParent = new Map(parents.map(p => [p.id, p.calendarId]))
+  const rowsByEntry = new Map<string, Set<string>>()
+  for (const row of gcalRows) {
+    if (!parentCalendarIds.has(row.calendarId)) continue
+    let set = rowsByEntry.get(row.scheduleEntryId)
+    if (!set) rowsByEntry.set(row.scheduleEntryId, (set = new Set()))
+    set.add(row.calendarId)
+  }
+
+  return entries
+    .filter(entry => {
+      const calendars = rowsByEntry.get(entry.id) ?? new Set<string>()
+      if (entry.parentId === null) return calendars.size > 0
+      const expected = calendarByParent.get(entry.parentId)
+      if (!expected) return false // unknown parent — nothing we can sync to
+      return !calendars.has(expected) || calendars.size > 1
+    })
+    .map(entry => entry.id)
+}
+
+/**
+ * After a failed (or partially failed) sync, flips every published entry in the
+ * window that is not actually reflected in Google Calendar back to 'draft', so the
+ * UI does not claim it is published and the next publish retries it.
+ * Returns the ids that were reverted.
+ */
+export async function revertUnsyncedEntriesToDraft(viewStart?: string, viewEnd?: string): Promise<string[]> {
+  const config = await getAppConfig()
+  const { start, end } = getWindowBounds(viewStart, viewEnd)
+  const startStr = format(start, "yyyy-MM-dd")
+  const endStr = format(end, "yyyy-MM-dd")
+
+  const entries = await db
+    .select({ id: scheduleEntries.id, parentId: scheduleEntries.parentId })
+    .from(scheduleEntries)
+    .where(
+      and(
+        eq(scheduleEntries.status, "published"),
+        gte(scheduleEntries.day, startStr),
+        lte(scheduleEntries.day, endStr),
+      )
+    )
+  if (entries.length === 0) return []
+
+  const rows = await db
+    .select({ scheduleEntryId: gcalEvents.scheduleEntryId, calendarId: gcalEvents.calendarId })
+    .from(gcalEvents)
+    .where(inArray(gcalEvents.scheduleEntryId, entries.map(e => e.id)))
+
+  const unsynced = findUnsyncedEntryIds(entries, rows, config.parents)
+  if (unsynced.length === 0) return []
+
+  await db.update(scheduleEntries)
+    .set({ status: "draft" })
+    .where(and(inArray(scheduleEntries.id, unsynced), eq(scheduleEntries.status, "published")))
+
+  console.log(`[GCal sync] Reverted ${unsynced.length} unsynced entries to draft`)
+  return unsynced
 }

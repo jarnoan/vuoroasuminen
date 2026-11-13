@@ -8,7 +8,7 @@ import type { ParentId } from "@/config/app"
 import { getAppConfig } from "@/config/app"
 import { getWindowBounds, generateDefaultEntries } from "@/lib/schedule/generate-default"
 import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCalendarDays } from "date-fns"
-import { syncCalendarsAfterPublish } from "@/lib/gcal/sync"
+import { syncCalendarsAfterPublish, revertUnsyncedEntriesToDraft } from "@/lib/gcal/sync"
 import type { SyncResult } from "@/lib/gcal/sync"
 import { getScheduleWindow } from "@/lib/schedule/queries"
 import type { ScheduleDay } from "@/lib/schedule/types"
@@ -81,7 +81,10 @@ export async function publishSchedule(viewStart?: string, viewEnd?: string): Pro
   return { success: true, count: result.length }
 }
 
-export async function syncCalendars(viewStart?: string, viewEnd?: string): Promise<SyncResult> {
+export async function syncCalendars(
+  viewStart?: string,
+  viewEnd?: string,
+): Promise<SyncResult & { revertedEntryIds: string[] }> {
   await requireAuthorizedParent()
   let syncResult: SyncResult
   try {
@@ -98,7 +101,20 @@ export async function syncCalendars(viewStart?: string, viewEnd?: string): Promi
   }
 
   console.log("[syncCalendars] syncResult:", JSON.stringify(syncResult, null, 2))
-  return syncResult
+
+  // On failure, entries that did not make it into Google Calendar must not stay
+  // marked as published — flip them back to draft so the UI is truthful and the
+  // next publish retries them.
+  let revertedEntryIds: string[] = []
+  if (!syncResult.success) {
+    try {
+      revertedEntryIds = await revertUnsyncedEntriesToDraft(viewStart, viewEnd)
+    } catch (err) {
+      console.error("[syncCalendars] Failed to revert unsynced entries to draft:", err)
+    }
+  }
+
+  return { ...syncResult, revertedEntryIds }
 }
 
 export async function extendSchedule(input: {

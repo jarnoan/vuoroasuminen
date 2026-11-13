@@ -67,12 +67,17 @@ export function DashboardShell({
     }
   }, [initialData])
 
-  const handlePublished = useCallback(() => {
+  const handlePublished = useCallback((revertedEntryIds: string[]) => {
+    const reverted = new Set(revertedEntryIds)
     setDays(prev => prev.map(day => ({
       ...day,
-      cells: day.cells.map(cell =>
-        cell.status === "draft" ? { ...cell, status: "published" as const } : cell
-      ),
+      cells: day.cells.map(cell => {
+        // Entries the server reverted (calendar sync failed) stay/become draft
+        if (cell.entryId && reverted.has(cell.entryId)) {
+          return cell.status === "draft" ? cell : { ...cell, status: "draft" as const }
+        }
+        return cell.status === "draft" ? { ...cell, status: "published" as const } : cell
+      }),
     })))
   }, [])
 
