@@ -11,7 +11,8 @@ import { addDays, addWeeks, endOfWeek, format, parseISO, isValid, differenceInCa
 import { syncCalendarsAfterPublish, revertUnsyncedEntriesToDraft } from "@/lib/gcal/sync"
 import type { SyncResult } from "@/lib/gcal/sync"
 import { getScheduleWindow } from "@/lib/schedule/queries"
-import type { ScheduleDay } from "@/lib/schedule/types"
+import type { DateWindow, ScheduleDay } from "@/lib/schedule/types"
+import { validateViewStart, validateViewEnd } from "@/lib/schedule/view-range"
 
 const VALID_PARENT_IDS: ParentId[] = ["father", "mother"]
 
@@ -266,4 +267,21 @@ export async function getScheduleDays(viewStart?: string, viewEnd?: string): Pro
   await requireAuthorizedParent()
   const result = await getScheduleWindow(viewStart, viewEnd)
   return result.days
+}
+
+/**
+ * Loads the schedule for a client-chosen view range. Inputs are validated/snapped
+ * (Monday start, Sunday end, 2-year cap); the effective bounds are returned so the
+ * client keeps exactly what the server used.
+ */
+export async function getScheduleView(viewStart?: string, viewEnd?: string): Promise<{
+  viewStart?: string
+  viewEnd?: string
+  window: DateWindow
+}> {
+  await requireAuthorizedParent()
+  const start = validateViewStart(viewStart)
+  const end = validateViewEnd(viewEnd, start)
+  const window = await getScheduleWindow(start, end)
+  return { viewStart: start, viewEnd: end, window }
 }

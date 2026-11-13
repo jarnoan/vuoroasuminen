@@ -1,30 +1,8 @@
 /**
- * Tests for the validateViewStart helper in dashboard/page.tsx.
- *
- * validateViewStart is not exported — we test it by importing the module and
- * extracting its observable behavior through the page's exported function.
- * However, since the page is a Server Component that calls getScheduleWindow
- * (which needs a DB), we instead test the logic directly by extracting the
- * same validation rules into an inline test implementation that matches the spec.
- *
- * This is the pragmatic TDD approach for Next.js Server Components: test the
- * pure helper function logic rather than the async Server Component itself.
+ * Tests for the view-range validation used by getScheduleView (dashboard range picker).
  */
 import { describe, it, expect } from "vitest"
-import { parseISO, isValid, startOfWeek, format } from "date-fns"
-
-/**
- * Inline implementation matching the spec from the plan.
- * This MUST stay in sync with the actual implementation in page.tsx.
- * If the implementation changes, these tests will catch the divergence.
- */
-function validateViewStart(raw: string | undefined): string | undefined {
-  if (!raw) return undefined
-  const parsed = parseISO(raw)
-  if (!isValid(parsed)) return undefined
-  const monday = startOfWeek(parsed, { weekStartsOn: 1 })
-  return format(monday, "yyyy-MM-dd")
-}
+import { validateViewStart } from "@/lib/schedule/view-range"
 
 describe("validateViewStart", () => {
   it("returns undefined when raw is undefined", () => {

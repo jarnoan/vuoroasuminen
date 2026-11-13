@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { differenceInCalendarDays, format, parseISO } from "date-fns"
 import { fi as fiFormat } from "date-fns/locale"
 import { fi as fiPicker } from "react-day-picker/locale"
@@ -13,9 +12,10 @@ import { clearRange } from "@/actions/schedule"
 
 interface ClearPanelProps {
   childCount: number
+  onCleared: () => void  // reload the currently displayed range
 }
 
-export function ClearPanel({ childCount }: ClearPanelProps) {
+export function ClearPanel({ childCount, onCleared }: ClearPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [pickedStart, setPickedStart] = useState<Date | undefined>(undefined)
   const [pickedEnd, setPickedEnd] = useState<Date | undefined>(undefined)
@@ -23,7 +23,6 @@ export function ClearPanel({ childCount }: ClearPanelProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Ref to the trigger button so we can return focus after collapse (UI-SPEC accessibility)
-  const router = useRouter()
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   const previewLabel = useMemo(() => {
@@ -55,9 +54,9 @@ export function ClearPanel({ childCount }: ClearPanelProps) {
         setErrorMsg(result.error)
         return
       }
-      // D-09: no URL navigation; router.refresh() re-fetches server data so cleared cells update immediately
+      // D-09: no navigation; reload the displayed range so cleared cells update immediately
       resetPanel()
-      router.refresh()
+      onCleared()
     } catch {
       setErrorMsg("Tyhjentäminen epäonnistui. Yritä uudelleen.")
     } finally {

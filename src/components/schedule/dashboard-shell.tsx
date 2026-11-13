@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
+import React, { useCallback, useRef, useState, useSyncExternalStore } from "react"
 import { ZoomIn, ZoomOut } from "lucide-react"
 import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
@@ -9,6 +9,8 @@ import { ExtendPanel } from "./extend-panel"
 import { ClearPanel } from "./clear-panel"
 import { OwnerWarningBanner } from "@/components/owner-warning-banner"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { getScheduleView } from "@/actions/schedule"
 import type { DateWindow, ScheduleDay, ParentId } from "@/lib/schedule/types"
 import {
   MIN_ZOOM,
@@ -22,8 +24,6 @@ import {
 
 interface DashboardShellProps {
   initialData: DateWindow
-  initialViewStart?: string
-  initialViewEnd?: string
   scheduleEndDate: string
   lastWeekStartParent?: ParentId | null
   header: React.ReactNode
@@ -35,8 +35,6 @@ interface DashboardShellProps {
 
 export function DashboardShell({
   initialData,
-  initialViewStart,
-  initialViewEnd,
   scheduleEndDate,
   lastWeekStartParent,
   header,
@@ -45,27 +43,38 @@ export function DashboardShell({
   childCount,
   currentParentId,
 }: DashboardShellProps) {
+  // The displayed range lives only here (not in the URL); a reload returns to the default.
+  // undefined bounds = server default (12 weeks from this week's Monday).
+  const [view, setView] = useState<{ viewStart?: string; viewEnd?: string }>({})
+  const [bounds, setBounds] = useState({ startDate: initialData.startDate, endDate: initialData.endDate })
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
+  const [loading, setLoading] = useState(false)
   const publishRef = useRef<(() => void) | null>(null)
-  const initialDataRef = useRef(initialData)
+  const loadSeqRef = useRef(0)
+
+  const loadView = useCallback(async (next: { viewStart?: string; viewEnd?: string }) => {
+    const seq = ++loadSeqRef.current
+    setLoading(true)
+    try {
+      const result = await getScheduleView(next.viewStart, next.viewEnd)
+      if (seq !== loadSeqRef.current) return // a newer request superseded this one
+      setView({ viewStart: result.viewStart, viewEnd: result.viewEnd })
+      setBounds({ startDate: result.window.startDate, endDate: result.window.endDate })
+      setDays(result.window.days)
+    } catch {
+      if (seq === loadSeqRef.current) toast.error("Aikataulun lataaminen epäonnistui. Yritä uudelleen.")
+    } finally {
+      if (seq === loadSeqRef.current) setLoading(false)
+    }
+  }, [])
+
+  const reloadView = useCallback(() => loadView(view), [loadView, view])
 
   const zoom = useSyncExternalStore(subscribeToRowZoom, getRowZoomSnapshot, getRowZoomServerSnapshot)
   const stepZoom = useCallback((delta: number) => {
     setRowZoom(getRowZoomSnapshot() + delta)
   }, [])
 
-  // Re-sync only when the date window itself changes (e.g. after clearRange + router.refresh()),
-  // not on every referential re-render of initialData. This prevents discarding in-flight
-  // optimistic updates when router.refresh() returns an identical-data but new-object prop.
-  useEffect(() => {
-    if (
-      initialData.startDate !== initialDataRef.current.startDate ||
-      initialData.endDate !== initialDataRef.current.endDate
-    ) {
-      initialDataRef.current = initialData
-      setDays(initialData.days)
-    }
-  }, [initialData])
 
   const handlePublished = useCallback((revertedEntryIds: string[]) => {
     const reverted = new Set(revertedEntryIds)
@@ -86,10 +95,11 @@ export function DashboardShell({
       {header}
       {showOwnerWarning && <OwnerWarningBanner />}
       <ViewToolbar
-        initialViewStart={initialViewStart}
-        initialViewEnd={initialViewEnd}
-        resolvedStart={initialData.startDate}
-        resolvedEnd={initialData.endDate}
+        viewStart={view.viewStart}
+        viewEnd={view.viewEnd}
+        resolvedStart={bounds.startDate}
+        resolvedEnd={bounds.endDate}
+        onChange={loadView}
       />
       <div className="flex items-center justify-between px-4 py-2 border-b">
         <div className="flex gap-1">
@@ -114,12 +124,21 @@ export function DashboardShell({
             <ZoomIn className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
-        <PublishButton days={days} viewStart={initialViewStart} viewEnd={initialViewEnd} onPublished={handlePublished} />
+        <PublishButton days={days} viewStart={view.viewStart} viewEnd={view.viewEnd} onPublished={handlePublished} />
       </div>
       <main className="flex-1 p-4">
-        <ScheduleWithRealtime days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={initialViewStart} viewEnd={initialViewEnd} currentParentId={currentParentId} zoom={zoom} />
-        <ExtendPanel scheduleEndDate={scheduleEndDate} lastWeekStartParent={lastWeekStartParent} parents={parents} />
-        <ClearPanel childCount={childCount} />
+        <div className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"} aria-busy={loading}>
+          {/* Keyed by the loaded window: remounts on range change so the realtime
+              subscription uses the new range and the table re-scrolls to today. */}
+          <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} />
+        </div>
+        <ExtendPanel
+          scheduleEndDate={scheduleEndDate}
+          lastWeekStartParent={lastWeekStartParent}
+          parents={parents}
+          onExtended={newStartDate => loadView({ viewStart: newStartDate })}
+        />
+        <ClearPanel childCount={childCount} onCleared={reloadView} />
       </main>
     </div>
   )

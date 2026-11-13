@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { addDays, addWeeks, endOfWeek, format, parseISO } from "date-fns"
 import { fi as fiFormat } from "date-fns/locale"
 import { fi as fiPicker } from "react-day-picker/locale"
@@ -16,6 +16,7 @@ interface ExtendPanelProps {
   scheduleEndDate: string  // ISO YYYY-MM-DD — current schedule's last day (Sunday)
   lastWeekStartParent?: ParentId | null  // parent assigned on the last existing week's Monday
   parents: Array<{ id: ParentId; name: string }>
+  onExtended: (newStartDate: string) => void  // show the first newly added week
 }
 
 type Mode = "weeks" | "date"
@@ -24,10 +25,8 @@ function otherParent(parentId: ParentId): ParentId {
   return parentId === "father" ? "mother" : "father"
 }
 
-export function ExtendPanel({ scheduleEndDate, lastWeekStartParent, parents }: ExtendPanelProps) {
+export function ExtendPanel({ scheduleEndDate, lastWeekStartParent, parents, onExtended }: ExtendPanelProps) {
   const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   // Default to continuing the alternating pattern: the opposite of whoever started last week.
   const defaultFirstParent: ParentId = lastWeekStartParent
@@ -65,17 +64,6 @@ export function ExtendPanel({ scheduleEndDate, lastWeekStartParent, parents }: E
     return `Ajanjakso: ${startLabel} – ${endLabel} (${firstParentName} aloittaa)`
   }, [rangeStart, rangeEnd, firstParent, parents])
 
-  const navigateTo = useCallback(
-    (dateStr: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set("viewStart", dateStr)
-      // A viewEnd from before extending would describe a now-stale range
-      params.delete("viewEnd")
-      router.replace(pathname + "?" + params.toString())
-    },
-    [router, pathname, searchParams],
-  )
-
   function resetPanel() {
     setIsOpen(false)
     setMode("weeks")
@@ -104,8 +92,9 @@ export function ExtendPanel({ scheduleEndDate, lastWeekStartParent, parents }: E
         setErrorMsg(result.error)
         return
       }
-      // D-09: auto-navigate to the first newly added week
-      navigateTo(result.newStartDate)
+      // D-09: show the first newly added week; refresh server props (scheduleEndDate etc.)
+      onExtended(result.newStartDate)
+      router.refresh()
       resetPanel()
     } catch {
       setErrorMsg("Viikkojen lisääminen epäonnistui. Yritä uudelleen.")

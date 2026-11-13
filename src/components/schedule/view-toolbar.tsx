@@ -1,7 +1,5 @@
 "use client"
 
-import { useCallback } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { parseISO, startOfWeek, endOfWeek, subDays, format } from "date-fns"
 import { fi } from "react-day-picker/locale"
 import { CalendarIcon, ChevronLeft, X } from "lucide-react"
@@ -10,35 +8,27 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface ViewToolbarProps {
-  initialViewStart?: string
-  initialViewEnd?: string
+  // Explicitly chosen bounds (undefined = server default)
+  viewStart?: string
+  viewEnd?: string
   // Actual resolved window bounds from the server (DateWindow.startDate/endDate) — always
-  // defined, even when viewStart/viewEnd aren't in the URL, so the pickers can show the
+  // defined, even when no explicit range is chosen, so the pickers can show the
   // real default range instead of appearing empty.
   resolvedStart: string
   resolvedEnd: string
+  onChange: (next: { viewStart?: string; viewEnd?: string }) => void
 }
 
-export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, resolvedEnd }: ViewToolbarProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const navigateTo = useCallback(
-    (updates: { viewStart?: string | null; viewEnd?: string | null }) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (updates.viewStart !== undefined) {
-        if (updates.viewStart) params.set("viewStart", updates.viewStart)
-        else params.delete("viewStart")
-      }
-      if (updates.viewEnd !== undefined) {
-        if (updates.viewEnd) params.set("viewEnd", updates.viewEnd)
-        else params.delete("viewEnd")
-      }
-      router.replace(pathname + (params.size > 0 ? "?" + params.toString() : ""))
-    },
-    [router, pathname, searchParams],
-  )
+export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewEnd, resolvedStart, resolvedEnd, onChange }: ViewToolbarProps) {
+  // updates: undefined = keep the current bound, null = reset it to the default
+  function navigateTo(updates: { viewStart?: string | null; viewEnd?: string | null }) {
+    const pick = (u: string | null | undefined, current: string | undefined) =>
+      u === undefined ? current : (u ?? undefined)
+    onChange({
+      viewStart: pick(updates.viewStart, initialViewStart),
+      viewEnd: pick(updates.viewEnd, initialViewEnd),
+    })
+  }
 
   function handlePrevWeek() {
     const currentStart = parseISO(initialViewStart ?? resolvedStart)
@@ -48,7 +38,9 @@ export function ViewToolbar({ initialViewStart, initialViewEnd, resolvedStart, r
   }
 
   function handleToday() {
-    // Clears viewStart/viewEnd — ScheduleTable's mount useEffect handles scroll after RSC re-render
+    // Back to the default window — if the range changes, ScheduleTable remounts and its
+    // mount effect scrolls to today; if it is already shown, just scroll there now.
+    document.querySelector('[data-today="true"]')?.scrollIntoView({ behavior: "instant", block: "start" })
     navigateTo({ viewStart: null, viewEnd: null })
   }
 
