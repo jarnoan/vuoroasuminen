@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react"
 import { addDays, format, parseISO } from "date-fns"
-import { Plus } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { MAX_NOTE_DAYS, isMultiDay, noteDayCount, type DayNoteSlot, type NoteInput } from "@/lib/schedule/notes"
 import type { DayNote } from "@/lib/schedule/types"
 import { NotesCell } from "./notes-cell"
@@ -150,6 +150,20 @@ function DragHandle({ note, handlers }: { note: DayNote; handlers: NoteHandlers 
   )
 }
 
+function DeleteButton({ note, handlers, className = "" }: { note: DayNote; handlers: NoteHandlers; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); handlers.remove(note.id) }}
+      aria-label={`Poista muistiinpano: ${note.text}`}
+      title="Poista muistiinpano"
+      className={`absolute z-[2] size-6 rounded-md inline-flex items-center justify-center text-muted-foreground bg-background/80 hover:bg-background hover:text-destructive opacity-0 group-hover/note:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40 ${className}`}
+    >
+      <X className="size-3.5" aria-hidden="true" />
+    </button>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Desktop notes column
 // ---------------------------------------------------------------------------
@@ -193,11 +207,12 @@ export function DesktopDayNotes({
               <NotesCell
                 value={slot.note.text}
                 ariaLabel={`Muistiinpano — ${dayLabel}`}
-                className={laneCount > 1 ? "bg-muted" : ""}
+                className={`pr-8 ${laneCount > 1 ? "bg-muted" : ""}`}
                 onCommit={(text) => text
                   ? handlers.update(slot.note.id, { startDay: slot.note.startDay, endDay: slot.note.endDay, text })
                   : handlers.remove(slot.note.id)}
               />
+              <DeleteButton note={slot.note} handlers={handlers} className="right-1 top-1/2 -translate-y-1/2" />
               <DragHandle note={slot.note} handlers={handlers} />
             </div>
           )
@@ -244,6 +259,7 @@ function MultiDayPiece({ slot, showLabel, handlers }: { slot: DayNoteSlot; showL
           </>
         )}
       </button>
+      {showLabel && <DeleteButton note={note} handlers={handlers} className="right-1 top-1" />}
       {isEnd && <DragHandle note={note} handlers={handlers} />}
     </div>
   )

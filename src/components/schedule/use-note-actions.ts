@@ -51,6 +51,12 @@ export function useNoteActions(setNotes: SetNotes) {
     try {
       const result = await deleteNote(id)
       if (!result.success) throw new Error(result.error)
+      if (prior) {
+        const { startDay, endDay, text } = prior
+        toast("Muistiinpano poistettu", {
+          action: { label: "Kumoa", onClick: () => { void create({ startDay, endDay, text }) } },
+        })
+      }
     } catch (err) {
       if (prior) {
         const restored = prior
@@ -58,7 +64,7 @@ export function useNoteActions(setNotes: SetNotes) {
       }
       toast.error(err instanceof Error && err.message ? err.message : "Muistiinpanon poistaminen epäonnistui.")
     }
-  }, [setNotes])
+  }, [setNotes, create])
 
   return { create, update, remove }
 }
