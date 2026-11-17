@@ -22,9 +22,12 @@ import {
   getRowZoomServerSnapshot,
   setRowZoom,
 } from "./row-zoom"
+import { saveViewRange, type ViewRange } from "./view-range-storage"
 
 interface DashboardShellProps {
   initialData: DateWindow
+  // The explicit bounds initialData was loaded with (empty = default window)
+  initialView: ViewRange
   scheduleEndDate: string
   lastWeekStartParent?: ParentId | null
   header: React.ReactNode
@@ -36,6 +39,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({
   initialData,
+  initialView,
   scheduleEndDate,
   lastWeekStartParent,
   header,
@@ -44,9 +48,10 @@ export function DashboardShell({
   childCount,
   currentParentId,
 }: DashboardShellProps) {
-  // The displayed range lives only here (not in the URL); a reload returns to the default.
-  // undefined bounds = server default (12 weeks from this week's Monday).
-  const [view, setView] = useState<{ viewStart?: string; viewEnd?: string }>({})
+  // The displayed range lives here (not in the URL) and is remembered per device in a
+  // cookie; the server reads it and passes it as initialView. undefined bounds = server
+  // default (12 weeks from this week's Monday).
+  const [view, setView] = useState<ViewRange>(initialView)
   const [bounds, setBounds] = useState({ startDate: initialData.startDate, endDate: initialData.endDate })
   const [days, setDays] = useState<ScheduleDay[]>(initialData.days)
   const [notes, setNotes] = useState<DayNote[]>(initialData.notes)
@@ -63,6 +68,7 @@ export function DashboardShell({
       const result = await getScheduleView(next.viewStart, next.viewEnd)
       if (seq !== loadSeqRef.current) return // a newer request superseded this one
       setView({ viewStart: result.viewStart, viewEnd: result.viewEnd })
+      saveViewRange({ viewStart: result.viewStart, viewEnd: result.viewEnd })
       setBounds({ startDate: result.window.startDate, endDate: result.window.endDate })
       setDays(result.window.days)
       setNotes(result.window.notes)

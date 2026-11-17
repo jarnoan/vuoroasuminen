@@ -1,5 +1,7 @@
 import { eq } from "drizzle-orm"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
+import { VIEW_RANGE_COOKIE, parseViewRange } from "@/components/schedule/view-range-storage"
+import { validateViewStart, validateViewEnd } from "@/lib/schedule/view-range"
 import { getScheduleWindow, getScheduleEndDate, getLastWeekStartParent } from "@/lib/schedule/queries"
 import { DashboardShell } from "@/components/schedule/dashboard-shell"
 import { InviteSection } from "@/components/invite/invite-section"
@@ -11,8 +13,9 @@ import { getActiveInviteToken } from "@/actions/invite"
 import { redirect } from "next/navigation"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-// The displayed date range is client state in DashboardShell (not in the URL);
-// the server always renders the default window and the shell fetches others.
+// The displayed date range is client state in DashboardShell (not in the URL). The last
+// range chosen on this device is kept in a cookie, so the server renders it directly;
+// the shell fetches any later range changes itself.
 export default async function Dashboard() {
   // Phase 12 D-10: When no family_config row exists, redirect to /setup.
   // The wizard at /setup collects parent/children/calendar config and writes
@@ -33,9 +36,13 @@ export default async function Dashboard() {
   // D-03: parent2Email used to detect whether Parent B has joined.
   const parent2Email = config.parents[1].email
 
+  const saved = parseViewRange((await cookies()).get(VIEW_RANGE_COOKIE)?.value)
+  const viewStart = validateViewStart(saved.viewStart)
+  const viewEnd = validateViewEnd(saved.viewEnd, viewStart)
+
   const [schedule, scheduleEndDate, lastWeekStartParent, tokenRow, parent2TokenRow, activeInvite] =
     await Promise.all([
-      getScheduleWindow(),
+      getScheduleWindow(viewStart, viewEnd),
       getScheduleEndDate(),
       getLastWeekStartParent(),
       db
@@ -85,6 +92,7 @@ export default async function Dashboard() {
       )}
       <DashboardShell
         initialData={schedule}
+        initialView={{ viewStart, viewEnd }}
         scheduleEndDate={scheduleEndDate ?? schedule.endDate}
         lastWeekStartParent={lastWeekStartParent}
         header={<Header />}
