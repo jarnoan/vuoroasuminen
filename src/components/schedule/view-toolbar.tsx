@@ -2,7 +2,7 @@
 
 import { parseISO, startOfWeek, endOfWeek, format, differenceInCalendarDays } from "date-fns"
 import { fi } from "react-day-picker/locale"
-import { CalendarIcon, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { shiftViewRange } from "@/lib/schedule/view-range"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -77,10 +77,6 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
     if (!date) return
     const sunday = endOfWeek(date, { weekStartsOn: 1 })
     navigateTo({ viewEnd: format(sunday, "yyyy-MM-dd") })
-  }
-
-  function handleClearEndDate() {
-    navigateTo({ viewEnd: null })
   }
 
   const selectedDate = parseISO(initialViewStart ?? resolvedStart)
@@ -162,7 +158,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
         </button>
       )}
 
-      {/* Desktop: ‹ start – end ✕ in one group */}
+      {/* Desktop: ‹ start – end length › in one group */}
       <div className={`${groupClass} max-sm:hidden`}>
         <button type="button" onClick={() => shiftRange(-1)} aria-label="Edellinen jakso" className={`${ghostBtn} w-9`}>
           <ChevronLeft className="size-[18px]" aria-hidden="true" />
@@ -193,11 +189,6 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
           </PopoverContent>
         </Popover>
         <span className="px-2 text-sm text-muted-foreground whitespace-nowrap" title="Jakson pituus">{periodLength}</span>
-        {initialViewEnd && (
-          <button type="button" onClick={handleClearEndDate} aria-label="Poista loppupäivän rajaus" className={`${ghostBtn} w-8 h-8 text-muted-foreground`}>
-            <X className="size-3.5" aria-hidden="true" />
-          </button>
-        )}
         {hasLaterDays && (
           <button type="button" onClick={() => shiftRange(1)} aria-label="Seuraava jakso" className={`${ghostBtn} w-9`}>
             <ChevronRight className="size-[18px]" aria-hidden="true" />
