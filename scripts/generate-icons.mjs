@@ -29,6 +29,11 @@ const square = svg({ radius: 0, scale: 0.9 }) // iOS rounds the corners itself
 const png = (src, size) => sharp(Buffer.from(src)).resize(size, size).png().toBuffer()
 
 writeFileSync("src/app/icon.svg", rounded)
+// The mark alone, tightly cropped, for the in-app header logo
+writeFileSync(
+  "public/logo.svg",
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="72 72 368 368">${mark}\n</svg>\n`,
+)
 writeFileSync("src/app/apple-icon.png", await png(square, 180))
 writeFileSync("public/icons/icon-192.png", await png(rounded, 192))
 writeFileSync("public/icons/icon-512.png", await png(rounded, 512))

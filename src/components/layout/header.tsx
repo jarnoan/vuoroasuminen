@@ -1,5 +1,4 @@
 import React from "react"
-import { House } from "lucide-react"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { getAppConfig } from "@/config/app"
 import { AccountMenu } from "./account-menu"
@@ -26,9 +25,8 @@ export default async function Header({ children }: { children?: React.ReactNode 
     <header className="bg-background border-b">
       <div className="max-w-[1360px] mx-auto flex items-center justify-between gap-4 px-4 py-2 sm:px-8 sm:py-3">
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <span className="size-8 sm:size-9 rounded-[10px] bg-primary text-primary-foreground flex items-center justify-center" aria-hidden="true">
-            <House className="size-[18px] sm:size-5" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG, nothing for next/image to optimise */}
+          <img src="/logo.svg" alt="" aria-hidden="true" className="size-8 sm:size-9" />
           <div className="flex flex-col">
             <span className="font-heading text-[17px] sm:text-lg font-bold tracking-tight leading-tight">Vuoroasuminen</span>
             <span className="hidden sm:block text-xs text-muted-foreground">Yhteinen aikataulu vanhemmille</span>
