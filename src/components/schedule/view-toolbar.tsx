@@ -1,6 +1,6 @@
 "use client"
 
-import { parseISO, startOfWeek, endOfWeek, subDays, format } from "date-fns"
+import { parseISO, startOfWeek, endOfWeek, subDays, format, differenceInCalendarDays } from "date-fns"
 import { fi } from "react-day-picker/locale"
 import { CalendarIcon, ChevronLeft, RotateCcw, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
@@ -16,6 +16,17 @@ interface ViewToolbarProps {
   resolvedStart: string
   resolvedEnd: string
   onChange: (next: { viewStart?: string; viewEnd?: string }) => void
+}
+
+// Length of an inclusive date range as full weeks plus leftover days, e.g. "12 vk", "12 vk 3 pv"
+export function formatPeriodLength(start: Date, end: Date): string {
+  const days = Math.max(0, differenceInCalendarDays(end, start) + 1)
+  const weeks = Math.floor(days / 7)
+  const rest = days % 7
+  const parts: string[] = []
+  if (weeks > 0) parts.push(`${weeks} vk`)
+  if (rest > 0 || weeks === 0) parts.push(`${rest} pv`)
+  return parts.join(" ")
 }
 
 const groupClass = "inline-flex items-center bg-background border rounded-xl p-1 gap-1"
@@ -72,6 +83,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
   const selectedDate = parseISO(initialViewStart ?? resolvedStart)
   const selectedEndDate = parseISO(initialViewEnd ?? resolvedEnd)
   const isDefault = !initialViewStart && !initialViewEnd
+  const periodLength = formatPeriodLength(selectedDate, selectedEndDate)
 
   const resetButton = (
     <button
@@ -104,6 +116,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
         >
           <CalendarIcon className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
           <span className="truncate">{format(selectedDate, "d.M.")} – {format(selectedEndDate, "d.M.yyyy")}</span>
+          <span className="ml-auto shrink-0 text-xs font-normal text-muted-foreground">{periodLength}</span>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[min(20rem,calc(100vw-2rem))] p-3 gap-3 rounded-xl">
           <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
@@ -165,6 +178,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
             />
           </PopoverContent>
         </Popover>
+        <span className="px-2 text-sm text-muted-foreground whitespace-nowrap" title="Jakson pituus">{periodLength}</span>
         {initialViewEnd && (
           <button type="button" onClick={handleClearEndDate} aria-label="Poista loppupäivän rajaus" className={`${ghostBtn} w-8 h-8 text-muted-foreground`}>
             <X className="size-3.5" aria-hidden="true" />
