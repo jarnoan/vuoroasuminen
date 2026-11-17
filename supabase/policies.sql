@@ -1,132 +1,135 @@
 -- supabase/policies.sql
--- Row Level Security policies for vuoroasuminen (v1.2 milestone, Phase 9)
+-- Row Level Security policies for vuoroasuminen.
 --
 -- HOW TO RUN
---   1. Open Supabase Dashboard → SQL editor (or use psql with the project connection string).
---   2. Paste the contents of this file and run the whole script in a single transaction.
---   3. Verify in Dashboard → Table editor that the green "RLS enabled" badge appears on each
---      of: children, schedules, schedule_entries, gcal_events, user_google_tokens.
+--   Open Supabase Dashboard → SQL editor (or psql with DATABASE_URL), paste this whole
+--   file and run it. It runs in one transaction and is idempotent: re-running it drops
+--   and recreates every policy, so it is safe to run again after any schema change.
+--   Re-run it after `npm run db:push` creates a new table, and add the table here first.
+--
+-- VERIFY
+--   Dashboard → Advisors → Security should report no rls_disabled_in_public issues.
 --
 -- CONVENTIONS
 --   - This project does NOT use the Supabase CLI migration system (D-01).
 --     This file is the canonical, git-tracked record of all RLS DDL.
---   - This project uses `npm run db:push` for Drizzle schema changes (D-02);
---     RLS policies live here, alongside the Drizzle schema files.
+--   - Drizzle schema changes use `npm run db:push` (D-02).
 --
--- SERVICE ROLE
---   - The application uses an admin Drizzle connection (SUPABASE_SERVICE_ROLE_KEY)
---     for all server-side reads and writes (Server Actions, GCal sync).
---   - The service_role role bypasses ALL of the policies below — this is intentional
---     (Phase 8 D-11, Phase 9 D-07, D-10). RLS protects:
---       (a) the anon role (unauthenticated PostgREST / Realtime clients), and
---       (b) the authenticated role (browser sessions; user_google_tokens per-user).
+-- WHO BYPASSES RLS
+--   - Server-side code (Server Actions, GCal sync, proxy) uses the Drizzle connection
+--     from DATABASE_URL, which runs as `postgres` and bypasses RLS. That is intentional.
+--   - RLS protects the PostgREST / Realtime API, which anyone holding the public anon
+--     key can call:
+--       (a) anon:          no access to anything.
+--       (b) authenticated: any Google account can sign in through Supabase Auth, so
+--                          the shared tables are limited to the two parents listed in
+--                          family_config (public.is_family_member()).
 --
--- IDEMPOTENCY
---   - `CREATE POLICY` errors if the policy name already exists. To re-run cleanly,
---     either drop existing policies first or use the Supabase Dashboard's editor
---     which lets you delete and recreate. The `ALTER TABLE ... ENABLE ROW LEVEL
---     SECURITY` and `ALTER PUBLICATION ... ADD TABLE` statements ARE idempotent in
---     PostgreSQL when re-run on already-enabled tables (no-op).
+-- WHAT THE BROWSER/API ACTUALLY NEEDS
+--   - Realtime postgres_changes on schedule_entries and day_notes (SELECT, family only).
+--   - /auth/callback upserts the caller's own row in user_google_tokens
+--     (INSERT + UPDATE + SELECT on their own email). This happens before invite
+--     redemption, so it must not depend on family_config.
+
+BEGIN;
 
 -- =====================================================================
--- Domain tables: any authenticated user can read/write all rows.
--- Per-household isolation is explicitly deferred (REQUIREMENTS.md Out of Scope).
+-- Helper: is the caller one of the two parents in family_config?
+-- SECURITY DEFINER so it can read family_config regardless of that table's RLS.
 -- =====================================================================
 
--- ---------- children ----------
-ALTER TABLE public.children ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.is_family_member()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.family_config
+    WHERE id = 1
+      AND lower(auth.jwt() ->> 'email') IN (lower(parent1_email), lower(parent2_email))
+  );
+$$;
 
-CREATE POLICY "authenticated can select children"
-  ON public.children FOR SELECT TO authenticated
-  USING (auth.role() = 'authenticated');
+REVOKE ALL ON FUNCTION public.is_family_member() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_family_member() TO authenticated;
 
-CREATE POLICY "authenticated can insert children"
-  ON public.children FOR INSERT TO authenticated
-  WITH CHECK (auth.role() = 'authenticated');
+-- =====================================================================
+-- Enable RLS on every public table, and take away anon's table privileges.
+-- RLS does not cover TRUNCATE, so revoke it explicitly.
+-- =====================================================================
 
-CREATE POLICY "authenticated can update children"
-  ON public.children FOR UPDATE TO authenticated
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+ALTER TABLE public.children           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.schedules          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.schedule_entries   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.day_notes          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gcal_events        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.family_config      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invite_tokens      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_google_tokens ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "authenticated can delete children"
-  ON public.children FOR DELETE TO authenticated
-  USING (auth.role() = 'authenticated');
+REVOKE ALL ON
+  public.children, public.schedules, public.schedule_entries, public.day_notes,
+  public.gcal_events, public.family_config, public.invite_tokens, public.user_google_tokens
+  FROM anon;
 
--- ---------- schedules ----------
-ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
+REVOKE TRUNCATE, TRIGGER, REFERENCES ON
+  public.children, public.schedules, public.schedule_entries, public.day_notes,
+  public.gcal_events, public.family_config, public.invite_tokens, public.user_google_tokens
+  FROM authenticated;
 
-CREATE POLICY "authenticated can select schedules"
-  ON public.schedules FOR SELECT TO authenticated
-  USING (auth.role() = 'authenticated');
+-- =====================================================================
+-- Shared domain tables: the two parents can read and write all rows.
+-- =====================================================================
 
-CREATE POLICY "authenticated can insert schedules"
-  ON public.schedules FOR INSERT TO authenticated
-  WITH CHECK (auth.role() = 'authenticated');
+DO $$
+DECLARE
+  t text;
+  p record;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['children', 'schedules', 'schedule_entries', 'day_notes', 'gcal_events']
+  LOOP
+    -- Drop every existing policy on the table (including older "authenticated can ..." ones)
+    FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = t
+    LOOP
+      EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, t);
+    END LOOP;
 
-CREATE POLICY "authenticated can update schedules"
-  ON public.schedules FOR UPDATE TO authenticated
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+    EXECUTE format(
+      'CREATE POLICY %I ON public.%I FOR ALL TO authenticated
+         USING (public.is_family_member()) WITH CHECK (public.is_family_member())',
+      'family members can access ' || t, t);
+  END LOOP;
+END $$;
 
-CREATE POLICY "authenticated can delete schedules"
-  ON public.schedules FOR DELETE TO authenticated
-  USING (auth.role() = 'authenticated');
+-- =====================================================================
+-- family_config: the parents can read it; writes only via the server (postgres).
+-- =====================================================================
 
--- ---------- schedule_entries ----------
-ALTER TABLE public.schedule_entries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "authenticated can select family_config" ON public.family_config;
+DROP POLICY IF EXISTS "family members can read family_config" ON public.family_config;
+CREATE POLICY "family members can read family_config"
+  ON public.family_config FOR SELECT TO authenticated
+  USING (public.is_family_member());
 
-CREATE POLICY "authenticated can select schedule_entries"
-  ON public.schedule_entries FOR SELECT TO authenticated
-  USING (auth.role() = 'authenticated');
+-- =====================================================================
+-- invite_tokens: users can read only tokens they created; writes via the server.
+-- =====================================================================
 
-CREATE POLICY "authenticated can insert schedule_entries"
-  ON public.schedule_entries FOR INSERT TO authenticated
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "authenticated can update schedule_entries"
-  ON public.schedule_entries FOR UPDATE TO authenticated
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "authenticated can delete schedule_entries"
-  ON public.schedule_entries FOR DELETE TO authenticated
-  USING (auth.role() = 'authenticated');
-
--- ---------- gcal_events ----------
-ALTER TABLE public.gcal_events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "authenticated can select gcal_events"
-  ON public.gcal_events FOR SELECT TO authenticated
-  USING (auth.role() = 'authenticated');
-
-CREATE POLICY "authenticated can insert gcal_events"
-  ON public.gcal_events FOR INSERT TO authenticated
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "authenticated can update gcal_events"
-  ON public.gcal_events FOR UPDATE TO authenticated
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "authenticated can delete gcal_events"
-  ON public.gcal_events FOR DELETE TO authenticated
-  USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "user can select own invite tokens" ON public.invite_tokens;
+CREATE POLICY "user can select own invite tokens"
+  ON public.invite_tokens FOR SELECT TO authenticated
+  USING (lower(auth.jwt() ->> 'email') = lower(created_by));
 
 -- =====================================================================
 -- user_google_tokens: per-user isolation by JWT email claim (D-08).
---
--- Note: D-08 mentions `auth.email()`. That helper is NOT documented in the
--- official Supabase RLS reference. The form `(auth.jwt() ->> 'email')` is
--- documented and guaranteed correct (Supabase JWT always includes the
--- `email` claim for users signed in via Google OAuth).
---
--- No DELETE policy: token rows are never deleted by the application.
--- GCal sync reads these rows via admin Drizzle (service_role) — bypasses
--- RLS by design (D-07).
+-- No DELETE policy: token rows are never deleted through the API.
 -- =====================================================================
 
-ALTER TABLE public.user_google_tokens ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "user can select own token" ON public.user_google_tokens;
+DROP POLICY IF EXISTS "user can insert own token" ON public.user_google_tokens;
+DROP POLICY IF EXISTS "user can update own token" ON public.user_google_tokens;
 
 CREATE POLICY "user can select own token"
   ON public.user_google_tokens FOR SELECT TO authenticated
@@ -142,53 +145,32 @@ CREATE POLICY "user can update own token"
   WITH CHECK ((auth.jwt() ->> 'email') = email);
 
 -- =====================================================================
--- Supabase Realtime publication — schedule_entries must be included so
--- Postgres Changes emits CDC events to the browser client.
---
--- ALTER PUBLICATION ... ADD TABLE is idempotent in PostgreSQL: running
--- it on a table that is already a member emits a NOTICE but does not
--- error. Safe to re-run.
+-- Constraints Drizzle Kit does not generate from the schema.
 -- =====================================================================
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.schedule_entries;
+ALTER TABLE public.family_config DROP CONSTRAINT IF EXISTS family_config_single_row;
+ALTER TABLE public.family_config ADD CONSTRAINT family_config_single_row CHECK (id = 1);
+
+ALTER TABLE public.day_notes DROP CONSTRAINT IF EXISTS day_notes_valid_range;
+ALTER TABLE public.day_notes ADD CONSTRAINT day_notes_valid_range CHECK (end_day >= start_day);
 
 -- =====================================================================
--- Phase 12 additions: family_config + invite_tokens
--- =====================================================================
--- family_config is a single-row table. The CHECK (id = 1) constraint
--- enforces single-row at the DB level (drizzle-kit does not generate
--- CHECK constraints from schema — must be added manually after push).
+-- Supabase Realtime publication: Postgres Changes for the browser client.
 -- =====================================================================
 
-ALTER TABLE public.family_config
-  ADD CONSTRAINT family_config_single_row CHECK (id = 1);
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['schedule_entries', 'day_notes']
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+    ) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+    END IF;
+  END LOOP;
+END $$;
 
--- ---------- family_config RLS ----------
--- Authenticated users can read; only service role writes (D-14, ONBOARDING-STACK.md §RLS).
--- The onboarding wizard's saveWizardConfig Server Action uses the admin Drizzle
--- connection which runs as service_role and bypasses RLS.
-
-ALTER TABLE public.family_config ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "authenticated can select family_config"
-  ON public.family_config FOR SELECT TO authenticated
-  USING (auth.role() = 'authenticated');
-
--- No INSERT/UPDATE/DELETE policy for authenticated role on family_config.
--- Writes happen only via service_role from saveWizardConfig (D-14).
-
--- ---------- invite_tokens RLS ----------
--- Users can read only invite tokens they themselves created. All writes happen
--- via service_role (Phase 13 will add the invite generation/acceptance logic).
-
-ALTER TABLE public.invite_tokens ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "user can select own invite tokens"
-  ON public.invite_tokens FOR SELECT TO authenticated
-  USING ((auth.jwt() ->> 'email') = created_by);
-
--- =====================================================================
--- Multi-day notes: day_notes (run after `npm run db:push` creates the table)
--- =====================================================================
-
-I 
+COMMIT;
