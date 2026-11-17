@@ -143,7 +143,7 @@ export function DashboardShell({
             hasLaterDays={hasLaterDays}
             onChange={loadView}
           />
-          <MobileActionsMenu onExtend={() => setExtendOpen(true)} onClear={() => setClearOpen(true)} />
+          <MobileActionsMenu onExtend={() => setExtendOpen(true)} onClear={() => setClearOpen(true)} zoom={zoom} onStepZoom={stepZoom} />
           <div className="sm:ml-auto flex items-center gap-2">
             <div className="max-sm:hidden inline-flex items-center bg-background border rounded-xl p-1 gap-1">
               <button
