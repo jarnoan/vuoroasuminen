@@ -95,5 +95,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Icons and the web manifest must load without a session: browsers fetch the
+  // manifest without cookies, and the sign-in page needs its favicon too.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|icons/).*)",
+  ],
 }
