@@ -409,7 +409,7 @@ export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, pub
                 >
                   <td
                     className={`pl-2 pr-1 sm:pl-4 sm:pr-2 text-sm whitespace-nowrap sticky left-0 ${rowBg}`}
-                    style={{ paddingTop: "var(--date-py)", paddingBottom: "var(--date-py)" }}
+                    style={{ paddingTop: "var(--date-py)", paddingBottom: "var(--date-py)", lineHeight: "min(1.25rem, var(--cell-min-h))" }}
                   >
                     <MobileRails
                       slots={slots}
@@ -459,8 +459,9 @@ export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, pub
                       type="button"
                       onClick={() => setEditor({ newOn: day.date })}
                       aria-label={`Lisää muistiinpano — ${day.dayLabel}`}
-                      className="size-8 inline-flex items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted"
-                      style={{ touchAction: "manipulation" }}
+                      className="w-8 inline-flex items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted"
+                      // Shrinks with the row zoom so the button doesn't hold compact rows open.
+                      style={{ touchAction: "manipulation", height: "min(2rem, var(--cell-min-h))" }}
                     >
                       <Pencil className="size-3.5" />
                     </button>

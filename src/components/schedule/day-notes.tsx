@@ -225,7 +225,8 @@ export function DesktopDayNotes({
           onClick={() => handlers.add(date)}
           aria-label={`Lisää muistiinpano — ${dayLabel}`}
           title="Lisää muistiinpano"
-          className="size-7 rounded-lg inline-flex items-center justify-center text-muted-foreground opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 hover:bg-muted hover:text-foreground"
+          style={{ height: "min(1.75rem, var(--cell-min-h))" }}
+          className="w-7 rounded-lg inline-flex items-center justify-center text-muted-foreground opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 hover:bg-muted hover:text-foreground"
         >
           <Plus className="size-3.5" aria-hidden="true" />
         </button>
