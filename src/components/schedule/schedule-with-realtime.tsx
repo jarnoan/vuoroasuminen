@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useCallback } from "react"
-import { ScheduleTable } from "./schedule-table"
+import { ScheduleTable, type ScrollTarget } from "./schedule-table"
 import { RealtimeProvider, type NoteChange } from "./realtime-provider"
 import type { DateWindow, DayNote, ParentId, ScheduleDay } from "@/lib/schedule/types"
 
@@ -25,10 +25,11 @@ interface ScheduleWithRealtimeProps {
   currentParentId?: ParentId
   zoom?: number
   onAddWeeks?: () => void
-  scrollToTodayRef?: React.RefObject<boolean>
+  onNextPeriod?: () => void
+  scrollOnMountRef?: React.RefObject<ScrollTarget>
 }
 
-export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks, scrollToTodayRef }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks, onNextPeriod, scrollOnMountRef }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -61,7 +62,8 @@ export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRe
         currentParentId={currentParentId}
         zoom={zoom}
         onAddWeeks={onAddWeeks}
-        scrollToTodayRef={scrollToTodayRef}
+        onNextPeriod={onNextPeriod}
+        scrollOnMountRef={scrollOnMountRef}
       />
     </RealtimeProvider>
   )

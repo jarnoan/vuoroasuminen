@@ -1,10 +1,12 @@
 "use client"
 
-import { parseISO, startOfWeek, endOfWeek, addDays, format, differenceInCalendarDays } from "date-fns"
+import { parseISO, startOfWeek, endOfWeek, format, differenceInCalendarDays } from "date-fns"
 import { fi } from "react-day-picker/locale"
 import { CalendarIcon, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
+import { shiftViewRange } from "@/lib/schedule/view-range"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import type { ScrollTarget } from "./schedule-table"
 
 interface ViewToolbarProps {
   // Explicitly chosen bounds (undefined = server default)
@@ -17,8 +19,8 @@ interface ViewToolbarProps {
   resolvedEnd: string
   // Whether saved (assigned) days exist after the shown range — shows the "next range" button
   hasLaterDays?: boolean
-  // scrollToToday: scroll to today once the new range is shown (otherwise keep the scroll)
-  onChange: (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollToToday?: boolean }) => void
+  // scrollTo: where to scroll once the new range is shown (default: keep the scroll position)
+  onChange: (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollTo?: ScrollTarget }) => void
 }
 
 // Length of an inclusive date range as full weeks plus leftover days, e.g. "12 vk", "12 vk 3 pv"
@@ -37,7 +39,7 @@ const ghostBtn = "h-9 rounded-lg hover:bg-muted aria-expanded:bg-muted transitio
 
 export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewEnd, resolvedStart, resolvedEnd, hasLaterDays = false, onChange }: ViewToolbarProps) {
   // updates: undefined = keep the current bound, null = reset it to the default
-  function navigateTo(updates: { viewStart?: string | null; viewEnd?: string | null }, opts?: { scrollToToday?: boolean }) {
+  function navigateTo(updates: { viewStart?: string | null; viewEnd?: string | null }, opts?: { scrollTo?: ScrollTarget }) {
     const pick = (u: string | null | undefined, current: string | undefined) =>
       u === undefined ? current : (u ?? undefined)
     onChange({
@@ -46,23 +48,16 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
     }, opts)
   }
 
-  // Shift the whole shown range by its own length (rounded up to full weeks, so the
-  // start stays on a Monday and the end on a Sunday) to show the previous/next range
+  // Show the previous/next range of the same length
   function shiftRange(direction: -1 | 1) {
-    const start = parseISO(initialViewStart ?? resolvedStart)
-    const end = parseISO(initialViewEnd ?? resolvedEnd)
-    const days = Math.ceil((differenceInCalendarDays(end, start) + 1) / 7) * 7 * direction
-    navigateTo({
-      viewStart: format(addDays(start, days), "yyyy-MM-dd"),
-      viewEnd: format(addDays(end, days), "yyyy-MM-dd"),
-    })
+    navigateTo(shiftViewRange(initialViewStart ?? resolvedStart, initialViewEnd ?? resolvedEnd, direction))
   }
 
   function handleReset() {
     // Back to the default window — if the range changes, ScheduleTable remounts and its
     // mount effect scrolls to today; if it is already shown, just scroll there now.
     document.querySelector('[data-today="true"]')?.scrollIntoView({ behavior: "instant", block: "start" })
-    navigateTo({ viewStart: null, viewEnd: null }, { scrollToToday: true })
+    navigateTo({ viewStart: null, viewEnd: null }, { scrollTo: "today" })
   }
 
   function handleDateSelect(date: Date | undefined) {

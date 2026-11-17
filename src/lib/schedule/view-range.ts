@@ -1,4 +1,4 @@
-import { parseISO, isValid, startOfWeek, endOfWeek, startOfToday, differenceInCalendarDays, format } from "date-fns"
+import { parseISO, isValid, startOfWeek, endOfWeek, startOfToday, differenceInCalendarDays, addDays, format } from "date-fns"
 
 /** Snaps a requested view start to the Monday of its week; undefined if missing/invalid. */
 export function validateViewStart(raw: string | undefined): string | undefined {
@@ -27,4 +27,18 @@ export function validateViewEnd(raw: string | undefined, validatedStart: string 
   if (daysDelta < 1 || daysDelta > 730) return undefined
 
   return format(sunday, "yyyy-MM-dd")
+}
+
+/**
+ * The previous (-1) or next (1) range of the same length as start..end (inclusive). The
+ * shift is rounded up to full weeks, so a Monday start stays a Monday and a Sunday end a Sunday.
+ */
+export function shiftViewRange(start: string, end: string, direction: -1 | 1): { viewStart: string; viewEnd: string } {
+  const startDate = parseISO(start)
+  const endDate = parseISO(end)
+  const days = Math.ceil((differenceInCalendarDays(endDate, startDate) + 1) / 7) * 7 * direction
+  return {
+    viewStart: format(addDays(startDate, days), "yyyy-MM-dd"),
+    viewEnd: format(addDays(endDate, days), "yyyy-MM-dd"),
+  }
 }

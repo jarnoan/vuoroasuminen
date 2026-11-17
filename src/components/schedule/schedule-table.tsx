@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useMemo, useState, useRef } from "react"
-import { ChevronDown, Pencil, Plus } from "lucide-react"
+import { ChevronDown, ChevronRight, Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { getISOWeek } from "date-fns"
 import { toggleCell, clearCell } from "@/actions/schedule"
@@ -37,12 +37,16 @@ interface ScheduleTableProps {
   currentParentId?: ParentId
   zoom?: number
   onAddWeeks?: () => void  // phones: end-of-schedule "Lisää viikkoja" button
-  // When true at mount, scroll to today's row and reset it to false. Lets the page scroll
-  // to today on first load (and on "back to this week") but not on other range changes.
-  scrollToTodayRef?: React.RefObject<boolean>
+  // phones: shown instead of "Lisää viikkoja" when saved days exist after the shown range
+  onNextPeriod?: () => void
+  // Where to scroll at mount; reset to null afterwards. Lets the page scroll to today on
+  // first load (and on "back to this week") but keep its position on other range changes.
+  scrollOnMountRef?: React.RefObject<ScrollTarget>
 }
 
-export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks, scrollToTodayRef }: ScheduleTableProps) {
+export type ScrollTarget = "today" | "top" | null
+
+export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks, onNextPeriod, scrollOnMountRef }: ScheduleTableProps) {
   const stats = useScheduleStats(days, parents)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -98,13 +102,14 @@ export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, pub
     }
   }, [applyPublished, publishRef])
 
-  // Auto-scroll to today on mount, when requested
+  // Scroll on mount, when requested (without a ref: always to today)
   useEffect(() => {
-    if (scrollToTodayRef && !scrollToTodayRef.current) return
-    if (scrollToTodayRef) scrollToTodayRef.current = false
-    const todayRow = document.querySelector('[data-today="true"]')
-    if (todayRow) {
-      todayRow.scrollIntoView({ behavior: "instant", block: "start" })
+    const target = scrollOnMountRef ? scrollOnMountRef.current : "today"
+    if (scrollOnMountRef) scrollOnMountRef.current = null
+    if (target === "top") {
+      window.scrollTo({ top: 0, behavior: "instant" })
+    } else if (target === "today") {
+      document.querySelector('[data-today="true"]')?.scrollIntoView({ behavior: "instant", block: "start" })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, [])
@@ -488,7 +493,18 @@ export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, pub
         </table>
       </div>
 
-      {onAddWeeks && (
+      {onNextPeriod ? (
+        <div className="sm:hidden p-3 border-t">
+          <button
+            type="button"
+            onClick={onNextPeriod}
+            className="w-full h-12 rounded-xl border text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-muted"
+          >
+            Seuraava jakso
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      ) : onAddWeeks && (
         <div className="sm:hidden p-3 border-t">
           <button
             type="button"

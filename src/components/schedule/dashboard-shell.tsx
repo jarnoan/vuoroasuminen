@@ -4,6 +4,8 @@ import React, { useCallback, useRef, useState, useSyncExternalStore } from "reac
 import { Minus, Plus } from "lucide-react"
 import { PublishButton } from "./publish-button"
 import { ScheduleWithRealtime } from "./schedule-with-realtime"
+import type { ScrollTarget } from "./schedule-table"
+import { shiftViewRange } from "@/lib/schedule/view-range"
 import { ViewToolbar } from "./view-toolbar"
 import { ExtendCard, ExtendSheet } from "./extend-panel"
 import { ClearCard, ClearDialog } from "./clear-panel"
@@ -61,12 +63,12 @@ export function DashboardShell({
   const [clearOpen, setClearOpen] = useState(false)
   const publishRef = useRef<(() => void) | null>(null)
   const loadSeqRef = useRef(0)
-  // Scroll to today on first load; afterwards only when a range change asks for it
-  const scrollToTodayRef = useRef(true)
+  // Scroll to today on first load; afterwards only where a range change asks for it
+  const scrollOnMountRef = useRef<ScrollTarget>("today")
 
-  const loadView = useCallback(async (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollToToday?: boolean }) => {
+  const loadView = useCallback(async (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollTo?: ScrollTarget }) => {
     const seq = ++loadSeqRef.current
-    scrollToTodayRef.current = !!opts?.scrollToToday
+    scrollOnMountRef.current = opts?.scrollTo ?? null
     setLoading(true)
     try {
       const result = await getScheduleView(next.viewStart, next.viewEnd)
@@ -82,6 +84,13 @@ export function DashboardShell({
       if (seq === loadSeqRef.current) setLoading(false)
     }
   }, [])
+
+  const hasLaterDays = scheduleEndDate > bounds.endDate
+  // From the bottom of the table: show the next range from its start
+  const handleNextPeriod = useCallback(
+    () => loadView(shiftViewRange(bounds.startDate, bounds.endDate, 1), { scrollTo: "top" }),
+    [loadView, bounds],
+  )
 
   const router = useRouter()
   const reloadView = useCallback(() => loadView(view), [loadView, view])
@@ -131,7 +140,7 @@ export function DashboardShell({
             viewEnd={view.viewEnd}
             resolvedStart={bounds.startDate}
             resolvedEnd={bounds.endDate}
-            hasLaterDays={scheduleEndDate > bounds.endDate}
+            hasLaterDays={hasLaterDays}
             onChange={loadView}
           />
           <MobileActionsMenu onExtend={() => setExtendOpen(true)} onClear={() => setClearOpen(true)} />
@@ -171,7 +180,7 @@ export function DashboardShell({
           >
             {/* Keyed by the loaded window: remounts on range change so the realtime
                 subscription uses the new range and the table re-scrolls to today. */}
-            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} notes={notes} setNotes={setNotes} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} scrollToTodayRef={scrollToTodayRef} />
+            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} notes={notes} setNotes={setNotes} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} onNextPeriod={hasLaterDays ? handleNextPeriod : undefined} scrollOnMountRef={scrollOnMountRef} />
           </div>
           <aside className="max-sm:hidden min-w-0 flex flex-col gap-4" style={{ flex: "1 1 320px" }}>
             <StatsCard days={days} parents={parents} />
