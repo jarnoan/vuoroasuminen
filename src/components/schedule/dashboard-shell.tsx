@@ -10,6 +10,7 @@ import { ClearCard, ClearDialog } from "./clear-panel"
 import { StatsCard } from "./stats-panel"
 import { MobileActionsMenu } from "./mobile-actions-menu"
 import { OwnerWarningBanner } from "@/components/owner-warning-banner"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getScheduleView } from "@/actions/schedule"
 import type { DateWindow, DayNote, ScheduleDay, ParentId } from "@/lib/schedule/types"
@@ -60,9 +61,12 @@ export function DashboardShell({
   const [clearOpen, setClearOpen] = useState(false)
   const publishRef = useRef<(() => void) | null>(null)
   const loadSeqRef = useRef(0)
+  // Scroll to today on first load; afterwards only when a range change asks for it
+  const scrollToTodayRef = useRef(true)
 
-  const loadView = useCallback(async (next: { viewStart?: string; viewEnd?: string }) => {
+  const loadView = useCallback(async (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollToToday?: boolean }) => {
     const seq = ++loadSeqRef.current
+    scrollToTodayRef.current = !!opts?.scrollToToday
     setLoading(true)
     try {
       const result = await getScheduleView(next.viewStart, next.viewEnd)
@@ -79,7 +83,13 @@ export function DashboardShell({
     }
   }, [])
 
+  const router = useRouter()
   const reloadView = useCallback(() => loadView(view), [loadView, view])
+  // Clearing can move the schedule's last assigned day, so also refresh server props
+  const handleCleared = useCallback(() => {
+    reloadView()
+    router.refresh()
+  }, [reloadView, router])
 
   const zoom = useSyncExternalStore(subscribeToRowZoom, getRowZoomSnapshot, getRowZoomServerSnapshot)
   const stepZoom = useCallback((delta: number) => {
@@ -121,6 +131,7 @@ export function DashboardShell({
             viewEnd={view.viewEnd}
             resolvedStart={bounds.startDate}
             resolvedEnd={bounds.endDate}
+            hasLaterDays={scheduleEndDate > bounds.endDate}
             onChange={loadView}
           />
           <MobileActionsMenu onExtend={() => setExtendOpen(true)} onClear={() => setClearOpen(true)} />
@@ -160,7 +171,7 @@ export function DashboardShell({
           >
             {/* Keyed by the loaded window: remounts on range change so the realtime
                 subscription uses the new range and the table re-scrolls to today. */}
-            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} notes={notes} setNotes={setNotes} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} />
+            <ScheduleWithRealtime key={`${bounds.startDate}_${bounds.endDate}`} days={days} setDays={setDays} notes={notes} setNotes={setNotes} publishRef={publishRef} parents={parents} viewStart={view.viewStart} viewEnd={view.viewEnd} currentParentId={currentParentId} zoom={zoom} onAddWeeks={() => setExtendOpen(true)} scrollToTodayRef={scrollToTodayRef} />
           </div>
           <aside className="max-sm:hidden min-w-0 flex flex-col gap-4" style={{ flex: "1 1 320px" }}>
             <StatsCard days={days} parents={parents} />
@@ -170,7 +181,7 @@ export function DashboardShell({
         </div>
       </main>
       <ExtendSheet open={extendOpen} onOpenChange={setExtendOpen} {...extendProps} />
-      <ClearDialog open={clearOpen} onOpenChange={setClearOpen} childCount={childCount} onCleared={reloadView} />
+      <ClearDialog open={clearOpen} onOpenChange={setClearOpen} childCount={childCount} onCleared={handleCleared} />
     </div>
   )
 }

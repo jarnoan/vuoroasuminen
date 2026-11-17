@@ -1,8 +1,8 @@
 "use client"
 
-import { parseISO, startOfWeek, endOfWeek, subDays, format, differenceInCalendarDays } from "date-fns"
+import { parseISO, startOfWeek, endOfWeek, addDays, format, differenceInCalendarDays } from "date-fns"
 import { fi } from "react-day-picker/locale"
-import { CalendarIcon, ChevronLeft, RotateCcw, X } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
@@ -15,7 +15,10 @@ interface ViewToolbarProps {
   // real default range instead of appearing empty.
   resolvedStart: string
   resolvedEnd: string
-  onChange: (next: { viewStart?: string; viewEnd?: string }) => void
+  // Whether saved (assigned) days exist after the shown range — shows the "next range" button
+  hasLaterDays?: boolean
+  // scrollToToday: scroll to today once the new range is shown (otherwise keep the scroll)
+  onChange: (next: { viewStart?: string; viewEnd?: string }, opts?: { scrollToToday?: boolean }) => void
 }
 
 // Length of an inclusive date range as full weeks plus leftover days, e.g. "12 vk", "12 vk 3 pv"
@@ -32,29 +35,34 @@ export function formatPeriodLength(start: Date, end: Date): string {
 const groupClass = "inline-flex items-center bg-background border rounded-xl p-1 gap-1"
 const ghostBtn = "h-9 rounded-lg hover:bg-muted aria-expanded:bg-muted transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 inline-flex items-center justify-center"
 
-export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewEnd, resolvedStart, resolvedEnd, onChange }: ViewToolbarProps) {
+export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewEnd, resolvedStart, resolvedEnd, hasLaterDays = false, onChange }: ViewToolbarProps) {
   // updates: undefined = keep the current bound, null = reset it to the default
-  function navigateTo(updates: { viewStart?: string | null; viewEnd?: string | null }) {
+  function navigateTo(updates: { viewStart?: string | null; viewEnd?: string | null }, opts?: { scrollToToday?: boolean }) {
     const pick = (u: string | null | undefined, current: string | undefined) =>
       u === undefined ? current : (u ?? undefined)
     onChange({
       viewStart: pick(updates.viewStart, initialViewStart),
       viewEnd: pick(updates.viewEnd, initialViewEnd),
-    })
+    }, opts)
   }
 
-  function handlePrevWeek() {
-    const currentStart = parseISO(initialViewStart ?? resolvedStart)
-    const prevMonday = startOfWeek(subDays(currentStart, 7), { weekStartsOn: 1 })
-    // Quick navigation resets to the default 12-week window
-    navigateTo({ viewStart: format(prevMonday, "yyyy-MM-dd"), viewEnd: null })
+  // Shift the whole shown range by its own length (rounded up to full weeks, so the
+  // start stays on a Monday and the end on a Sunday) to show the previous/next range
+  function shiftRange(direction: -1 | 1) {
+    const start = parseISO(initialViewStart ?? resolvedStart)
+    const end = parseISO(initialViewEnd ?? resolvedEnd)
+    const days = Math.ceil((differenceInCalendarDays(end, start) + 1) / 7) * 7 * direction
+    navigateTo({
+      viewStart: format(addDays(start, days), "yyyy-MM-dd"),
+      viewEnd: format(addDays(end, days), "yyyy-MM-dd"),
+    })
   }
 
   function handleReset() {
     // Back to the default window — if the range changes, ScheduleTable remounts and its
     // mount effect scrolls to today; if it is already shown, just scroll there now.
     document.querySelector('[data-today="true"]')?.scrollIntoView({ behavior: "instant", block: "start" })
-    navigateTo({ viewStart: null, viewEnd: null })
+    navigateTo({ viewStart: null, viewEnd: null }, { scrollToToday: true })
   }
 
   function handleDateSelect(date: Date | undefined) {
@@ -101,8 +109,8 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
     <div className="flex items-center gap-2 min-w-0 max-sm:flex-1">
       <button
         type="button"
-        onClick={handlePrevWeek}
-        aria-label="Edellinen viikko"
+        onClick={() => shiftRange(-1)}
+        aria-label="Edellinen jakso"
         className="size-11 shrink-0 rounded-xl border bg-background hover:bg-muted inline-flex items-center justify-center sm:hidden"
       >
         <ChevronLeft className="size-[18px]" aria-hidden="true" />
@@ -114,7 +122,7 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
           aria-label="Valitse näytettävä ajanjakso"
           className="sm:hidden flex-1 min-w-0 h-11 rounded-xl border bg-background px-3 inline-flex items-center gap-2 text-sm font-semibold whitespace-nowrap hover:bg-muted aria-expanded:bg-muted"
         >
-          <CalendarIcon className="size-4 text-muted-foreground shrink-0" aria-hidden="true" />
+          <CalendarIcon className="size-4 text-muted-foreground shrink-0 max-[400px]:hidden" aria-hidden="true" />
           <span className="truncate">{format(selectedDate, "d.M.")} – {format(selectedEndDate, "d.M.yyyy")}</span>
           <span className="ml-auto shrink-0 text-xs font-normal text-muted-foreground">{periodLength}</span>
         </PopoverTrigger>
@@ -148,9 +156,20 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
         </PopoverContent>
       </Popover>
 
+      {hasLaterDays && (
+        <button
+          type="button"
+          onClick={() => shiftRange(1)}
+          aria-label="Seuraava jakso"
+          className="size-11 shrink-0 rounded-xl border bg-background hover:bg-muted inline-flex items-center justify-center sm:hidden"
+        >
+          <ChevronRight className="size-[18px]" aria-hidden="true" />
+        </button>
+      )}
+
       {/* Desktop: ‹ start – end ✕ in one group */}
       <div className={`${groupClass} max-sm:hidden`}>
-        <button type="button" onClick={handlePrevWeek} aria-label="Edellinen viikko" className={`${ghostBtn} w-9`}>
+        <button type="button" onClick={() => shiftRange(-1)} aria-label="Edellinen jakso" className={`${ghostBtn} w-9`}>
           <ChevronLeft className="size-[18px]" aria-hidden="true" />
         </button>
         <Popover>
@@ -182,6 +201,11 @@ export function ViewToolbar({ viewStart: initialViewStart, viewEnd: initialViewE
         {initialViewEnd && (
           <button type="button" onClick={handleClearEndDate} aria-label="Poista loppupäivän rajaus" className={`${ghostBtn} w-8 h-8 text-muted-foreground`}>
             <X className="size-3.5" aria-hidden="true" />
+          </button>
+        )}
+        {hasLaterDays && (
+          <button type="button" onClick={() => shiftRange(1)} aria-label="Seuraava jakso" className={`${ghostBtn} w-9`}>
+            <ChevronRight className="size-[18px]" aria-hidden="true" />
           </button>
         )}
       </div>

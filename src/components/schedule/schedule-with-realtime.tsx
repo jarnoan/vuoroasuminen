@@ -25,9 +25,10 @@ interface ScheduleWithRealtimeProps {
   currentParentId?: ParentId
   zoom?: number
   onAddWeeks?: () => void
+  scrollToTodayRef?: React.RefObject<boolean>
 }
 
-export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks }: ScheduleWithRealtimeProps) {
+export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRef, parents, viewStart, viewEnd, currentParentId, zoom, onAddWeeks, scrollToTodayRef }: ScheduleWithRealtimeProps) {
   const realtimeRef = useRef<((entry: EntryUpdate) => void) | null>(null)
 
   const handleEntryChange = useCallback((entry: EntryUpdate) => {
@@ -60,6 +61,7 @@ export function ScheduleWithRealtime({ days, setDays, notes, setNotes, publishRe
         currentParentId={currentParentId}
         zoom={zoom}
         onAddWeeks={onAddWeeks}
+        scrollToTodayRef={scrollToTodayRef}
       />
     </RealtimeProvider>
   )

@@ -37,9 +37,12 @@ interface ScheduleTableProps {
   currentParentId?: ParentId
   zoom?: number
   onAddWeeks?: () => void  // phones: end-of-schedule "Lisää viikkoja" button
+  // When true at mount, scroll to today's row and reset it to false. Lets the page scroll
+  // to today on first load (and on "back to this week") but not on other range changes.
+  scrollToTodayRef?: React.RefObject<boolean>
 }
 
-export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks }: ScheduleTableProps) {
+export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, publishRef, parents, currentParentId, zoom = 1, onAddWeeks, scrollToTodayRef }: ScheduleTableProps) {
   const stats = useScheduleStats(days, parents)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -95,12 +98,15 @@ export function ScheduleTable({ days, setDays, notes, setNotes, realtimeRef, pub
     }
   }, [applyPublished, publishRef])
 
-  // Auto-scroll to today on mount
+  // Auto-scroll to today on mount, when requested
   useEffect(() => {
+    if (scrollToTodayRef && !scrollToTodayRef.current) return
+    if (scrollToTodayRef) scrollToTodayRef.current = false
     const todayRow = document.querySelector('[data-today="true"]')
     if (todayRow) {
       todayRow.scrollIntoView({ behavior: "instant", block: "start" })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, [])
 
   // Multi-day notes: optimistic actions, drag-to-extend and lane layout
